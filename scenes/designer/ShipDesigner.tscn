@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=7 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://room_palette_panel" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_budget"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -90,6 +91,12 @@ theme_override_font_sizes/font_size = 16
 text = "Remaining: 30"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="RoomPalettePanel" parent="." instance=ExtResource("2")]
+offset_left = 1010.0
+offset_top = 100.0
+offset_right = 1260.0
+offset_bottom = 500.0
 
 [node name="AutoFillButton" type="Button" parent="."]
 layout_mode = 0

@@ -26,8 +26,14 @@ var current_budget: int = 0
 @onready var launch_button: Button = $LaunchButton
 @onready var auto_fill_button: Button = $AutoFillButton
 
+## Room palette panel
+@onready var room_palette: RoomPalettePanel = $RoomPalettePanel
+
 ## Current template index for cycling
 var current_template_index: int = 0
+
+## Currently selected room type from palette
+var selected_room_type: RoomData.RoomType = RoomData.RoomType.EMPTY
 
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
@@ -61,6 +67,13 @@ func _ready():
 	auto_fill_button.pressed.connect(_on_auto_fill_pressed)
 	auto_fill_button.mouse_entered.connect(_on_button_hover_start.bind(auto_fill_button))
 	auto_fill_button.mouse_exited.connect(_on_button_hover_end.bind(auto_fill_button))
+
+	# Connect room palette signals
+	room_palette.room_type_selected.connect(_on_room_type_selected)
+
+	# Initialize palette display
+	update_palette_counts()
+	update_palette_availability()
 
 func _create_grid():
 	"""Create an 8x6 grid of tiles"""
@@ -233,53 +246,52 @@ func _process(_delta):
 		if child is Line2D:
 			child.default_color = Color(0.29, 0.89, 0.89, pulse)
 
-## Handle tile left-click - cycle through room types
+## Handle tile left-click - place selected room type from palette
 func _on_tile_clicked(x: int, y: int):
 	var tile = get_tile_at(x, y)
 	if not tile:
 		return
 
-	# Get current room type and determine next type
+	# Get current room type at this tile
 	var current_type = tile.get_room_type()
-	var next_type = get_next_room_type(current_type)
 
-	# Auto-skip room types that can't be placed here
-	# Keep cycling until we find a valid room or reach EMPTY
-	var attempts = 0
-	while next_type != RoomData.RoomType.EMPTY and attempts < 7:
-		var can_place = true
+	# If no room type selected from palette, do nothing
+	if selected_room_type == RoomData.RoomType.EMPTY:
+		return
 
-		# Skip Bridge if we already have one (unless this tile has it)
-		if next_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
-			can_place = false
-
-		# Skip if row constraint violated
-		if not RoomData.can_place_in_row(next_type, y):
-			can_place = false
-
-		# Skip if would exceed budget
-		var old_cost = RoomData.get_cost(current_type)
-		var new_cost = RoomData.get_cost(next_type)
-		var new_budget = current_budget - old_cost + new_cost
-		if new_budget > max_budget:
-			can_place = false
-
-		if can_place:
-			break  # Found valid room type
-
-		# Try next room type
-		next_type = get_next_room_type(next_type)
-		attempts += 1
-
-	# If next type is EMPTY, clear the room (always allowed)
-	if next_type == RoomData.RoomType.EMPTY:
+	# If clicking same type, deselect it (clear the room)
+	if current_type == selected_room_type:
 		tile.clear_room()
 		_update_budget_display()
 		update_all_power_states()
+		update_palette_counts()
+		update_palette_availability()
 		return
 
-	# Place the room (validation already done in auto-skip loop)
-	var room_scene = room_scenes.get(next_type)
+	# Validate placement
+	var can_place = true
+
+	# Check Bridge limit (only 1 allowed, unless this tile already has it)
+	if selected_room_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
+		can_place = false
+
+	# Check row constraints
+	if not RoomData.can_place_in_row(selected_room_type, y):
+		can_place = false
+
+	# Check budget
+	var old_cost = RoomData.get_cost(current_type)
+	var new_cost = RoomData.get_cost(selected_room_type)
+	var new_budget = current_budget - old_cost + new_cost
+	if new_budget > max_budget:
+		can_place = false
+
+	# If can't place, return (do nothing)
+	if not can_place:
+		return
+
+	# Place the room
+	var room_scene = room_scenes.get(selected_room_type)
 	if room_scene:
 		var room = room_scene.instantiate()
 		tile.set_room(room)
@@ -287,6 +299,8 @@ func _on_tile_clicked(x: int, y: int):
 	# Update budget display and power states
 	_update_budget_display()
 	update_all_power_states()
+	update_palette_counts()
+	update_palette_availability()
 
 ## Handle tile right-click - remove room
 func _on_tile_right_clicked(x: int, y: int):
@@ -300,6 +314,68 @@ func _on_tile_right_clicked(x: int, y: int):
 	# Update budget display and power states
 	_update_budget_display()
 	update_all_power_states()
+	update_palette_counts()
+	update_palette_availability()
+
+## Handle room type selection from palette
+func _on_room_type_selected(room_type: RoomData.RoomType):
+	selected_room_type = room_type
+	# Update button availability based on new selection
+	update_palette_availability()
+
+## Update room counts on palette panel
+func update_palette_counts():
+	# Count each room type
+	var counts = {
+		RoomData.RoomType.BRIDGE: 0,
+		RoomData.RoomType.WEAPON: 0,
+		RoomData.RoomType.SHIELD: 0,
+		RoomData.RoomType.ENGINE: 0,
+		RoomData.RoomType.REACTOR: 0,
+		RoomData.RoomType.ARMOR: 0
+	}
+
+	for tile in grid_tiles:
+		var room_type = tile.get_room_type()
+		if counts.has(room_type):
+			counts[room_type] += 1
+
+	# Update palette display
+	room_palette.update_counts(counts)
+
+## Update which room types can be placed (enable/disable buttons)
+func update_palette_availability():
+	var available_types = []
+
+	# Check each room type
+	for room_type in [RoomData.RoomType.BRIDGE, RoomData.RoomType.WEAPON, RoomData.RoomType.SHIELD,
+					  RoomData.RoomType.ENGINE, RoomData.RoomType.REACTOR, RoomData.RoomType.ARMOR]:
+		var can_afford = true
+		var can_place_somewhere = false
+
+		# Check if we can afford it
+		var cost = RoomData.get_cost(room_type)
+		if current_budget + cost > max_budget:
+			can_afford = false
+
+		# Check if we can place it somewhere (at least one valid row)
+		if can_afford:
+			# Check Bridge limit
+			if room_type == RoomData.RoomType.BRIDGE and count_bridges() >= 1:
+				can_place_somewhere = false
+			else:
+				# Check if there's at least one valid row for this room type
+				for y in range(GRID_HEIGHT):
+					if RoomData.can_place_in_row(room_type, y):
+						can_place_somewhere = true
+						break
+
+		# Add to available if can afford and can place
+		if can_afford and can_place_somewhere:
+			available_types.append(room_type)
+
+	# Update palette
+	room_palette.update_availability(available_types)
 
 ## Handle launch button press
 func _on_launch_pressed():
@@ -357,6 +433,8 @@ func _on_auto_fill_pressed():
 	# Update display
 	_update_budget_display()
 	update_all_power_states()
+	update_palette_counts()
+	update_palette_availability()
 
 ## Clear all rooms from the grid
 func _clear_all_rooms():

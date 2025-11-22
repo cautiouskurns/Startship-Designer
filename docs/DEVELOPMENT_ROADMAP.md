@@ -7,13 +7,14 @@
 
 ## OVERVIEW
 
-**Total Time Estimate:** 17-18 hours (with buffer for iteration)
+**Total Time Estimate:** 22-23 hours (with buffer for iteration)
 
-**4-Phase Structure:**
+**5-Phase Structure:**
 1. **Visual Layout** (3.5h) - Static UI on screen, no interaction
 2. **Interactive** (4h) - Respond to player input, basic placement
 3. **Systems** (8h) - Combat logic, power routing, missions
 4. **Polish** (3h) - Visual feedback, animations, balance
+5. **Designer UI/UX** (4.5h) - Modern toolkit interface, improved usability
 
 **Critical Questions Being Tested:**
 - **Q1:** Is the design → watch → iterate loop satisfying?
@@ -902,6 +903,316 @@ Mission 3: "Fleet Battle"
 
 ---
 
+# PHASE 5: DESIGNER UI/UX POLISH
+
+**Goal:** Designer has modern toolkit UI - select room from palette, see stats/costs, get instant visual feedback
+
+**Time:** 4-5 hours
+
+---
+
+## Feature 5.1: Room Type Palette Panel
+
+**Tests:** Q1 (Design → iterate loop)
+**Time:** 1.5 hours
+
+### What Player Sees:
+- **Position:** Right side of screen, 300px wide panel, anchored to right edge
+- **Title:** "ROOM TYPES" in white header text (24pt)
+- **Layout:** 6 rows stacked vertically, one per room type
+- **Each row shows:**
+  - Room icon (64×64px sprite, same as grid rooms)
+  - Room name in white text (18pt): "Bridge", "Weapon", etc.
+  - Cost in gray text (14pt): "2 pts", "3 pts"
+  - Count placed on far right: "×0", "×1", "×2" (updates live)
+- **Selection state:**
+  - Selected room: cyan border glow (2px), background slightly lighter
+  - Unselected: default dark background
+- **Disabled state:**
+  - Can't afford: row grayed out (50% opacity)
+  - Bridge limit reached: Bridge row grayed out
+  - Hover disabled row: shows red flash briefly
+
+### What Player Does:
+- Click a room type row → row highlights (cyan border)
+- Selected room type stays active
+- Click grid tile → places selected room (no more cycling through 7 types!)
+- Right-click grid → still removes rooms (unchanged)
+- Click different room type row → selection changes
+- See counts update: place Weapon → count shows "×1", place another → "×2"
+
+### How It Works:
+- New scene: `RoomPalettePanel.tscn` (Panel container with VBoxContainer)
+- Each row is custom `RoomTypeButton.tscn` (Button with HBoxContainer layout)
+  - Contains: TextureRect (icon), Label (name), Label (cost), Label (count)
+- ShipDesigner tracks: `selected_room_type: RoomData.RoomType = RoomData.RoomType.EMPTY`
+- On palette button clicked:
+  - Set `selected_room_type` to clicked room
+  - Update visual highlights (previous button loses glow, clicked button gains glow)
+- On grid tile left-click:
+  - If `selected_room_type != EMPTY`: attempt to place that room type
+  - Run validation: check budget, row constraints, Bridge limit
+  - If valid: place room, update count labels, update budget
+  - If invalid: flash palette button red (can't place)
+- Update all count labels after every placement/removal:
+  - Iterate through grid tiles, count each room type
+  - Set count label text: "×N" for each room type
+
+### Acceptance Criteria:
+- [ ] Visual check: Room palette panel visible on right side with 6 room types
+- [ ] Visual check: Each row shows icon, name, cost, and count
+- [ ] Interaction check: Click Weapon row → Weapon highlighted with cyan border
+- [ ] Interaction check: Click grid tile → Weapon placed (no cycling)
+- [ ] Interaction check: Click room type you can't afford → red flash, doesn't select
+- [ ] Manual test: Place 2 Weapons → count shows "×2"
+- [ ] Manual test: Remove 1 Weapon → count shows "×1"
+
+### Shortcuts for This Phase:
+- Reuse existing room scene sprites as icons (no separate icon assets)
+- No drag-and-drop (just click-to-select, then click-to-place)
+- No tooltips yet (defer to Feature 5.3)
+- Simple instant selection (no smooth transitions)
+
+---
+
+## Feature 5.2: Hover Preview & Placement Feedback
+
+**Tests:** Q1 (Design → iterate loop)
+**Time:** 1 hour
+
+### What Player Sees:
+- **Valid tile hover (with room selected):**
+  - Tile border glows cyan (2px border)
+  - Small cost indicator floats near cursor: "+3" in white
+- **Invalid tile hover:**
+  - Tile border glows red (2px border)
+  - Tile shows red overlay (50% opacity ColorRect)
+  - Cost indicator near cursor shows "+3" in red
+- **Invalid reasons:**
+  - Wrong row (row constraint failed)
+  - Over budget (can't afford)
+  - Already have Bridge (limit 1)
+- **No selection:** Hovering grid with no room selected shows no preview
+
+### What Player Does:
+- Select room type from palette
+- Move mouse over grid tiles
+- See cyan glow on valid placement tiles
+- See red glow + overlay on invalid tiles
+- See floating cost "+3" following cursor
+- Click valid tile → room places
+- Click invalid tile → nothing happens (tile flashes red briefly)
+
+### How It Works:
+- ShipDesigner has variable: `hovered_tile: GridTile = null`
+- On GridTile mouse_entered:
+  - Set `hovered_tile = self`
+  - If `selected_room_type != EMPTY`:
+    - Run validation: check budget, row constraint, Bridge limit
+    - If valid: show cyan border (modulate or border ColorRect)
+    - If invalid: show red border + red overlay
+- On GridTile mouse_exited:
+  - Clear `hovered_tile = null`
+  - Remove border glow and overlay
+- Cursor cost indicator:
+  - Label node that follows mouse position (update in `_process()`)
+  - Text: "+%d" % RoomData.get_cost(selected_room_type)
+  - Color: white if valid, red if invalid
+  - Only visible when selected_room_type != EMPTY and hovering grid
+
+### Acceptance Criteria:
+- [ ] Visual check: Select Weapon, hover valid tile → cyan border appears
+- [ ] Visual check: Select Reactor, hover row 0 → red border + overlay (wrong row)
+- [ ] Visual check: Fill budget to 29, select 3-cost room, hover → red (over budget)
+- [ ] Visual check: Cost indicator "+3" follows cursor while hovering
+- [ ] Interaction check: Click red (invalid) tile → nothing happens
+
+### Shortcuts for This Phase:
+- Don't show *why* invalid (just red = can't place)
+- No animation on hover (instant show/hide)
+- Cost indicator is simple Label, doesn't smoothly follow (just position updates)
+- No preview of the actual room sprite (just border feedback)
+
+---
+
+## Feature 5.3: Room Info Tooltips
+
+**Tests:** Q1 (Design → iterate loop)
+**Time:** 45 minutes
+
+### What Player Sees:
+- **Hover over room type button:** Tooltip appears after 0.3s delay
+- **Tooltip panel:**
+  - 250px wide, floats to the left of button
+  - Dark background (#1A1A1A), light border (#4A4A4A)
+  - Room name in cyan header (20pt)
+  - Description text (14pt white): explains room function
+  - Stats text (14pt gray): shows combat numbers
+- **Tooltip content examples:**
+  - **Bridge:** "Command center. Required. Self-powered. | Losing Bridge = instant defeat."
+  - **Weapon:** "Offensive system. | Deals 10 damage per powered weapon."
+  - **Shield:** "Defensive system. | Absorbs up to 15 damage per powered shield."
+  - **Engine:** "Propulsion system. | Higher engine count shoots first (initiative)."
+  - **Reactor:** "Power generation. | Powers adjacent rooms (up/down/left/right only)."
+  - **Armor:** "Hull plating. | Adds 20 HP per armor room (doesn't need power)."
+
+### What Player Does:
+- Hover mouse over room type button in palette
+- Wait 0.3s → see tooltip appear
+- Read what the room does and how it affects combat
+- Move mouse away → tooltip disappears immediately
+
+### How It Works:
+- Each `RoomTypeButton` has:
+  - `tooltip_panel: Panel` child node (hidden by default)
+  - `tooltip_timer: Timer` (one-shot, wait_time = 0.3s)
+- On `mouse_entered`:
+  - Start `tooltip_timer`
+- On `timeout`:
+  - Show `tooltip_panel`
+  - Position panel to left of button: `position.x = -260` (250px width + 10px margin)
+- On `mouse_exited`:
+  - Stop `tooltip_timer`
+  - Hide `tooltip_panel`
+- Tooltip text is hard-coded per room type in RoomTypeButton script
+
+### Acceptance Criteria:
+- [ ] Visual check: Hover Weapon button 0.3s → see tooltip with description
+- [ ] Visual check: Tooltip shows "Deals 10 damage per powered weapon"
+- [ ] Visual check: Hover Reactor → see "Powers adjacent rooms (up/down/left/right only)"
+- [ ] Interaction check: Move mouse away before 0.3s → tooltip doesn't appear
+- [ ] Interaction check: Move mouse away after tooltip shown → tooltip disappears
+
+### Shortcuts for This Phase:
+- Hard-code all tooltip text in RoomTypeButton (no data file)
+- Instant show/hide (no fade animation)
+- Tooltip doesn't follow cursor (fixed position left of button)
+- Simple Panel styling (no fancy graphics)
+
+---
+
+## Feature 5.4: Ship Status Panel
+
+**Tests:** Q1 (Design → iterate loop)
+**Time:** 1 hour
+
+### What Player Sees:
+- **Position:** Bottom-right corner, 300px wide, 200px tall
+- **Title:** "SHIP STATUS" in white header (24pt)
+- **3 status rows:**
+  - **Bridge:** Icon + text
+    - ✓ "Ready" in green (#4AE24A) when 1 Bridge placed
+    - ✗ "Missing" in red (#E24A4A) when 0 Bridges
+  - **Budget:** Icon + text
+    - ✓ "Within Limits" in green when current ≤ max
+    - ✗ "Over Budget" in red when current > max
+    - Shows amount: "28 / 30" in gray
+  - **Power:** Icon + text
+    - ✓ "All Rooms Powered" in green when all rooms powered
+    - ⚠ "N Unpowered" in yellow (#E2D44A) when some rooms unpowered
+    - Shows count: "2 rooms need power" in gray
+- **Launch button state:** Only enabled when all 3 checks are green (✓)
+
+### What Player Does:
+- Glance at status panel to see if ship is ready to launch
+- See what's blocking launch:
+  - No Bridge? → red ✗ Missing
+  - Over budget? → red ✗ Over Budget
+  - Unpowered rooms? → yellow ⚠ N Unpowered (warning, but still launchable)
+- Fix issues → watch status update in real-time
+- All green → Launch button enables
+
+### How It Works:
+- New scene: `ShipStatusPanel.tscn` (Panel with VBoxContainer)
+- 3 child nodes: `StatusRow.tscn` (HBoxContainer with icon label + status label)
+- ShipDesigner calls `_update_ship_status()` after every room placement/removal:
+  - **Bridge check:**
+    - Count Bridges: `bridge_count = count_bridges()`
+    - If `bridge_count == 1`: status = "✓ Ready" (green)
+    - Else: status = "✗ Missing" (red)
+  - **Budget check:**
+    - If `current_budget <= max_budget`: status = "✓ Within Limits" (green)
+    - Else: status = "✗ Over Budget" (red)
+  - **Power check:**
+    - Create temp ShipData: `temp_ship = ShipData.from_designer_grid(grid_tiles)`
+    - Count unpowered non-armor rooms:
+      ```
+      unpowered_count = 0
+      for each room in grid:
+        if room != EMPTY and room != ARMOR and !temp_ship.is_room_powered(x, y):
+          unpowered_count++
+      ```
+    - If `unpowered_count == 0`: status = "✓ All Rooms Powered" (green)
+    - Else: status = "⚠ %d Unpowered" % unpowered_count (yellow)
+- Launch button enabled only if:
+  - Bridge check green AND Budget check green
+  - Power check doesn't block launch (yellow warning is OK)
+
+### Acceptance Criteria:
+- [ ] Visual check: Status panel visible bottom-right with 3 status rows
+- [ ] Visual check: Start with no Bridge → see "✗ Missing" in red
+- [ ] Interaction check: Place Bridge → see "✓ Ready" in green
+- [ ] Interaction check: Go over budget → see "✗ Over Budget" in red, Launch disabled
+- [ ] Interaction check: Place weapon without reactor nearby → see "⚠ 1 Unpowered" in yellow
+- [ ] Manual test: Fix all issues (Bridge placed, within budget) → all green → Launch enables
+
+### Shortcuts for This Phase:
+- Use text symbols for icons (✓, ✗, ⚠) instead of image icons
+- Power check only shows count, doesn't list which rooms
+- Simple color change (no animation)
+- Don't show detailed power grid visualization here
+
+---
+
+## Feature 5.5: Clear Grid Button
+
+**Tests:** Q1 (Design → iterate loop)
+**Time:** 30 minutes
+
+### What Player Sees:
+- **Position:** Top-right of grid area, 150×50px button
+- **Appearance:**
+  - Red background (#E24A4A)
+  - White text "CLEAR GRID" (18pt)
+  - Hover: background lightens to #FF6A6A
+  - Hover: button scales to 1.05
+- **Click effect:** All rooms removed instantly from grid
+
+### What Player Does:
+- Click "CLEAR GRID" button
+- See all rooms disappear from grid
+- Budget resets to 0/[max]
+- Room counts reset to ×0
+- Power lines disappear
+- Status panel updates (shows Bridge missing)
+- Start designing from scratch
+
+### How It Works:
+- Add Button to ShipDesigner.tscn
+  - Position above grid, top-right corner
+  - Red StyleBoxFlat background
+- On `pressed` signal:
+  - Call existing `_clear_all_rooms()` function (already exists from auto-fill feature)
+  - Call `_update_budget_display()`
+  - Call `update_all_power_states()`
+  - Call `_update_ship_status()`
+- Button has same hover scale effect as other buttons (existing `_on_button_hover_start/end`)
+
+### Acceptance Criteria:
+- [ ] Visual check: Clear Grid button visible top-right with red background
+- [ ] Interaction check: Click button → all rooms removed instantly
+- [ ] Visual check: Budget shows "0 / 20", all counts show "×0"
+- [ ] Visual check: Status panel shows "✗ Missing" for Bridge
+- [ ] Interaction check: Hover button → scales to 1.05, background lightens
+
+### Shortcuts for This Phase:
+- No confirmation dialog ("Are you sure?")
+- No undo functionality
+- Instant clear (no fade-out animation)
+- Reuses existing _clear_all_rooms() function
+
+---
+
 ## APPENDIX: Scene Architecture Recommendations
 
 Based on the roadmap, here's suggested scene structure:
@@ -928,6 +1239,16 @@ Based on the roadmap, here's suggested scene structure:
   - Auto-plays tween on _ready() and queue_free() when done
 - **Explosion.tscn** - Room destruction effect
   - Auto-plays animation and queue_free() when done
+- **RoomPalettePanel.tscn** (Phase 5) - Room selection UI
+  - Contains 6 RoomTypeButton instances
+  - Properties: selected_room_type
+  - Signals: room_type_selected(room_type)
+- **RoomTypeButton.tscn** (Phase 5) - Single room type in palette
+  - Properties: room_type, cost, count, is_selected
+  - Contains: icon, name label, cost label, count label, tooltip panel
+- **ShipStatusPanel.tscn** (Phase 5) - Ship readiness display
+  - Contains 3 StatusRow instances (Bridge, Budget, Power)
+  - Updates in real-time as ship design changes
 
 ### Autoload Singletons:
 - **GameState.gd** - Global state
@@ -944,21 +1265,22 @@ Based on the roadmap, here's suggested scene structure:
 
 ## SUMMARY
 
-**Total Features:** 17 features across 4 phases
+**Total Features:** 22 features across 5 phases
 
 **Critical Path (Minimum Viable):**
 - Phase 1: All features (need visual foundation)
 - Phase 2: All features (need interactivity)
 - Phase 3: Features 3.1, 3.2, 3.3, 3.5 (skip 3.4 if time-constrained)
 - Phase 4: Features 4.2, 4.3 (skip 4.1 if time-constrained)
+- Phase 5: Optional (game is playable without it, but UX is much better)
 
 **Time Estimates:**
 - **Must-Have:** 14.5 hours (Phases 1-3, skip 3.4, minimal Phase 4)
-- **Full Roadmap:** 18.5 hours (all features)
-- **GDD Original:** 18 hours (5 phases)
+- **With Phase 4 Polish:** 18.5 hours (Phases 1-4 complete)
+- **Full Roadmap:** 23 hours (all phases including Phase 5 UX polish)
 
 **Testing the 5 Critical Questions:**
-- Q1 (Design → iterate loop): Features 2.4, 3.1, 3.2, 3.5, 4.2
+- Q1 (Design → iterate loop): Features 2.4, 3.1, 3.2, 3.5, 4.2, 5.1, 5.2, 5.3, 5.4, 5.5
 - Q2 (Placement strategic): Features 1.1, 1.2, 2.1, 2.2, 2.3, 3.3
 - Q3 (Combat readable): Features 3.1, 3.2, 3.4, 4.1, 4.2
 - Q4 (Budget trade-offs): Features 1.3, 2.2, 2.3, 3.3
