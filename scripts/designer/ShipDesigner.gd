@@ -43,6 +43,10 @@ func _create_grid():
 			# Position the tile
 			tile.position = Vector2(x * TILE_SIZE, y * TILE_SIZE)
 
+			# Connect tile signals
+			tile.tile_clicked.connect(_on_tile_clicked)
+			tile.tile_right_clicked.connect(_on_tile_right_clicked)
+
 			# Add to grid container
 			grid_container.add_child(tile)
 
@@ -78,3 +82,13 @@ func _get_remaining_color(remaining: int) -> Color:
 		return Color(0.886, 0.831, 0.290)  # Yellow #E2D44A
 	else:
 		return Color(0.886, 0.290, 0.290)  # Red #E24A4A
+
+## Handle tile left-click (stub for Feature 2.2)
+func _on_tile_clicked(x: int, y: int):
+	print("Tile clicked at: [%d, %d]" % [x, y])
+	# Feature 2.2 will implement room cycling logic here
+
+## Handle tile right-click (stub for Feature 2.2)
+func _on_tile_right_clicked(x: int, y: int):
+	print("Tile right-clicked at: [%d, %d]" % [x, y])
+	# Feature 2.2 will implement room removal logic here
