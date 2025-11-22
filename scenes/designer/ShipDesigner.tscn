@@ -1,6 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=5 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_budget"]
+bg_color = Color(0.101961, 0.101961, 0.101961, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.4, 0.4, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_launch_normal"]
+bg_color = Color(0.172549, 0.290196, 0.54902, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_launch_disabled"]
+bg_color = Color(0.298039, 0.298039, 0.298039, 1)
 
 [node name="ShipDesigner" type="Control"]
 layout_mode = 3
@@ -35,6 +49,65 @@ theme_override_font_sizes/font_size = 36
 text = "SHIP DESIGNER"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="BudgetPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -220.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 80.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_budget")
+
+[node name="BudgetLabel" type="Label" parent="BudgetPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 8.0
+offset_bottom = 32.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "BUDGET: 0/30"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RemainingLabel" type="Label" parent="BudgetPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 34.0
+offset_bottom = 52.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.290196, 1)
+theme_override_font_sizes/font_size = 16
+text = "Remaining: 30"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LaunchButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -170.0
+offset_top = -70.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_disabled_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_launch_normal")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_launch_disabled")
+text = "LAUNCH"
+disabled = true
 
 [node name="GridContainer" type="Node2D" parent="."]
 position = Vector2(384, 168)
