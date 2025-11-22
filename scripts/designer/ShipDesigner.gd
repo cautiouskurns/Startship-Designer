@@ -25,15 +25,25 @@ var current_budget: int = 0
 ## Buttons
 @onready var launch_button: Button = $LaunchButton
 @onready var auto_fill_button: Button = $AutoFillButton
+@onready var clear_grid_button: Button = $ClearGridButton
 
 ## Room palette panel
 @onready var room_palette: RoomPalettePanel = $RoomPalettePanel
+
+## Ship status panel
+@onready var ship_status_panel: ShipStatusPanel = $ShipStatusPanel
+
+## Cost indicator label
+@onready var cost_indicator: Label = $CostIndicator
 
 ## Current template index for cycling
 var current_template_index: int = 0
 
 ## Currently selected room type from palette
 var selected_room_type: RoomData.RoomType = RoomData.RoomType.EMPTY
+
+## Currently hovered tile
+var hovered_tile: GridTile = null
 
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
@@ -68,12 +78,20 @@ func _ready():
 	auto_fill_button.mouse_entered.connect(_on_button_hover_start.bind(auto_fill_button))
 	auto_fill_button.mouse_exited.connect(_on_button_hover_end.bind(auto_fill_button))
 
+	# Connect clear grid button signals
+	clear_grid_button.pressed.connect(_on_clear_grid_pressed)
+	clear_grid_button.mouse_entered.connect(_on_button_hover_start.bind(clear_grid_button))
+	clear_grid_button.mouse_exited.connect(_on_button_hover_end.bind(clear_grid_button))
+
 	# Connect room palette signals
 	room_palette.room_type_selected.connect(_on_room_type_selected)
 
 	# Initialize palette display
 	update_palette_counts()
 	update_palette_availability()
+
+	# Initialize status panel
+	_update_ship_status()
 
 func _create_grid():
 	"""Create an 8x6 grid of tiles"""
@@ -92,6 +110,8 @@ func _create_grid():
 			# Connect tile signals
 			tile.tile_clicked.connect(_on_tile_clicked)
 			tile.tile_right_clicked.connect(_on_tile_right_clicked)
+			tile.tile_hovered.connect(_on_tile_hovered)
+			tile.tile_unhovered.connect(_on_tile_unhovered)
 
 			# Add to grid container
 			grid_container.add_child(tile)
@@ -135,6 +155,19 @@ func _update_launch_button():
 	var is_valid = (count_bridges() == 1) and (current_budget <= max_budget)
 	launch_button.disabled = !is_valid
 
+## Update ship status panel
+func _update_ship_status():
+	# Update Bridge status
+	var bridge_count = count_bridges()
+	ship_status_panel.update_bridge_status(bridge_count)
+
+	# Update Budget status
+	ship_status_panel.update_budget_status(current_budget, max_budget)
+
+	# Update Power status
+	var unpowered_count = count_unpowered_rooms()
+	ship_status_panel.update_power_status(unpowered_count)
+
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:
 	if remaining > 5:
@@ -164,6 +197,48 @@ func count_bridges() -> int:
 		if tile.get_room_type() == RoomData.RoomType.BRIDGE:
 			count += 1
 	return count
+
+## Count number of unpowered rooms (excluding EMPTY and ARMOR)
+func count_unpowered_rooms() -> int:
+	# Create temporary ShipData to calculate power grid
+	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+
+	var unpowered_count = 0
+	for tile in grid_tiles:
+		var room_type = tile.get_room_type()
+
+		# Skip empty tiles and armor (armor doesn't need power)
+		if room_type == RoomData.RoomType.EMPTY or room_type == RoomData.RoomType.ARMOR:
+			continue
+
+		# Check if this room is powered
+		if not temp_ship.is_room_powered(tile.grid_x, tile.grid_y):
+			unpowered_count += 1
+
+	return unpowered_count
+
+## Check if a room can be placed at given position
+func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_type: RoomData.RoomType) -> bool:
+	# Can't place EMPTY (that's for clearing)
+	if room_type == RoomData.RoomType.EMPTY:
+		return false
+
+	# Check Bridge limit (only 1 allowed, unless this tile already has it)
+	if room_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
+		return false
+
+	# Check row constraints
+	if not RoomData.can_place_in_row(room_type, y):
+		return false
+
+	# Check budget
+	var old_cost = RoomData.get_cost(current_type)
+	var new_cost = RoomData.get_cost(room_type)
+	var new_budget = current_budget - old_cost + new_cost
+	if new_budget > max_budget:
+		return false
+
+	return true
 
 ## Export current ship design as ShipData for combat
 func export_ship_data() -> ShipData:
@@ -238,13 +313,37 @@ func draw_power_lines():
 				line.default_color = Color(0.29, 0.89, 0.89, 0.5)  # Cyan with transparency
 				power_lines_container.add_child(line)
 
-## Pulse power lines brightness
+## Pulse power lines brightness and update cost indicator
 func _process(_delta):
 	# Pulse alpha between 0.3 and 0.7
 	var pulse = 0.5 + 0.2 * sin(Time.get_ticks_msec() / 500.0)
 	for child in power_lines_container.get_children():
 		if child is Line2D:
 			child.default_color = Color(0.29, 0.89, 0.89, pulse)
+
+	# Update cost indicator
+	if selected_room_type != RoomData.RoomType.EMPTY and hovered_tile != null:
+		# Show cost indicator near cursor
+		var mouse_pos = get_global_mouse_position()
+		cost_indicator.position = mouse_pos + Vector2(15, 15)  # Offset from cursor
+		cost_indicator.visible = true
+
+		# Update cost and color based on validity
+		var cost = RoomData.get_cost(selected_room_type)
+		cost_indicator.text = "+%d" % cost
+
+		# Check if placement is valid
+		var current_type = hovered_tile.get_room_type()
+		var can_place = can_place_room_at(selected_room_type, hovered_tile.grid_x, hovered_tile.grid_y, current_type)
+
+		# Set color: white if valid, red if invalid
+		if can_place:
+			cost_indicator.add_theme_color_override("font_color", Color(1, 1, 1))  # White
+		else:
+			cost_indicator.add_theme_color_override("font_color", Color(0.886, 0.290, 0.290))  # Red
+	else:
+		# Hide cost indicator when not hovering or no room selected
+		cost_indicator.visible = false
 
 ## Handle tile left-click - place selected room type from palette
 func _on_tile_clicked(x: int, y: int):
@@ -266,28 +365,15 @@ func _on_tile_clicked(x: int, y: int):
 		update_all_power_states()
 		update_palette_counts()
 		update_palette_availability()
+		_update_ship_status()
 		return
 
-	# Validate placement
-	var can_place = true
+	# Validate placement using helper method
+	var can_place = can_place_room_at(selected_room_type, x, y, current_type)
 
-	# Check Bridge limit (only 1 allowed, unless this tile already has it)
-	if selected_room_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
-		can_place = false
-
-	# Check row constraints
-	if not RoomData.can_place_in_row(selected_room_type, y):
-		can_place = false
-
-	# Check budget
-	var old_cost = RoomData.get_cost(current_type)
-	var new_cost = RoomData.get_cost(selected_room_type)
-	var new_budget = current_budget - old_cost + new_cost
-	if new_budget > max_budget:
-		can_place = false
-
-	# If can't place, return (do nothing)
+	# If can't place, flash red and return
 	if not can_place:
+		tile._play_flash_red()
 		return
 
 	# Place the room
@@ -301,6 +387,7 @@ func _on_tile_clicked(x: int, y: int):
 	update_all_power_states()
 	update_palette_counts()
 	update_palette_availability()
+	_update_ship_status()
 
 ## Handle tile right-click - remove room
 func _on_tile_right_clicked(x: int, y: int):
@@ -316,12 +403,36 @@ func _on_tile_right_clicked(x: int, y: int):
 	update_all_power_states()
 	update_palette_counts()
 	update_palette_availability()
+	_update_ship_status()
 
 ## Handle room type selection from palette
 func _on_room_type_selected(room_type: RoomData.RoomType):
 	selected_room_type = room_type
 	# Update button availability based on new selection
 	update_palette_availability()
+
+## Handle tile hover - show preview
+func _on_tile_hovered(tile: GridTile):
+	hovered_tile = tile
+
+	# Only show preview if room type is selected
+	if selected_room_type == RoomData.RoomType.EMPTY:
+		return
+
+	# Check if placement is valid
+	var current_type = tile.get_room_type()
+	var can_place = can_place_room_at(selected_room_type, tile.grid_x, tile.grid_y, current_type)
+
+	# Show appropriate preview
+	if can_place:
+		tile.show_valid_preview()
+	else:
+		tile.show_invalid_preview()
+
+## Handle tile unhover - clear preview
+func _on_tile_unhovered(tile: GridTile):
+	hovered_tile = null
+	tile.clear_preview()
 
 ## Update room counts on palette panel
 func update_palette_counts():
@@ -435,6 +546,19 @@ func _on_auto_fill_pressed():
 	update_all_power_states()
 	update_palette_counts()
 	update_palette_availability()
+	_update_ship_status()
+
+## Handle clear grid button press
+func _on_clear_grid_pressed():
+	# Clear all rooms from grid
+	_clear_all_rooms()
+
+	# Update all displays
+	_update_budget_display()
+	update_all_power_states()
+	update_palette_counts()
+	update_palette_availability()
+	_update_ship_status()
 
 ## Clear all rooms from the grid
 func _clear_all_rooms():

@@ -4,6 +4,8 @@ class_name GridTile
 ## Signals for tile interaction
 signal tile_clicked(x: int, y: int)
 signal tile_right_clicked(x: int, y: int)
+signal tile_hovered(tile: GridTile)
+signal tile_unhovered(tile: GridTile)
 
 ## Grid position coordinates
 @export var grid_x: int = 0
@@ -18,6 +20,9 @@ var style_box: StyleBoxFlat
 
 ## Power state overlay (shown when room is unpowered)
 var unpowered_overlay: ColorRect = null
+
+## Preview overlay (shown for invalid placement feedback)
+var preview_overlay: ColorRect = null
 
 ## Hover tracking
 var is_hovering: bool = false
@@ -52,18 +57,18 @@ func _gui_input(event: InputEvent):
 ## Handle mouse entering tile
 func _on_mouse_entered():
 	is_hovering = true
-	# Change border to cyan
-	style_box.border_color = Color(0.290, 0.886, 0.886)  # #4AE2E2 cyan
 	# Change cursor to pointing hand
 	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+	# Emit hover signal
+	emit_signal("tile_hovered", self)
 
 ## Handle mouse leaving tile
 func _on_mouse_exited():
 	is_hovering = false
-	# Restore border to white
-	style_box.border_color = Color(1, 1, 1)  # #FFFFFF white
 	# Restore cursor to arrow
 	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	# Emit unhover signal
+	emit_signal("tile_unhovered", self)
 
 ## Play flash animation on click
 func _play_flash():
@@ -156,3 +161,46 @@ func set_powered_state(powered: bool):
 			unpowered_overlay.z_index = 2  # Above room but below flash
 			unpowered_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			add_child(unpowered_overlay)
+
+## Show valid placement preview (cyan border)
+func show_valid_preview():
+	# Set border to cyan with 2px width
+	style_box.border_color = Color(0.290, 0.886, 0.886)  # Cyan
+	style_box.border_width_left = 2
+	style_box.border_width_top = 2
+	style_box.border_width_right = 2
+	style_box.border_width_bottom = 2
+
+## Show invalid placement preview (red border + overlay)
+func show_invalid_preview():
+	# Set border to red with 2px width
+	style_box.border_color = Color(0.886, 0.290, 0.290)  # Red
+	style_box.border_width_left = 2
+	style_box.border_width_top = 2
+	style_box.border_width_right = 2
+	style_box.border_width_bottom = 2
+
+	# Create red overlay if it doesn't exist
+	if not preview_overlay:
+		preview_overlay = ColorRect.new()
+		preview_overlay.color = Color(0.886, 0.290, 0.290, 0.5)  # Red, 50% opacity
+		preview_overlay.size = Vector2(60, 60)
+		preview_overlay.position = Vector2(2, 2)
+		preview_overlay.z_index = 2  # Above room but below flash
+		preview_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(preview_overlay)
+
+## Clear preview (restore default border)
+func clear_preview():
+	# Restore border to white with 1px width
+	style_box.border_color = Color(1, 1, 1)  # White
+	style_box.border_width_left = 1
+	style_box.border_width_top = 1
+	style_box.border_width_right = 1
+	style_box.border_width_bottom = 1
+
+	# Remove preview overlay if it exists
+	if preview_overlay:
+		remove_child(preview_overlay)
+		preview_overlay.queue_free()
+		preview_overlay = null
