@@ -20,6 +20,14 @@ func _ready():
 	# Center in tile (2px offset from each edge for 4px total margin)
 	position = Vector2(2, 2)
 
+	# Ignore mouse input so clicks pass through to GridTile
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Also set all children to ignore mouse
+	for child in get_children():
+		if child is Control:
+			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 ## Set powered state and update visual
 func set_powered(powered: bool):
 	is_powered = powered

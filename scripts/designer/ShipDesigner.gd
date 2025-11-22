@@ -22,6 +22,16 @@ var current_budget: int = 0
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
 
+## Preload Room scenes
+var room_scenes = {
+	RoomData.RoomType.BRIDGE: preload("res://scenes/components/rooms/Bridge.tscn"),
+	RoomData.RoomType.WEAPON: preload("res://scenes/components/rooms/Weapon.tscn"),
+	RoomData.RoomType.SHIELD: preload("res://scenes/components/rooms/Shield.tscn"),
+	RoomData.RoomType.ENGINE: preload("res://scenes/components/rooms/Engine.tscn"),
+	RoomData.RoomType.REACTOR: preload("res://scenes/components/rooms/Reactor.tscn"),
+	RoomData.RoomType.ARMOR: preload("res://scenes/components/rooms/Armor.tscn")
+}
+
 ## Store all grid tiles
 var grid_tiles: Array[GridTile] = []
 
@@ -83,12 +93,60 @@ func _get_remaining_color(remaining: int) -> Color:
 	else:
 		return Color(0.886, 0.290, 0.290)  # Red #E24A4A
 
-## Handle tile left-click (stub for Feature 2.2)
-func _on_tile_clicked(x: int, y: int):
-	print("Tile clicked at: [%d, %d]" % [x, y])
-	# Feature 2.2 will implement room cycling logic here
+## Get tile at grid coordinates
+func get_tile_at(x: int, y: int) -> GridTile:
+	var index = y * GRID_WIDTH + x
+	if index >= 0 and index < grid_tiles.size():
+		return grid_tiles[index]
+	return null
 
-## Handle tile right-click (stub for Feature 2.2)
+## Get next room type in cycling order
+func get_next_room_type(current: RoomData.RoomType) -> RoomData.RoomType:
+	# Cycle: EMPTY → BRIDGE → WEAPON → SHIELD → ENGINE → REACTOR → ARMOR → EMPTY
+	var next_value = (int(current) + 1) % 7
+	return next_value as RoomData.RoomType
+
+## Handle tile left-click - cycle through room types
+func _on_tile_clicked(x: int, y: int):
+	print("Left-click at [%d, %d]" % [x, y])
+	var tile = get_tile_at(x, y)
+	if not tile:
+		print("ERROR: Tile not found!")
+		return
+
+	# Get current room type and determine next type
+	var current_type = tile.get_room_type()
+	var next_type = get_next_room_type(current_type)
+	print("Current type: %d, Next type: %d" % [current_type, next_type])
+
+	# If next type is EMPTY, clear the room
+	if next_type == RoomData.RoomType.EMPTY:
+		print("Clearing room")
+		tile.clear_room()
+	else:
+		# Instantiate and place the new room
+		var room_scene = room_scenes.get(next_type)
+		if room_scene:
+			print("Instantiating room type: %d" % next_type)
+			var room = room_scene.instantiate()
+			tile.set_room(room)
+		else:
+			print("ERROR: Room scene not found for type %d" % next_type)
+
+	# Update budget display
+	_update_budget_display()
+
+## Handle tile right-click - remove room
 func _on_tile_right_clicked(x: int, y: int):
-	print("Tile right-clicked at: [%d, %d]" % [x, y])
-	# Feature 2.2 will implement room removal logic here
+	print("Right-click at [%d, %d]" % [x, y])
+	var tile = get_tile_at(x, y)
+	if not tile:
+		print("ERROR: Tile not found!")
+		return
+
+	# Clear the room
+	print("Clearing room from tile")
+	tile.clear_room()
+
+	# Update budget display
+	_update_budget_display()
