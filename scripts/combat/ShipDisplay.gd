@@ -10,6 +10,9 @@ const GRID_HEIGHT = 6
 ## Ship data to display
 var ship_data: ShipData = null
 
+## Dictionary to track room nodes by position "x,y" -> room node
+var room_nodes: Dictionary = {}
+
 ## Preload room scenes (reuse from Phase 1)
 var room_scenes = {
 	RoomData.RoomType.BRIDGE: preload("res://scenes/components/rooms/Bridge.tscn"),
@@ -30,9 +33,10 @@ func _render_ship():
 	if not ship_data:
 		return
 
-	# Clear any existing children
+	# Clear any existing children and room tracking
 	for child in get_children():
 		child.queue_free()
+	room_nodes.clear()
 
 	# Render each room in the grid
 	for y in range(GRID_HEIGHT):
@@ -54,3 +58,31 @@ func _render_ship():
 					room.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 				add_child(room)
+
+				# Track room node by position
+				var key = "%d,%d" % [x, y]
+				room_nodes[key] = room
+
+## Flash the entire ship with a color overlay
+func flash(color: Color):
+	# Create flash overlay
+	var overlay = ColorRect.new()
+	overlay.color = color
+	overlay.color.a = 0
+	overlay.size = Vector2(GRID_WIDTH * TILE_SIZE, GRID_HEIGHT * TILE_SIZE)
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(overlay)
+
+	# Tween flash effect
+	var tween = create_tween()
+	tween.tween_property(overlay, "color:a", 0.5, 0.2)
+	tween.tween_property(overlay, "color:a", 0.0, 0.2)
+	tween.tween_callback(overlay.queue_free)
+
+## Destroy room visual at grid position (gray it out)
+func destroy_room_visual(x: int, y: int):
+	var key = "%d,%d" % [x, y]
+	if room_nodes.has(key):
+		var room = room_nodes[key]
+		# Gray out and make semi-transparent
+		room.modulate = Color(0.5, 0.5, 0.5, 0.5)

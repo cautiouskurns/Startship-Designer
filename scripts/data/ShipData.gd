@@ -15,8 +15,40 @@ func _init(room_grid: Array = [], hp: int = 100):
 	max_hp = hp
 	current_hp = hp
 
+## Count number of specific room type in grid
+func count_room_type(room_type: RoomData.RoomType) -> int:
+	var count = 0
+	for row in grid:
+		for cell in row:
+			if cell == room_type:
+				count += 1
+	return count
+
+## Get all active (non-empty) room positions as array of Vector2i
+func get_active_room_positions() -> Array:
+	var positions = []
+	for y in range(grid.size()):
+		for x in range(grid[y].size()):
+			if grid[y][x] != RoomData.RoomType.EMPTY:
+				positions.append(Vector2i(x, y))
+	return positions
+
+## Check if ship has a Bridge
+func has_bridge() -> bool:
+	return count_room_type(RoomData.RoomType.BRIDGE) > 0
+
+## Calculate hull HP based on armor count
+func calculate_hull_hp() -> int:
+	var armor_count = count_room_type(RoomData.RoomType.ARMOR)
+	return 60 + (armor_count * 20)
+
+## Destroy room at grid position
+func destroy_room_at(x: int, y: int):
+	if y >= 0 and y < grid.size() and x >= 0 and x < grid[y].size():
+		grid[y][x] = RoomData.RoomType.EMPTY
+
 ## Create ShipData from ShipDesigner's grid_tiles array
-static func from_designer_grid(grid_tiles: Array, hp: int = 100) -> ShipData:
+static func from_designer_grid(grid_tiles: Array) -> ShipData:
 	var room_grid = []
 
 	# Convert grid_tiles (1D array) to 2D array (8 columns × 6 rows)
@@ -31,7 +63,12 @@ static func from_designer_grid(grid_tiles: Array, hp: int = 100) -> ShipData:
 				row.append(RoomData.RoomType.EMPTY)
 		room_grid.append(row)
 
-	return ShipData.new(room_grid, hp)
+	# Create ship with placeholder HP, then calculate based on armor
+	var ship = ShipData.new(room_grid, 0)
+	var hull_hp = ship.calculate_hull_hp()
+	ship.max_hp = hull_hp
+	ship.current_hp = hull_hp
+	return ship
 
 ## Create Mission 1 Scout enemy ship (hard-coded)
 static func create_mission1_scout() -> ShipData:
@@ -73,9 +110,9 @@ static func create_mission1_scout() -> ShipData:
 		RoomData.RoomType.EMPTY
 	])
 
-	# Row 3: Empty
+	# Row 3: 1 Bridge (rows 2-3 allowed for bridge)
 	room_grid.append([
-		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.BRIDGE,
 		RoomData.RoomType.EMPTY,
 		RoomData.RoomType.EMPTY,
 		RoomData.RoomType.EMPTY,

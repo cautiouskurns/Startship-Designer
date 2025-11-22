@@ -137,8 +137,8 @@ func count_bridges() -> int:
 
 ## Export current ship design as ShipData for combat
 func export_ship_data() -> ShipData:
-	# Player ships start with 100 HP (Phase 3 may add HP calculation)
-	return ShipData.from_designer_grid(grid_tiles, 100)
+	# HP is calculated based on armor count in ShipData
+	return ShipData.from_designer_grid(grid_tiles)
 
 ## Handle tile left-click - cycle through room types
 func _on_tile_clicked(x: int, y: int):
