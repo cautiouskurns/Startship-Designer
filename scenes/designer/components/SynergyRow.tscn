@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3 uid="uid://synergy_row"]
+
+[ext_resource type="Script" path="res://scripts/designer/SynergyRow.gd" id="1"]
+
+[node name="SynergyRow" type="HBoxContainer"]
+custom_minimum_size = Vector2(260, 32)
+offset_right = 260.0
+offset_bottom = 32.0
+theme_override_constants/separation = 4
+script = ExtResource("1")
+
+[node name="RoomIcon1" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+color = Color(1, 1, 1, 1)
+
+[node name="PlusLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "+"
+vertical_alignment = 1
+
+[node name="RoomIcon2" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+color = Color(1, 1, 1, 1)
+
+[node name="ArrowLabel" type="Label" parent="."]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "→"
+vertical_alignment = 1
+
+[node name="SynergyIndicator" type="ColorRect" parent="."]
+custom_minimum_size = Vector2(16, 16)
+layout_mode = 2
+size_flags_vertical = 4
+color = Color(1, 1, 1, 1)
+
+[node name="BonusLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "+15% Damage"
+vertical_alignment = 1
+
+[node name="CountLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(30, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 14
+text = "×0"
+vertical_alignment = 1

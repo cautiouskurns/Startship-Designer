@@ -252,18 +252,65 @@ func _determine_initiative() -> bool:
 	var player_engines = player_data.count_powered_room_type(RoomData.RoomType.ENGINE)
 	var enemy_engines = enemy_data.count_powered_room_type(RoomData.RoomType.ENGINE)
 
+	# Apply synergy bonuses (Engine+Engine gives +1 initiative)
+	var player_synergies = player_data.calculate_synergy_bonuses()
+	var enemy_synergies = enemy_data.calculate_synergy_bonuses()
+
+	player_engines += player_synergies["counts"][RoomData.SynergyType.INITIATIVE]
+	enemy_engines += enemy_synergies["counts"][RoomData.SynergyType.INITIATIVE]
+
 	# Higher engine count shoots first, player wins ties
 	return player_engines >= enemy_engines
 
 ## Calculate damage dealt by attacker
 func _calculate_damage(attacker: ShipData) -> int:
 	var weapons = attacker.count_powered_room_type(RoomData.RoomType.WEAPON)
-	return weapons * 10
+	var base_damage = weapons * 10
+
+	# Apply synergy bonuses (Weapon+Weapon gives +15% damage per weapon in synergy)
+	var synergies = attacker.calculate_synergy_bonuses()
+	var room_synergies = synergies["room_synergies"]
+
+	# Count how many weapons have FIRE_RATE synergy
+	var weapons_with_synergy = 0
+	for y in range(attacker.grid.size()):
+		for x in range(attacker.grid[y].size()):
+			var room_type = attacker.grid[y][x]
+			if room_type == RoomData.RoomType.WEAPON and attacker.is_room_powered(x, y):
+				var pos = Vector2i(x, y)
+				if pos in room_synergies:
+					if RoomData.SynergyType.FIRE_RATE in room_synergies[pos]:
+						weapons_with_synergy += 1
+
+	# Add 15% bonus damage for each weapon with synergy
+	var synergy_damage = int(weapons_with_synergy * 10 * 0.15)
+	return base_damage + synergy_damage
 
 ## Calculate shield absorption for defender
 func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 	var shields = defender.count_powered_room_type(RoomData.RoomType.SHIELD)
-	return min(damage, shields * 15)
+	var base_absorption = shields * 15
+
+	# Apply synergy bonuses (Shield+Reactor gives +20% absorption per shield in synergy)
+	var synergies = defender.calculate_synergy_bonuses()
+	var room_synergies = synergies["room_synergies"]
+
+	# Count how many shields have SHIELD_CAPACITY synergy
+	var shields_with_synergy = 0
+	for y in range(defender.grid.size()):
+		for x in range(defender.grid[y].size()):
+			var room_type = defender.grid[y][x]
+			if room_type == RoomData.RoomType.SHIELD and defender.is_room_powered(x, y):
+				var pos = Vector2i(x, y)
+				if pos in room_synergies:
+					if RoomData.SynergyType.SHIELD_CAPACITY in room_synergies[pos]:
+						shields_with_synergy += 1
+
+	# Add 20% bonus absorption for each shield with synergy
+	var synergy_absorption = int(shields_with_synergy * 15 * 0.20)
+	var total_absorption = base_absorption + synergy_absorption
+
+	return min(damage, total_absorption)
 
 ## Spawn floating damage number above target ship
 func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption: int, is_player_target: bool):
@@ -313,6 +360,10 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 	# Track if any reactors were destroyed
 	var reactor_destroyed = false
 
+	# Get synergy data for DURABILITY bonus
+	var synergies = defender.calculate_synergy_bonuses()
+	var room_synergies = synergies["room_synergies"]
+
 	# Get all active room positions, excluding Bridge initially
 	var active_rooms = []
 	for pos in defender.get_active_room_positions():
@@ -326,9 +377,20 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 		# Pick random room
 		var index = randi() % active_rooms.size()
 		var pos = active_rooms[index]
+		var room_type = defender.grid[pos.y][pos.x]
+
+		# Check if this weapon has DURABILITY synergy (25% chance to resist destruction)
+		if room_type == RoomData.RoomType.WEAPON:
+			if pos in room_synergies:
+				if RoomData.SynergyType.DURABILITY in room_synergies[pos]:
+					# 25% chance to resist destruction
+					if randf() < 0.25:
+						# Weapon resisted destruction, try another room
+						active_rooms.remove_at(index)
+						continue
 
 		# Check if this is a reactor
-		if defender.grid[pos.y][pos.x] == RoomData.RoomType.REACTOR:
+		if room_type == RoomData.RoomType.REACTOR:
 			reactor_destroyed = true
 
 		# Destroy it (data)

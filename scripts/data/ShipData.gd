@@ -388,3 +388,70 @@ static func create_mission3_dreadnought() -> ShipData:
 	ship.calculate_power_grid()
 
 	return ship
+
+## Calculate synergy bonuses based on adjacent compatible rooms
+## Returns a Dictionary with synergy counts and per-room bonuses
+func calculate_synergy_bonuses() -> Dictionary:
+	var synergy_counts = {
+		RoomData.SynergyType.FIRE_RATE: 0,
+		RoomData.SynergyType.SHIELD_CAPACITY: 0,
+		RoomData.SynergyType.INITIATIVE: 0,
+		RoomData.SynergyType.DURABILITY: 0
+	}
+
+	# Track synergies per room position for damage/absorption bonuses
+	# Key: Vector2i(x,y), Value: Array of SynergyTypes affecting this room
+	var room_synergies = {}
+
+	var checked_pairs = {}
+
+	# Check each room for synergies with adjacent rooms
+	for y in range(grid.size()):
+		for x in range(grid[y].size()):
+			var room_type = grid[y][x]
+			if room_type == RoomData.RoomType.EMPTY:
+				continue
+
+			# Check right and down only to avoid counting same pair twice
+			var adjacent_checks = [
+				Vector2i(x + 1, y),  # Right
+				Vector2i(x, y + 1)   # Down
+			]
+
+			for adj_pos in adjacent_checks:
+				# Check bounds
+				if adj_pos.y < 0 or adj_pos.y >= grid.size() or adj_pos.x < 0 or adj_pos.x >= grid[adj_pos.y].size():
+					continue
+
+				var adj_room_type = grid[adj_pos.y][adj_pos.x]
+				if adj_room_type == RoomData.RoomType.EMPTY:
+					continue
+
+				var synergy_type = RoomData.get_synergy_type(room_type, adj_room_type)
+				if synergy_type == RoomData.SynergyType.NONE:
+					continue
+
+				# Create unique key for this pair to avoid duplicates
+				var pair_key = "%d,%d-%d,%d" % [x, y, adj_pos.x, adj_pos.y]
+				if pair_key in checked_pairs:
+					continue
+
+				checked_pairs[pair_key] = true
+				synergy_counts[synergy_type] += 1
+
+				# Track which rooms are affected by this synergy
+				var pos_a = Vector2i(x, y)
+				var pos_b = Vector2i(adj_pos.x, adj_pos.y)
+
+				if not (pos_a in room_synergies):
+					room_synergies[pos_a] = []
+				if not (pos_b in room_synergies):
+					room_synergies[pos_b] = []
+
+				room_synergies[pos_a].append(synergy_type)
+				room_synergies[pos_b].append(synergy_type)
+
+	return {
+		"counts": synergy_counts,
+		"room_synergies": room_synergies
+	}

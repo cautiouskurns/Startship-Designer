@@ -1,8 +1,9 @@
-[gd_scene load_steps=10 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=11 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/designer/components/SynergyGuidePanel.tscn" id="4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_budget"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -118,6 +119,17 @@ offset_top = -288.0
 offset_right = -20.0
 offset_bottom = -88.0
 grow_horizontal = 0
+grow_vertical = 0
+
+[node name="SynergyGuidePanel" parent="." instance=ExtResource("4")]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 31.0
+offset_top = -488.0
+offset_right = 311.0
+offset_bottom = -288.0
 grow_vertical = 0
 
 [node name="ClearGridButton" type="Button" parent="."]

@@ -110,3 +110,20 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 14
 text = "  All powered!"
+
+[node name="SynergyStatusRow" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/MarginContainer/Content/SynergyStatusRow"]
+layout_mode = 2
+
+[node name="SynergyIconLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "⚡"
+
+[node name="SynergyTextLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = " Synergies: 0 active"

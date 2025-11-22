@@ -36,6 +36,9 @@ var current_budget: int = 0
 ## Ship status panel
 @onready var ship_status_panel: ShipStatusPanel = $ShipStatusPanel
 
+## Synergy guide panel
+@onready var synergy_guide_panel: SynergyGuidePanel = $SynergyGuidePanel
+
 ## Cost indicator label
 @onready var cost_indicator: Label = $CostIndicator
 
@@ -174,6 +177,10 @@ func _update_ship_status():
 	var unpowered_count = count_unpowered_rooms()
 	ship_status_panel.update_power_status(unpowered_count)
 
+	# Update Synergy status
+	var synergy_count = count_synergies()
+	ship_status_panel.update_synergy_status(synergy_count)
+
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:
 	if remaining > 5:
@@ -222,6 +229,20 @@ func count_unpowered_rooms() -> int:
 			unpowered_count += 1
 
 	return unpowered_count
+
+## Count number of active synergies
+func count_synergies() -> int:
+	# Create temporary ShipData to calculate synergies
+	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
+	var synergy_counts = synergy_bonuses["counts"]
+
+	# Sum all synergy types
+	var total = 0
+	for synergy_type in synergy_counts:
+		total += synergy_counts[synergy_type]
+
+	return total
 
 ## Check if a room can be placed at given position
 func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_type: RoomData.RoomType) -> bool:
@@ -375,6 +396,11 @@ func update_synergies():
 
 				# Mark as created
 				created_synergies[synergy_key] = true
+
+	# Update synergy guide panel with counts
+	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
+	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
 
 ## Pulse power lines brightness and update cost indicator
 func _process(_delta):
