@@ -70,11 +70,55 @@ static func get_color(room_type: RoomType) -> Color:
 static func get_label(room_type: RoomType) -> String:
 	return labels.get(room_type, "")
 
+## Synergy type enumeration
+enum SynergyType {
+	NONE,
+	FIRE_RATE,        # Weapon + Weapon
+	SHIELD_CAPACITY,  # Shield + Reactor
+	INITIATIVE,       # Engine + Engine
+	DURABILITY        # Weapon + Armor
+}
+
+## Synergy pairs - defines which room combinations create synergies
+## Key is array of two RoomTypes, value is the synergy type
+static var synergy_pairs = {
+	# Weapon + Weapon synergy
+	[RoomType.WEAPON, RoomType.WEAPON]: SynergyType.FIRE_RATE,
+	# Shield + Reactor synergy
+	[RoomType.SHIELD, RoomType.REACTOR]: SynergyType.SHIELD_CAPACITY,
+	[RoomType.REACTOR, RoomType.SHIELD]: SynergyType.SHIELD_CAPACITY,
+	# Engine + Engine synergy
+	[RoomType.ENGINE, RoomType.ENGINE]: SynergyType.INITIATIVE,
+	# Weapon + Armor synergy
+	[RoomType.WEAPON, RoomType.ARMOR]: SynergyType.DURABILITY,
+	[RoomType.ARMOR, RoomType.WEAPON]: SynergyType.DURABILITY
+}
+
+## Synergy colors for visual indicators
+static var synergy_colors = {
+	SynergyType.FIRE_RATE: Color(0.886, 0.565, 0.290),       # Orange #E2904A
+	SynergyType.SHIELD_CAPACITY: Color(0.290, 0.886, 0.886), # Cyan #4AE2E2
+	SynergyType.INITIATIVE: Color(0.290, 0.565, 0.886),      # Blue #4A90E2
+	SynergyType.DURABILITY: Color(0.886, 0.290, 0.290)       # Red #E24A4A
+}
+
 ## Check if room can be placed in row
 static func can_place_in_row(room_type: RoomType, row: int) -> bool:
 	var allowed_rows = placement_rows.get(room_type, [])
 	# If empty array, any row is allowed
 	if allowed_rows.is_empty():
 		return true
-	# Otherwise check if row is in allowed list
+	# Otherwise check if room is in allowed list
 	return row in allowed_rows
+
+## Get synergy type between two room types (order-independent)
+static func get_synergy_type(room_type_a: RoomType, room_type_b: RoomType) -> SynergyType:
+	# Check both orderings since dictionary keys are ordered
+	var key = [room_type_a, room_type_b]
+	if key in synergy_pairs:
+		return synergy_pairs[key]
+	return SynergyType.NONE
+
+## Get color for synergy type
+static func get_synergy_color(synergy_type: SynergyType) -> Color:
+	return synergy_colors.get(synergy_type, Color.WHITE)

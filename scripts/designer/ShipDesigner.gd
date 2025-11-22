@@ -18,6 +18,9 @@ var current_budget: int = 0
 ## Power lines container
 @onready var power_lines_container: Node2D = $PowerLinesContainer
 
+## Synergy container
+@onready var synergy_container: Node2D = $SynergyContainer
+
 ## Budget UI elements
 @onready var budget_label: Label = $BudgetPanel/BudgetLabel
 @onready var remaining_label: Label = $BudgetPanel/RemainingLabel
@@ -47,6 +50,9 @@ var hovered_tile: GridTile = null
 
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
+
+## Preload SynergyIndicator scene
+var synergy_indicator_scene = preload("res://scenes/designer/components/SynergyIndicator.tscn")
 
 ## Preload Room scenes
 var room_scenes = {
@@ -313,6 +319,63 @@ func draw_power_lines():
 				line.default_color = Color(0.29, 0.89, 0.89, 0.5)  # Cyan with transparency
 				power_lines_container.add_child(line)
 
+## Update synergy indicators based on room adjacencies
+func update_synergies():
+	# Clear existing synergy indicators
+	for child in synergy_container.get_children():
+		child.queue_free()
+
+	# Track which synergies we've already created (to avoid duplicates)
+	var created_synergies = {}
+
+	# Check each tile for potential synergies
+	for y in range(GRID_HEIGHT):
+		for x in range(GRID_WIDTH):
+			var tile = get_tile_at(x, y)
+			if not tile:
+				continue
+
+			var room_type = tile.get_room_type()
+			if room_type == RoomData.RoomType.EMPTY:
+				continue
+
+			# Check 4 adjacent tiles (right and down only to avoid duplicates)
+			var adjacent_checks = [
+				Vector2i(x + 1, y),  # Right
+				Vector2i(x, y + 1)   # Down
+			]
+
+			for adj_pos in adjacent_checks:
+				# Check bounds
+				if adj_pos.x < 0 or adj_pos.x >= GRID_WIDTH or adj_pos.y < 0 or adj_pos.y >= GRID_HEIGHT:
+					continue
+
+				var adj_tile = get_tile_at(adj_pos.x, adj_pos.y)
+				if not adj_tile:
+					continue
+
+				var adj_room_type = adj_tile.get_room_type()
+				if adj_room_type == RoomData.RoomType.EMPTY:
+					continue
+
+				# Check if these two room types create a synergy
+				var synergy_type = RoomData.get_synergy_type(room_type, adj_room_type)
+				if synergy_type == RoomData.SynergyType.NONE:
+					continue
+
+				# Create unique key for this synergy to avoid duplicates
+				var synergy_key = "%d,%d-%d,%d" % [x, y, adj_pos.x, adj_pos.y]
+				if synergy_key in created_synergies:
+					continue
+
+				# Create synergy indicator
+				var indicator: SynergyIndicator = synergy_indicator_scene.instantiate()
+				indicator.setup(tile, adj_tile, synergy_type)
+				synergy_container.add_child(indicator)
+
+				# Mark as created
+				created_synergies[synergy_key] = true
+
 ## Pulse power lines brightness and update cost indicator
 func _process(_delta):
 	# Pulse alpha between 0.3 and 0.7
@@ -366,6 +429,7 @@ func _on_tile_clicked(x: int, y: int):
 		update_palette_counts()
 		update_palette_availability()
 		_update_ship_status()
+		update_synergies()
 		return
 
 	# Validate placement using helper method
@@ -388,6 +452,7 @@ func _on_tile_clicked(x: int, y: int):
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	update_synergies()
 
 ## Handle tile right-click - remove room
 func _on_tile_right_clicked(x: int, y: int):
@@ -404,6 +469,7 @@ func _on_tile_right_clicked(x: int, y: int):
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	update_synergies()
 
 ## Handle room type selection from palette
 func _on_room_type_selected(room_type: RoomData.RoomType):
@@ -547,6 +613,7 @@ func _on_auto_fill_pressed():
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	update_synergies()
 
 ## Handle clear grid button press
 func _on_clear_grid_pressed():
@@ -559,6 +626,7 @@ func _on_clear_grid_pressed():
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	update_synergies()
 
 ## Clear all rooms from the grid
 func _clear_all_rooms():
