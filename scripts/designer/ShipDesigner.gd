@@ -140,6 +140,23 @@ func export_ship_data() -> ShipData:
 	# HP is calculated based on armor count in ShipData
 	return ShipData.from_designer_grid(grid_tiles)
 
+## Update power states for all tiles based on reactor positions
+func update_all_power_states():
+	# Create temporary ShipData to calculate power grid
+	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+
+	# Update visual power state for each tile
+	for tile in grid_tiles:
+		# Skip empty tiles
+		if tile.get_room_type() == RoomData.RoomType.EMPTY:
+			continue
+
+		# Check if this position is powered
+		var is_powered = temp_ship.is_room_powered(tile.grid_x, tile.grid_y)
+
+		# Update visual state
+		tile.set_powered_state(is_powered)
+
 ## Handle tile left-click - cycle through room types
 func _on_tile_clicked(x: int, y: int):
 	var tile = get_tile_at(x, y)
@@ -182,6 +199,7 @@ func _on_tile_clicked(x: int, y: int):
 	if next_type == RoomData.RoomType.EMPTY:
 		tile.clear_room()
 		_update_budget_display()
+		update_all_power_states()
 		return
 
 	# Place the room (validation already done in auto-skip loop)
@@ -190,8 +208,9 @@ func _on_tile_clicked(x: int, y: int):
 		var room = room_scene.instantiate()
 		tile.set_room(room)
 
-	# Update budget display
+	# Update budget display and power states
 	_update_budget_display()
+	update_all_power_states()
 
 ## Handle tile right-click - remove room
 func _on_tile_right_clicked(x: int, y: int):
@@ -202,8 +221,9 @@ func _on_tile_right_clicked(x: int, y: int):
 	# Clear the room
 	tile.clear_room()
 
-	# Update budget display
+	# Update budget display and power states
 	_update_budget_display()
+	update_all_power_states()
 
 ## Handle launch button press
 func _on_launch_pressed():

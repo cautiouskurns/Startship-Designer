@@ -16,6 +16,9 @@ var current_room: Node = null
 var style_box: StyleBoxFlat
 @onready var flash_overlay: ColorRect = $FlashOverlay
 
+## Power state overlay (shown when room is unpowered)
+var unpowered_overlay: ColorRect = null
+
 ## Hover tracking
 var is_hovering: bool = false
 
@@ -111,8 +114,45 @@ func clear_room() -> void:
 		current_room.queue_free()
 		current_room = null
 
+	# Also clear unpowered overlay if it exists
+	if unpowered_overlay:
+		remove_child(unpowered_overlay)
+		unpowered_overlay.queue_free()
+		unpowered_overlay = null
+
 ## Get the room type of current room (returns EMPTY if no room)
 func get_room_type() -> RoomData.RoomType:
 	if current_room and current_room is Room:
 		return current_room.room_type
 	return RoomData.RoomType.EMPTY
+
+## Set the powered state of the room visually
+func set_powered_state(powered: bool):
+	# If no room, nothing to do
+	if not current_room:
+		return
+
+	if powered:
+		# Powered: full opacity, no overlay
+		if current_room is Control:
+			current_room.modulate = Color(1, 1, 1, 1)
+
+		# Remove unpowered overlay if it exists
+		if unpowered_overlay:
+			remove_child(unpowered_overlay)
+			unpowered_overlay.queue_free()
+			unpowered_overlay = null
+	else:
+		# Unpowered: 50% opacity + gray overlay
+		if current_room is Control:
+			current_room.modulate = Color(1, 1, 1, 0.5)
+
+		# Create gray overlay if it doesn't exist
+		if not unpowered_overlay:
+			unpowered_overlay = ColorRect.new()
+			unpowered_overlay.color = Color(0.3, 0.3, 0.3, 0.3)  # Dark gray, semi-transparent
+			unpowered_overlay.size = Vector2(60, 60)
+			unpowered_overlay.position = Vector2(2, 2)
+			unpowered_overlay.z_index = 2  # Above room but below flash
+			unpowered_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(unpowered_overlay)

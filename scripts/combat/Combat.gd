@@ -201,27 +201,27 @@ func _execute_turn():
 	# Destroy rooms (1 per 20 damage)
 	var rooms_to_destroy = int(net_damage / 20)
 	if rooms_to_destroy > 0:
-		_destroy_random_rooms(defender, defender_display, rooms_to_destroy)
+		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy)
 
-	# Wait longer to see health bar animation and damage
-	await get_tree().create_timer(1.2).timeout
+	# Wait a moment to see final state
+	await get_tree().create_timer(0.5).timeout
 
 ## Determine which ship shoots first based on engine count
 func _determine_initiative() -> bool:
-	var player_engines = player_data.count_room_type(RoomData.RoomType.ENGINE)
-	var enemy_engines = enemy_data.count_room_type(RoomData.RoomType.ENGINE)
+	var player_engines = player_data.count_powered_room_type(RoomData.RoomType.ENGINE)
+	var enemy_engines = enemy_data.count_powered_room_type(RoomData.RoomType.ENGINE)
 
 	# Higher engine count shoots first, player wins ties
 	return player_engines >= enemy_engines
 
 ## Calculate damage dealt by attacker
 func _calculate_damage(attacker: ShipData) -> int:
-	var weapons = attacker.count_room_type(RoomData.RoomType.WEAPON)
+	var weapons = attacker.count_powered_room_type(RoomData.RoomType.WEAPON)
 	return weapons * 10
 
 ## Calculate shield absorption for defender
 func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
-	var shields = defender.count_room_type(RoomData.RoomType.SHIELD)
+	var shields = defender.count_powered_room_type(RoomData.RoomType.SHIELD)
 	return min(damage, shields * 15)
 
 ## Spawn floating damage number above target ship
@@ -266,6 +266,9 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 	if count <= 0:
 		return
 
+	# Track if any reactors were destroyed
+	var reactor_destroyed = false
+
 	# Get all active room positions, excluding Bridge initially
 	var active_rooms = []
 	for pos in defender.get_active_room_positions():
@@ -273,16 +276,25 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 		if room_type != RoomData.RoomType.BRIDGE:
 			active_rooms.append(pos)
 
-	# Destroy random rooms
+	# Destroy random rooms sequentially with animation
 	var destroyed = 0
 	while destroyed < count and active_rooms.size() > 0:
 		# Pick random room
 		var index = randi() % active_rooms.size()
 		var pos = active_rooms[index]
 
-		# Destroy it
+		# Check if this is a reactor
+		if defender.grid[pos.y][pos.x] == RoomData.RoomType.REACTOR:
+			reactor_destroyed = true
+
+		# Destroy it (data)
 		defender.destroy_room_at(pos.x, pos.y)
-		defender_display.destroy_room_visual(pos.x, pos.y)
+
+		# Destroy it (visual with animation) - AWAIT
+		await defender_display.destroy_room_visual(pos.x, pos.y)
+
+		# Small delay between room destructions
+		await get_tree().create_timer(0.2).timeout
 
 		# Remove from list
 		active_rooms.remove_at(index)
@@ -294,9 +306,17 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 		for pos in defender.get_active_room_positions():
 			var room_type = defender.grid[pos.y][pos.x]
 			if room_type == RoomData.RoomType.BRIDGE:
+				# Destroy data
 				defender.destroy_room_at(pos.x, pos.y)
-				defender_display.destroy_room_visual(pos.x, pos.y)
+
+				# Destroy visual with animation - AWAIT
+				await defender_display.destroy_room_visual(pos.x, pos.y)
 				break
+
+	# If reactor was destroyed, recalculate power and update visuals
+	if reactor_destroyed:
+		defender.recalculate_power()
+		defender_display.update_power_visuals(defender)
 
 ## Flash ship with color
 func _flash_ship(display: ShipDisplay, color: Color):
