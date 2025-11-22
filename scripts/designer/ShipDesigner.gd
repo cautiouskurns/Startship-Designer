@@ -22,8 +22,12 @@ var current_budget: int = 0
 @onready var budget_label: Label = $BudgetPanel/BudgetLabel
 @onready var remaining_label: Label = $BudgetPanel/RemainingLabel
 
-## Launch button
+## Buttons
 @onready var launch_button: Button = $LaunchButton
+@onready var auto_fill_button: Button = $AutoFillButton
+
+## Current template index for cycling
+var current_template_index: int = 0
 
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
@@ -52,6 +56,11 @@ func _ready():
 	launch_button.pressed.connect(_on_launch_pressed)
 	launch_button.mouse_entered.connect(_on_button_hover_start.bind(launch_button))
 	launch_button.mouse_exited.connect(_on_button_hover_end.bind(launch_button))
+
+	# Connect auto-fill button signals
+	auto_fill_button.pressed.connect(_on_auto_fill_pressed)
+	auto_fill_button.mouse_entered.connect(_on_button_hover_start.bind(auto_fill_button))
+	auto_fill_button.mouse_exited.connect(_on_button_hover_end.bind(auto_fill_button))
 
 func _create_grid():
 	"""Create an 8x6 grid of tiles"""
@@ -325,3 +334,113 @@ func _on_button_hover_start(button: Button):
 func _on_button_hover_end(button: Button):
 	var tween = create_tween()
 	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)
+
+## Handle auto-fill button press - cycles through templates
+func _on_auto_fill_pressed():
+	# Clear current grid
+	_clear_all_rooms()
+
+	# Apply template based on current mission and template index
+	var mission = GameState.current_mission
+
+	match current_template_index:
+		0:
+			_apply_balanced_template(mission)
+		1:
+			_apply_aggressive_template(mission)
+		2:
+			_apply_tank_template(mission)
+
+	# Cycle to next template
+	current_template_index = (current_template_index + 1) % 3
+
+	# Update display
+	_update_budget_display()
+	update_all_power_states()
+
+## Clear all rooms from the grid
+func _clear_all_rooms():
+	for tile in grid_tiles:
+		tile.clear_room()
+
+## Place a room at grid position
+func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
+	var tile = get_tile_at(x, y)
+	if not tile:
+		return
+
+	var room_scene = room_scenes.get(room_type)
+	if room_scene:
+		var room = room_scene.instantiate()
+		tile.set_room(room)
+
+## Balanced template - good for all missions
+## Budget: Mission 0=19, Mission 1=25, Mission 2=29
+func _apply_balanced_template(mission: int):
+	# Common core: Bridge + Reactor
+	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)  # 5
+	_place_room_at(2, 2, RoomData.RoomType.REACTOR)  # 3 (total: 8)
+
+	# All missions: 2 Weapons, 1 Shield, 1 Armor
+	_place_room_at(2, 1, RoomData.RoomType.WEAPON)  # 2
+	_place_room_at(2, 3, RoomData.RoomType.WEAPON)  # 2
+	_place_room_at(3, 1, RoomData.RoomType.SHIELD)  # 3 (total: 15)
+	_place_room_at(3, 4, RoomData.RoomType.ARMOR)  # 4 (total: 19)
+
+	if mission >= 1:
+		# Mission 1+: Add reactor and engine
+		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
+		_place_room_at(4, 1, RoomData.RoomType.ENGINE)  # 2 (total: 24)
+
+	if mission >= 2:
+		# Mission 2: Add weapon, shield
+		_place_room_at(4, 3, RoomData.RoomType.WEAPON)  # 2
+		_place_room_at(3, 3, RoomData.RoomType.SHIELD)  # 3 (total: 29)
+
+## Aggressive template - max damage
+## Budget: Mission 0=20, Mission 1=25, Mission 2=30
+func _apply_aggressive_template(mission: int):
+	# Common core: Bridge + Reactor
+	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)  # 5
+	_place_room_at(2, 2, RoomData.RoomType.REACTOR)  # 3 (total: 8)
+
+	# All missions: 3 Weapons, 1 Shield
+	_place_room_at(2, 1, RoomData.RoomType.WEAPON)  # 2
+	_place_room_at(2, 3, RoomData.RoomType.WEAPON)  # 2
+	_place_room_at(2, 0, RoomData.RoomType.WEAPON)  # 2
+	_place_room_at(3, 1, RoomData.RoomType.SHIELD)  # 3 (total: 17)
+
+	if mission >= 1:
+		# Mission 1+: Add reactor, weapon, engine
+		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
+		_place_room_at(4, 1, RoomData.RoomType.WEAPON)  # 2
+		_place_room_at(3, 0, RoomData.RoomType.ENGINE)  # 2 (total: 24)
+
+	if mission >= 2:
+		# Mission 2: Add 2 more weapons
+		_place_room_at(4, 3, RoomData.RoomType.WEAPON)  # 2
+		_place_room_at(3, 3, RoomData.RoomType.WEAPON)  # 2 (total: 28)
+
+## Tank template - high defense
+## Budget: Mission 0=20, Mission 1=25, Mission 2=30
+func _apply_tank_template(mission: int):
+	# Common core: Bridge + Reactor
+	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)  # 5
+	_place_room_at(2, 2, RoomData.RoomType.REACTOR)  # 3 (total: 8)
+
+	# All missions: 1 Weapon, 2 Shields, 1 Armor
+	_place_room_at(2, 1, RoomData.RoomType.WEAPON)  # 2
+	_place_room_at(2, 3, RoomData.RoomType.SHIELD)  # 3
+	_place_room_at(3, 1, RoomData.RoomType.SHIELD)  # 3
+	_place_room_at(3, 4, RoomData.RoomType.ARMOR)  # 4 (total: 20)
+
+	if mission == 1:
+		# Mission 1: Add reactor, weapon
+		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
+		_place_room_at(4, 1, RoomData.RoomType.WEAPON)  # 2 (total: 25)
+
+	if mission == 2:
+		# Mission 2: Add reactor, shield, armor
+		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
+		_place_room_at(4, 1, RoomData.RoomType.SHIELD)  # 3
+		_place_room_at(2, 4, RoomData.RoomType.ARMOR)  # 4 (total: 30)

@@ -125,6 +125,15 @@ offset_bottom = 730.0
 theme_override_font_sizes/font_size = 18
 text = "REDESIGN"
 
+[node name="FFButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1100.0
+offset_top = 20.0
+offset_right = 1210.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 18
+text = "FF: 1x"
+
 [node name="ResultOverlay" type="ColorRect" parent="."]
 visible = false
 layout_mode = 1

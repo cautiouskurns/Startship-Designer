@@ -80,36 +80,36 @@ func flash(color: Color):
 	tween.tween_callback(overlay.queue_free)
 
 ## Destroy room visual at grid position with animation
-func destroy_room_visual(x: int, y: int):
+func destroy_room_visual(x: int, y: int, speed_mult: float = 1.0):
 	var key = "%d,%d" % [x, y]
 	if not room_nodes.has(key):
 		return
 
 	var room = room_nodes[key]
 
-	# Stage 1: Red flash warning (3 flashes, 0.6s total)
-	for i in range(3):
+	# Stage 1: Red flash warning (2 flashes for faster feedback)
+	for i in range(2):
 		# Flash to red
 		var tween_on = create_tween()
-		tween_on.tween_property(room, "modulate", Color(1, 0.3, 0.3, 1), 0.1)
+		tween_on.tween_property(room, "modulate", Color(1, 0.3, 0.3, 1), 0.08 * speed_mult)
 		await tween_on.finished
 
 		# Flash back to normal
 		var tween_off = create_tween()
-		tween_off.tween_property(room, "modulate", Color(1, 1, 1, 1), 0.1)
+		tween_off.tween_property(room, "modulate", Color(1, 1, 1, 1), 0.08 * speed_mult)
 		await tween_off.finished
 
-	# Stage 2: Explosion animation (0.3s)
+	# Stage 2: Explosion animation
 	var explosion = _create_explosion(room.position + Vector2(30, 30))  # Center of 60x60 room
 	add_child(explosion)
 
 	# Explosion expands and fades
 	var exp_tween = create_tween()
-	exp_tween.tween_property(explosion, "scale", Vector2(1.33, 1.33), 0.3)  # 60 → 80px
-	exp_tween.parallel().tween_property(explosion, "modulate:a", 0.0, 0.3)
+	exp_tween.tween_property(explosion, "scale", Vector2(1.33, 1.33), 0.25 * speed_mult)  # 60 → 80px
+	exp_tween.parallel().tween_property(explosion, "modulate:a", 0.0, 0.25 * speed_mult)
 	exp_tween.tween_callback(explosion.queue_free)
 
-	await get_tree().create_timer(0.3).timeout
+	await get_tree().create_timer(0.25 * speed_mult).timeout
 
 	# Stage 3: Final destroyed state (dark gray, broken appearance)
 	room.modulate = Color(0.4, 0.4, 0.4, 0.6)

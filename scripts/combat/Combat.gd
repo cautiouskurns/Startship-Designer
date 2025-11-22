@@ -19,6 +19,9 @@ extends Control
 ## Redesign button
 @onready var redesign_button: Button = $RedesignButton
 
+## Fast Forward button
+@onready var ff_button: Button = $FFButton
+
 ## Result overlay nodes
 @onready var result_overlay: ColorRect = $ResultOverlay
 @onready var result_label: Label = $ResultOverlay/ResultLabel
@@ -37,16 +40,22 @@ var combat_active: bool = false
 var turn_count: int = 0
 var current_mission: int = 0
 
+## Speed control
+var speed_multiplier: float = 1.0  # 1.0 = normal, 0.5 = fast forward (2x speed)
+
 func _ready():
 	# Connect buttons
 	redesign_button.pressed.connect(_on_redesign_pressed)
 	victory_return_button.pressed.connect(_on_victory_return_pressed)
+	ff_button.pressed.connect(_on_ff_pressed)
 
 	# Connect hover scale effects
 	redesign_button.mouse_entered.connect(_on_button_hover_start.bind(redesign_button))
 	redesign_button.mouse_exited.connect(_on_button_hover_end.bind(redesign_button))
 	victory_return_button.mouse_entered.connect(_on_button_hover_start.bind(victory_return_button))
 	victory_return_button.mouse_exited.connect(_on_button_hover_end.bind(victory_return_button))
+	ff_button.mouse_entered.connect(_on_button_hover_start.bind(ff_button))
+	ff_button.mouse_exited.connect(_on_button_hover_end.bind(ff_button))
 
 ## Start combat with player ship data and mission index
 func start_combat(player_ship: ShipData, mission_index: int = 0):
@@ -86,7 +95,7 @@ func _update_player_health():
 	player_health_bar.max_value = player_data.max_hp
 	# Animate health bar smoothly
 	var tween = create_tween()
-	tween.tween_property(player_health_bar, "value", player_data.current_hp, 0.5)
+	tween.tween_property(player_health_bar, "value", player_data.current_hp, 0.3 * speed_multiplier)
 	player_health_label.text = "%d / %d HP" % [player_data.current_hp, player_data.max_hp]
 	_update_health_bar_color(player_health_bar)
 
@@ -95,7 +104,7 @@ func _update_enemy_health():
 	enemy_health_bar.max_value = enemy_data.max_hp
 	# Animate health bar smoothly
 	var tween = create_tween()
-	tween.tween_property(enemy_health_bar, "value", enemy_data.current_hp, 0.5)
+	tween.tween_property(enemy_health_bar, "value", enemy_data.current_hp, 0.3 * speed_multiplier)
 	enemy_health_label.text = "%d / %d HP" % [enemy_data.current_hp, enemy_data.max_hp]
 	_update_health_bar_color(enemy_health_bar)
 
@@ -143,7 +152,7 @@ func run_combat_loop():
 	tween.tween_callback(start_label.queue_free)
 
 	# Wait for message to complete
-	await get_tree().create_timer(1.8).timeout
+	await get_tree().create_timer(1.8 * speed_multiplier).timeout
 
 	# Combat loop
 	while combat_active:
@@ -160,8 +169,8 @@ func run_combat_loop():
 		is_player_turn = !is_player_turn
 		turn_count += 1
 
-		# Wait between turns (longer pause to see results)
-		await get_tree().create_timer(1.5).timeout
+		# Wait between turns
+		await get_tree().create_timer(0.3 * speed_multiplier).timeout
 
 ## Execute one ship's turn
 func _execute_turn():
@@ -188,11 +197,14 @@ func _execute_turn():
 	# Update turn indicator with visual emphasis
 	_update_turn_indicator(is_player_turn)
 
+	# Wait to see turn indicator
+	await get_tree().create_timer(0.5 * speed_multiplier).timeout
+
 	# Flash attacking ship
 	_flash_ship(attacker_display, Color(1, 1, 1))  # White flash
 
-	# Longer delay to see who's attacking
-	await get_tree().create_timer(0.6).timeout
+	# Wait to see attacker flash
+	await get_tree().create_timer(0.2 * speed_multiplier).timeout
 
 	# Calculate damage
 	var damage = _calculate_damage(attacker)
@@ -222,7 +234,7 @@ func _execute_turn():
 	# Flash defender when taking damage
 	if net_damage > 0:
 		_flash_ship(defender_display, Color(0.89, 0.29, 0.29))  # Red flash
-		await get_tree().create_timer(0.2).timeout
+		await get_tree().create_timer(0.1 * speed_multiplier).timeout
 
 	# Spawn damage number
 	_spawn_damage_number(net_damage, damage, shield_absorption, !is_player_attacking)
@@ -233,7 +245,7 @@ func _execute_turn():
 		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy)
 
 	# Wait a moment to see final state
-	await get_tree().create_timer(0.5).timeout
+	await get_tree().create_timer(0.3 * speed_multiplier).timeout
 
 ## Determine which ship shoots first based on engine count
 func _determine_initiative() -> bool:
@@ -254,7 +266,7 @@ func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 	return min(damage, shields * 15)
 
 ## Spawn floating damage number above target ship
-func _spawn_damage_number(net_damage: int, total_damage: int, shield_absorption: int, is_player_target: bool):
+func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption: int, is_player_target: bool):
 	var damage_label = Label.new()
 	damage_label.text = "-%d" % net_damage
 
@@ -287,10 +299,10 @@ func _spawn_damage_number(net_damage: int, total_damage: int, shield_absorption:
 
 	add_child(damage_label)
 
-	# Tween to float up and fade out (slightly slower for readability)
+	# Tween to float up and fade out
 	var tween = create_tween()
-	tween.tween_property(damage_label, "position:y", damage_label.position.y - 60, 1.2)
-	tween.parallel().tween_property(damage_label, "modulate:a", 0.0, 1.2)
+	tween.tween_property(damage_label, "position:y", damage_label.position.y - 60, 0.8 * speed_multiplier)
+	tween.parallel().tween_property(damage_label, "modulate:a", 0.0, 0.8 * speed_multiplier)
 	tween.tween_callback(damage_label.queue_free)
 
 ## Destroy random rooms from defender
@@ -323,10 +335,10 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 		defender.destroy_room_at(pos.x, pos.y)
 
 		# Destroy it (visual with animation) - AWAIT
-		await defender_display.destroy_room_visual(pos.x, pos.y)
+		await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
 
 		# Small delay between room destructions
-		await get_tree().create_timer(0.2).timeout
+		await get_tree().create_timer(0.1 * speed_multiplier).timeout
 
 		# Remove from list
 		active_rooms.remove_at(index)
@@ -342,7 +354,7 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 				defender.destroy_room_at(pos.x, pos.y)
 
 				# Destroy visual with animation - AWAIT
-				await defender_display.destroy_room_visual(pos.x, pos.y)
+				await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
 				break
 
 	# If reactor was destroyed, recalculate power and update visuals
@@ -436,3 +448,14 @@ func _on_button_hover_start(button: Button):
 func _on_button_hover_end(button: Button):
 	var tween = create_tween()
 	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)
+
+## Handle Fast Forward button press - toggle speed
+func _on_ff_pressed():
+	if speed_multiplier == 1.0:
+		# Switch to fast forward (2x speed)
+		speed_multiplier = 0.5
+		ff_button.text = "FF: 2x"
+	else:
+		# Switch back to normal speed
+		speed_multiplier = 1.0
+		ff_button.text = "FF: 1x"
