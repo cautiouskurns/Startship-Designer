@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bxxsnydrqjyb7"]
 
-[ext_resource type="PackedScene" path="res://scenes/designer/ShipDesigner.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://bh4cmg1gk2fmf" path="res://scenes/designer/ShipDesigner.tscn" id="1"]
 
 [node name="Main" type="Node"]
 
