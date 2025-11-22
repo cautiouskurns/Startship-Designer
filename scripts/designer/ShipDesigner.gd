@@ -80,9 +80,15 @@ func _update_budget_display():
 	# Update budget label
 	budget_label.text = "BUDGET: %d/%d" % [current_budget, max_budget]
 
-	# Update remaining label with color
-	remaining_label.text = "Remaining: %d" % remaining
-	remaining_label.add_theme_color_override("font_color", _get_remaining_color(remaining))
+	# Check if Bridge is missing
+	if count_bridges() == 0:
+		# Show "NEED BRIDGE" warning in red
+		remaining_label.text = "NEED BRIDGE"
+		remaining_label.add_theme_color_override("font_color", Color(0.886, 0.290, 0.290))  # Red #E24A4A
+	else:
+		# Show normal remaining budget with color coding
+		remaining_label.text = "Remaining: %d" % remaining
+		remaining_label.add_theme_color_override("font_color", _get_remaining_color(remaining))
 
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:
@@ -106,46 +112,74 @@ func get_next_room_type(current: RoomData.RoomType) -> RoomData.RoomType:
 	var next_value = (int(current) + 1) % 7
 	return next_value as RoomData.RoomType
 
+## Count number of Bridge rooms currently placed
+func count_bridges() -> int:
+	var count = 0
+	for tile in grid_tiles:
+		if tile.get_room_type() == RoomData.RoomType.BRIDGE:
+			count += 1
+	return count
+
 ## Handle tile left-click - cycle through room types
 func _on_tile_clicked(x: int, y: int):
-	print("Left-click at [%d, %d]" % [x, y])
 	var tile = get_tile_at(x, y)
 	if not tile:
-		print("ERROR: Tile not found!")
 		return
 
 	# Get current room type and determine next type
 	var current_type = tile.get_room_type()
 	var next_type = get_next_room_type(current_type)
-	print("Current type: %d, Next type: %d" % [current_type, next_type])
 
-	# If next type is EMPTY, clear the room
+	# Auto-skip room types that can't be placed here
+	# Keep cycling until we find a valid room or reach EMPTY
+	var attempts = 0
+	while next_type != RoomData.RoomType.EMPTY and attempts < 7:
+		var can_place = true
+
+		# Skip Bridge if we already have one (unless this tile has it)
+		if next_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
+			can_place = false
+
+		# Skip if row constraint violated
+		if not RoomData.can_place_in_row(next_type, y):
+			can_place = false
+
+		# Skip if would exceed budget
+		var old_cost = RoomData.get_cost(current_type)
+		var new_cost = RoomData.get_cost(next_type)
+		var new_budget = current_budget - old_cost + new_cost
+		if new_budget > max_budget:
+			can_place = false
+
+		if can_place:
+			break  # Found valid room type
+
+		# Try next room type
+		next_type = get_next_room_type(next_type)
+		attempts += 1
+
+	# If next type is EMPTY, clear the room (always allowed)
 	if next_type == RoomData.RoomType.EMPTY:
-		print("Clearing room")
 		tile.clear_room()
-	else:
-		# Instantiate and place the new room
-		var room_scene = room_scenes.get(next_type)
-		if room_scene:
-			print("Instantiating room type: %d" % next_type)
-			var room = room_scene.instantiate()
-			tile.set_room(room)
-		else:
-			print("ERROR: Room scene not found for type %d" % next_type)
+		_update_budget_display()
+		return
+
+	# Place the room (validation already done in auto-skip loop)
+	var room_scene = room_scenes.get(next_type)
+	if room_scene:
+		var room = room_scene.instantiate()
+		tile.set_room(room)
 
 	# Update budget display
 	_update_budget_display()
 
 ## Handle tile right-click - remove room
 func _on_tile_right_clicked(x: int, y: int):
-	print("Right-click at [%d, %d]" % [x, y])
 	var tile = get_tile_at(x, y)
 	if not tile:
-		print("ERROR: Tile not found!")
 		return
 
 	# Clear the room
-	print("Clearing room from tile")
 	tile.clear_room()
 
 	# Update budget display
