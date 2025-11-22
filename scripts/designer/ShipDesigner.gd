@@ -1,5 +1,8 @@
 extends Control
 
+## Signal emitted when player clicks Launch button with valid ship design
+signal launch_pressed
+
 ## Grid dimensions
 const GRID_WIDTH = 8
 const GRID_HEIGHT = 6
@@ -38,6 +41,9 @@ var grid_tiles: Array[GridTile] = []
 func _ready():
 	_create_grid()
 	_update_budget_display()
+
+	# Connect launch button signal
+	launch_button.pressed.connect(_on_launch_pressed)
 
 func _create_grid():
 	"""Create an 8x6 grid of tiles"""
@@ -90,6 +96,15 @@ func _update_budget_display():
 		remaining_label.text = "Remaining: %d" % remaining
 		remaining_label.add_theme_color_override("font_color", _get_remaining_color(remaining))
 
+	# Update launch button state
+	_update_launch_button()
+
+## Update launch button enabled/disabled state
+func _update_launch_button():
+	# Ship is valid if: has exactly 1 Bridge AND within budget
+	var is_valid = (count_bridges() == 1) and (current_budget <= max_budget)
+	launch_button.disabled = !is_valid
+
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:
 	if remaining > 5:
@@ -119,6 +134,11 @@ func count_bridges() -> int:
 		if tile.get_room_type() == RoomData.RoomType.BRIDGE:
 			count += 1
 	return count
+
+## Export current ship design as ShipData for combat
+func export_ship_data() -> ShipData:
+	# Player ships start with 100 HP (Phase 3 may add HP calculation)
+	return ShipData.from_designer_grid(grid_tiles, 100)
 
 ## Handle tile left-click - cycle through room types
 func _on_tile_clicked(x: int, y: int):
@@ -184,3 +204,25 @@ func _on_tile_right_clicked(x: int, y: int):
 
 	# Update budget display
 	_update_budget_display()
+
+## Handle launch button press
+func _on_launch_pressed():
+	# Emit signal
+	emit_signal("launch_pressed")
+
+	# Export player ship data
+	var player_ship = export_ship_data()
+
+	# Load combat scene
+	var combat_scene = preload("res://scenes/combat/Combat.tscn")
+	var combat_instance = combat_scene.instantiate()
+
+	# Switch to combat scene
+	get_tree().root.add_child(combat_instance)
+	get_tree().current_scene = combat_instance
+
+	# Start combat after scene is in tree (deferred so _ready() completes first)
+	combat_instance.call_deferred("start_combat", player_ship)
+
+	# Remove designer scene
+	queue_free()

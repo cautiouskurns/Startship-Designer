@@ -17,8 +17,8 @@ func _ready():
 	custom_minimum_size = Vector2(60, 60)
 	size = Vector2(60, 60)
 
-	# Center in tile (2px offset from each edge for 4px total margin)
-	position = Vector2(2, 2)
+	# Position is set by parent (GridTile in designer, ShipDisplay in combat)
+	# Don't override it here
 
 	# Ignore mouse input so clicks pass through to GridTile
 	mouse_filter = Control.MOUSE_FILTER_IGNORE

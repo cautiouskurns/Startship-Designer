@@ -97,6 +97,7 @@ func set_room(room: Node) -> void:
 
 	# Center room in tile (2px margin on all sides for 60x60 room in 64x64 tile)
 	if room is Control:
+		# MUST set position AFTER add_child, before or during _ready() it gets overridden
 		room.position = Vector2(2, 2)
 		room.z_index = 1  # Draw on top of FlashOverlay
 		room.visible = true  # Ensure visibility
