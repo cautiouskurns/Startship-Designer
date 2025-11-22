@@ -102,6 +102,20 @@ text = "PLAYER TURN"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="TurnGlow" type="ColorRect" parent="TurnIndicator"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.29, 0.89, 0.89, 0.3)
+z_index = -1
+
 [node name="RedesignButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 20.0
@@ -139,3 +153,67 @@ theme_override_font_sizes/font_size = 64
 text = "VICTORY"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="VictoryOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="VictoryTitle" type="Label" parent="VictoryOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -120.0
+offset_right = 400.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.290196, 1)
+theme_override_font_sizes/font_size = 64
+text = "ALL MISSIONS COMPLETE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VictorySubtitle" type="Label" parent="VictoryOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -20.0
+offset_right = 400.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 24
+text = "You've proven your designs can win the war!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReturnButton" type="Button" parent="VictoryOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = 60.0
+offset_right = 150.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 24
+text = "RETURN TO MENU"

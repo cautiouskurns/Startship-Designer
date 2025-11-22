@@ -14,6 +14,7 @@ extends Control
 
 ## Turn indicator
 @onready var turn_indicator: Label = $TurnIndicator
+@onready var turn_glow: ColorRect = $TurnIndicator/TurnGlow
 
 ## Redesign button
 @onready var redesign_button: Button = $RedesignButton
@@ -21,6 +22,10 @@ extends Control
 ## Result overlay nodes
 @onready var result_overlay: ColorRect = $ResultOverlay
 @onready var result_label: Label = $ResultOverlay/ResultLabel
+
+## Victory overlay nodes (for mission 3 completion)
+@onready var victory_overlay: ColorRect = $VictoryOverlay
+@onready var victory_return_button: Button = $VictoryOverlay/ReturnButton
 
 ## Ship data
 var player_data: ShipData = null
@@ -30,15 +35,34 @@ var enemy_data: ShipData = null
 var is_player_turn: bool = true
 var combat_active: bool = false
 var turn_count: int = 0
+var current_mission: int = 0
 
 func _ready():
-	# Connect redesign button
+	# Connect buttons
 	redesign_button.pressed.connect(_on_redesign_pressed)
+	victory_return_button.pressed.connect(_on_victory_return_pressed)
 
-## Start combat with player ship data
-func start_combat(player_ship: ShipData):
+	# Connect hover scale effects
+	redesign_button.mouse_entered.connect(_on_button_hover_start.bind(redesign_button))
+	redesign_button.mouse_exited.connect(_on_button_hover_end.bind(redesign_button))
+	victory_return_button.mouse_entered.connect(_on_button_hover_start.bind(victory_return_button))
+	victory_return_button.mouse_exited.connect(_on_button_hover_end.bind(victory_return_button))
+
+## Start combat with player ship data and mission index
+func start_combat(player_ship: ShipData, mission_index: int = 0):
 	player_data = player_ship
-	enemy_data = ShipData.create_mission1_scout()
+	current_mission = mission_index
+
+	# Load enemy based on mission
+	match mission_index:
+		0:
+			enemy_data = ShipData.create_mission1_scout()
+		1:
+			enemy_data = ShipData.create_mission2_raider()
+		2:
+			enemy_data = ShipData.create_mission3_dreadnought()
+		_:
+			enemy_data = ShipData.create_mission1_scout()  # Default fallback
 
 	# Set up ship displays
 	player_ship_display.set_ship_data(player_data)
@@ -195,8 +219,13 @@ func _execute_turn():
 	else:
 		_update_player_health()
 
+	# Flash defender when taking damage
+	if net_damage > 0:
+		_flash_ship(defender_display, Color(0.89, 0.29, 0.29))  # Red flash
+		await get_tree().create_timer(0.2).timeout
+
 	# Spawn damage number
-	_spawn_damage_number(net_damage, !is_player_attacking)
+	_spawn_damage_number(net_damage, damage, shield_absorption, !is_player_attacking)
 
 	# Destroy rooms (1 per 20 damage)
 	var rooms_to_destroy = int(net_damage / 20)
@@ -225,21 +254,24 @@ func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 	return min(damage, shields * 15)
 
 ## Spawn floating damage number above target ship
-func _spawn_damage_number(amount: int, is_player_target: bool):
+func _spawn_damage_number(net_damage: int, total_damage: int, shield_absorption: int, is_player_target: bool):
 	var damage_label = Label.new()
-	damage_label.text = "-%d" % amount
+	damage_label.text = "-%d" % net_damage
 
 	# Larger, more visible font
 	damage_label.add_theme_font_size_override("font_size", 48)
 
-	# Color code based on damage amount
+	# Color code based on shield absorption effectiveness
 	var damage_color: Color
-	if amount >= 30:
-		damage_color = Color(1, 0.2, 0.2, 1)  # Bright red for high damage
-	elif amount >= 15:
-		damage_color = Color(1, 0.5, 0.2, 1)  # Orange for medium damage
+	if net_damage > 0 and shield_absorption > 0:
+		# Partial absorption - some got through shields
+		damage_color = Color(1, 0.5, 0.2, 1)  # Orange
+	elif net_damage > 0:
+		# No shields or shields overwhelmed - pure hull damage
+		damage_color = Color(1, 0.2, 0.2, 1)  # Red
 	else:
-		damage_color = Color(1, 0.8, 0.3, 1)  # Yellow for low damage
+		# Fully absorbed by shields - no hull damage
+		damage_color = Color(0.2, 0.9, 0.9, 1)  # Cyan
 
 	damage_label.add_theme_color_override("font_color", damage_color)
 
@@ -327,9 +359,11 @@ func _update_turn_indicator(player_turn: bool):
 	if player_turn:
 		turn_indicator.text = "PLAYER TURN"
 		turn_indicator.add_theme_color_override("font_color", Color(0.29, 0.89, 0.89, 1))  # Cyan
+		turn_glow.color = Color(0.29, 0.89, 0.89, 0.3)  # Cyan glow
 	else:
 		turn_indicator.text = "ENEMY TURN"
 		turn_indicator.add_theme_color_override("font_color", Color(0.89, 0.29, 0.29, 1))  # Red
+		turn_glow.color = Color(0.89, 0.29, 0.29, 0.3)  # Red glow
 
 	# Pulse animation to draw attention
 	var tween = create_tween()
@@ -343,13 +377,31 @@ func _show_combat_end(winner: String):
 		_flash_ship(player_ship_display, Color(0.29, 0.89, 0.29))  # Green
 		_flash_ship(enemy_ship_display, Color(0.89, 0.29, 0.29))   # Red
 		result_label.text = "VICTORY"
+
+		# Wait for flash to complete
+		await get_tree().create_timer(0.5).timeout
+
+		# Handle victory based on mission
+		if current_mission < 2:
+			# Unlock next mission
+			GameState.unlock_mission(current_mission + 1)
+
+			# Return to Mission Select
+			get_tree().change_scene_to_file("res://scenes/mission/MissionSelect.tscn")
+		else:
+			# Mission 3 complete - show final victory screen
+			victory_overlay.visible = true
 	else:
 		_flash_ship(player_ship_display, Color(0.89, 0.29, 0.29))  # Red
 		_flash_ship(enemy_ship_display, Color(0.29, 0.89, 0.29))   # Green
 		result_label.text = "DEFEAT"
 
-	# Show result overlay
-	result_overlay.visible = true
+		# Show result overlay
+		result_overlay.visible = true
+
+		# Wait a moment, then return to designer for redesign
+		await get_tree().create_timer(2.0).timeout
+		get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
 
 ## Check win condition
 func _check_win_condition() -> String:
@@ -367,3 +419,20 @@ func _check_win_condition() -> String:
 func _on_redesign_pressed():
 	# Return to ShipDesigner scene
 	get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
+
+## Handle victory return button press
+func _on_victory_return_pressed():
+	# Return to Mission Select
+	get_tree().change_scene_to_file("res://scenes/mission/MissionSelect.tscn")
+
+## Button hover start - scale up
+func _on_button_hover_start(button: Button):
+	if button.disabled:
+		return
+	var tween = create_tween()
+	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.1)
+
+## Button hover end - scale back
+func _on_button_hover_end(button: Button):
+	var tween = create_tween()
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)

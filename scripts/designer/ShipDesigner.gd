@@ -9,11 +9,14 @@ const GRID_HEIGHT = 6
 const TILE_SIZE = 64
 
 ## Budget values
-var max_budget: int = 30  # Hard-coded for Phase 1
+var max_budget: int = 30  # Loaded from GameState based on mission
 var current_budget: int = 0
 
 ## Grid container node
 @onready var grid_container: Node2D = $GridContainer
+
+## Power lines container
+@onready var power_lines_container: Node2D = $PowerLinesContainer
 
 ## Budget UI elements
 @onready var budget_label: Label = $BudgetPanel/BudgetLabel
@@ -39,11 +42,16 @@ var room_scenes = {
 var grid_tiles: Array[GridTile] = []
 
 func _ready():
+	# Load mission budget from GameState
+	max_budget = GameState.get_mission_budget(GameState.current_mission)
+
 	_create_grid()
 	_update_budget_display()
 
-	# Connect launch button signal
+	# Connect launch button signals
 	launch_button.pressed.connect(_on_launch_pressed)
+	launch_button.mouse_entered.connect(_on_button_hover_start.bind(launch_button))
+	launch_button.mouse_exited.connect(_on_button_hover_end.bind(launch_button))
 
 func _create_grid():
 	"""Create an 8x6 grid of tiles"""
@@ -157,6 +165,65 @@ func update_all_power_states():
 		# Update visual state
 		tile.set_powered_state(is_powered)
 
+	# Update power lines visual
+	draw_power_lines()
+
+## Draw power lines from reactors to powered rooms
+func draw_power_lines():
+	# Clear existing lines
+	for child in power_lines_container.get_children():
+		child.queue_free()
+
+	# Create temporary ShipData to calculate power grid
+	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+
+	# Find all reactors and draw lines to adjacent powered rooms
+	for y in range(GRID_HEIGHT):
+		for x in range(GRID_WIDTH):
+			var tile = get_tile_at(x, y)
+			if not tile or tile.get_room_type() != RoomData.RoomType.REACTOR:
+				continue
+
+			# This is a reactor - check all adjacent tiles
+			var adjacent_positions = [
+				Vector2i(x - 1, y), Vector2i(x + 1, y),
+				Vector2i(x, y - 1), Vector2i(x, y + 1)
+			]
+
+			for adj_pos in adjacent_positions:
+				# Check bounds
+				if adj_pos.x < 0 or adj_pos.x >= GRID_WIDTH or adj_pos.y < 0 or adj_pos.y >= GRID_HEIGHT:
+					continue
+
+				var adj_tile = get_tile_at(adj_pos.x, adj_pos.y)
+				if not adj_tile:
+					continue
+
+				var adj_type = adj_tile.get_room_type()
+				# Skip empty tiles, bridges (self-powered), and other reactors
+				if adj_type == RoomData.RoomType.EMPTY or adj_type == RoomData.RoomType.BRIDGE or adj_type == RoomData.RoomType.REACTOR:
+					continue
+
+				# Check if this adjacent room is actually powered
+				if not temp_ship.is_room_powered(adj_pos.x, adj_pos.y):
+					continue
+
+				# Draw line from reactor center to room center
+				var line = Line2D.new()
+				line.add_point(Vector2(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2))
+				line.add_point(Vector2(adj_pos.x * TILE_SIZE + TILE_SIZE / 2, adj_pos.y * TILE_SIZE + TILE_SIZE / 2))
+				line.width = 2
+				line.default_color = Color(0.29, 0.89, 0.89, 0.5)  # Cyan with transparency
+				power_lines_container.add_child(line)
+
+## Pulse power lines brightness
+func _process(_delta):
+	# Pulse alpha between 0.3 and 0.7
+	var pulse = 0.5 + 0.2 * sin(Time.get_ticks_msec() / 500.0)
+	for child in power_lines_container.get_children():
+		if child is Line2D:
+			child.default_color = Color(0.29, 0.89, 0.89, pulse)
+
 ## Handle tile left-click - cycle through room types
 func _on_tile_clicked(x: int, y: int):
 	var tile = get_tile_at(x, y)
@@ -241,8 +308,20 @@ func _on_launch_pressed():
 	get_tree().root.add_child(combat_instance)
 	get_tree().current_scene = combat_instance
 
-	# Start combat after scene is in tree (deferred so _ready() completes first)
-	combat_instance.call_deferred("start_combat", player_ship)
+	# Start combat after scene is in tree with mission index
+	combat_instance.call_deferred("start_combat", player_ship, GameState.current_mission)
 
 	# Remove designer scene
 	queue_free()
+
+## Button hover start - scale up
+func _on_button_hover_start(button: Button):
+	if button.disabled:
+		return
+	var tween = create_tween()
+	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.1)
+
+## Button hover end - scale back
+func _on_button_hover_end(button: Button):
+	var tween = create_tween()
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)

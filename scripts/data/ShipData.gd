@@ -222,3 +222,169 @@ static func create_mission1_scout() -> ShipData:
 	ship.calculate_power_grid()
 
 	return ship
+
+## Create Mission 2 Raider enemy ship (hard-coded)
+static func create_mission2_raider() -> ShipData:
+	var room_grid = []
+
+	# Row 0: 2 Weapons + 1 Reactor
+	room_grid.append([
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.REACTOR,
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 1: 1 Weapon + 1 Shield (powered by reactor above)
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.SHIELD,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 2: 1 Shield + 1 Reactor (powers shields and bridge below)
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.SHIELD,
+		RoomData.RoomType.REACTOR,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 3: 1 Bridge (powered by reactor above)
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.BRIDGE,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 4: 1 Engine (NOT powered - too far from reactors)
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.ENGINE,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 5: Empty
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	var ship = ShipData.new(room_grid, 60)  # 60 HP for Mission 2 Raider
+
+	# Calculate power grid
+	ship.calculate_power_grid()
+
+	return ship
+
+## Create Mission 3 Dreadnought enemy ship (hard-coded)
+static func create_mission3_dreadnought() -> ShipData:
+	var room_grid = []
+
+	# Row 0: 3 Weapons + 1 Reactor
+	room_grid.append([
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.REACTOR,
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 1: 2 Weapons + 1 Reactor (powers weapons and shields below)
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.REACTOR,
+		RoomData.RoomType.WEAPON,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 2: 2 Shields + 1 Reactor (center reactor powers shields and bridge)
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.SHIELD,
+		RoomData.RoomType.REACTOR,
+		RoomData.RoomType.SHIELD,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 3: 1 Shield + 1 Bridge (both powered by reactor above)
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.SHIELD,
+		RoomData.RoomType.BRIDGE,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 4: 2 Engines (NOT powered - would need reactor nearby)
+	room_grid.append([
+		RoomData.RoomType.ENGINE,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.ENGINE,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	# Row 5: Empty
+	room_grid.append([
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY,
+		RoomData.RoomType.EMPTY
+	])
+
+	var ship = ShipData.new(room_grid, 100)  # 100 HP for Mission 3 Dreadnought
+
+	# Calculate power grid
+	ship.calculate_power_grid()
+
+	return ship

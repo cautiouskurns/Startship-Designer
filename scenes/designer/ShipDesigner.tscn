@@ -113,5 +113,9 @@ theme_override_styles/disabled = SubResource("StyleBoxFlat_launch_disabled")
 text = "LAUNCH"
 disabled = true
 
+[node name="PowerLinesContainer" type="Node2D" parent="."]
+position = Vector2(384, 168)
+z_index = -1
+
 [node name="GridContainer" type="Node2D" parent="."]
 position = Vector2(384, 168)

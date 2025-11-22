@@ -11,9 +11,13 @@ config_version=5
 [application]
 
 config/name="Starship Designer"
-run/main_scene="res://scenes/main/Main.tscn"
+run/main_scene="res://scenes/mission/MissionSelect.tscn"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+
+[autoload]
+
+GameState="*res://scripts/autoload/GameState.gd"
 
 [display]
 
