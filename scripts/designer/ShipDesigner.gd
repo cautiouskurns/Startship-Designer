@@ -264,8 +264,8 @@ func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.Roo
 		if tile.is_occupied():
 			return false
 
-		# Check row constraints for this specific tile
-		if not RoomData.can_place_in_row(room_type, tile_y):
+		# Check row constraints for this specific tile (Phase 10.2 - pass grid height)
+		if not RoomData.can_place_in_row(room_type, tile_y, ship_grid.GRID_HEIGHT):
 			return false
 
 	# Check budget
@@ -320,8 +320,8 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 	if room_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
 		return false
 
-	# Check row constraints
-	if not RoomData.can_place_in_row(room_type, y):
+	# Check row constraints (Phase 10.2 - pass grid height)
+	if not RoomData.can_place_in_row(room_type, y, ship_grid.GRID_HEIGHT):
 		return false
 
 	# Check budget
@@ -588,7 +588,7 @@ func _on_tile_hovered(tile: GridTile):
 			if preview_tile:
 				# Check THIS specific tile's state for mixed preview feedback
 				var tile_empty = not preview_tile.is_occupied()
-				var row_valid = RoomData.can_place_in_row(selected_room_type, tile_y)
+				var row_valid = RoomData.can_place_in_row(selected_room_type, tile_y, ship_grid.GRID_HEIGHT)
 
 				# Show cyan if tile is available, red if blocked
 				if tile_empty and row_valid:
@@ -658,7 +658,7 @@ func update_palette_availability():
 			else:
 				# Check if there's at least one valid row for this room type
 				for y in range(ship_grid.GRID_HEIGHT):
-					if RoomData.can_place_in_row(room_type, y):
+					if RoomData.can_place_in_row(room_type, y, ship_grid.GRID_HEIGHT):
 						can_place_somewhere = true
 						break
 

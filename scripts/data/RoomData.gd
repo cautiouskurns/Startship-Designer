@@ -113,8 +113,26 @@ static var synergy_colors = {
 	SynergyType.DURABILITY: Color(0.886, 0.290, 0.290)       # Red #E24A4A
 }
 
-## Check if room can be placed in row
-static func can_place_in_row(room_type: RoomType, row: int) -> bool:
+## Check if room can be placed in row (Phase 10.2 - dynamic constraints based on hull grid height)
+static func can_place_in_row(room_type: RoomType, row: int, grid_height: int = -1) -> bool:
+	# If grid_height provided, calculate constraints dynamically based on hull
+	if grid_height > 0:
+		match room_type:
+			RoomType.WEAPON:
+				# Frigate/Cruiser (4/6 rows): Top 2 rows [0, 1]
+				# Battleship (7 rows): Top 3 rows [0, 1, 2]
+				if grid_height >= 7:
+					return row in [0, 1, 2]
+				else:
+					return row in [0, 1]
+			RoomType.ENGINE:
+				# Always bottom 2 rows [grid_height - 2, grid_height - 1]
+				return row in [grid_height - 2, grid_height - 1]
+			_:
+				# All other room types can be placed anywhere
+				return true
+
+	# Fallback to static placement_rows if grid_height not provided (backwards compatibility)
 	var allowed_rows = placement_rows.get(room_type, [])
 	# If empty array, any row is allowed
 	if allowed_rows.is_empty():
