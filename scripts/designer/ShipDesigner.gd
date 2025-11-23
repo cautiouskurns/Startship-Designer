@@ -48,6 +48,9 @@ var current_template_index: int = 0
 ## Currently selected room type from palette
 var selected_room_type: RoomData.RoomType = RoomData.RoomType.EMPTY
 
+## Current rotation angle for selected room (Phase 7.3)
+var current_rotation: int = 0  # 0, 90, 180, or 270
+
 ## Currently hovered tile
 var hovered_tile: GridTile = null
 
@@ -100,6 +103,7 @@ func _ready():
 
 	# Connect room palette signals
 	room_palette.room_type_selected.connect(_on_room_type_selected)
+	room_palette.rotation_requested.connect(rotate_selected_room)  # Phase 7.3
 
 	# Initialize palette display
 	update_palette_counts()
@@ -207,6 +211,28 @@ func get_next_room_type(current: RoomData.RoomType) -> RoomData.RoomType:
 	var next_value = (int(current) + 1) % 7
 	return next_value as RoomData.RoomType
 
+## Rotate selected room by 90° clockwise (Phase 7.3)
+func rotate_selected_room():
+	# Increment rotation by 90°
+	current_rotation = (current_rotation + 90) % 360
+
+	# Update palette rotation display
+	room_palette.update_rotation_display(current_rotation)
+
+	# Update preview if we're hovering over a tile
+	if hovered_tile and selected_room_type != RoomData.RoomType.EMPTY:
+		# Save reference before clearing (unhovered sets hovered_tile to null)
+		var tile_to_refresh = hovered_tile
+		# Clear current preview
+		_on_tile_unhovered(tile_to_refresh)
+		# Show new preview with rotated shape
+		_on_tile_hovered(tile_to_refresh)
+
+## Get the shape for selected room type with current rotation applied (Phase 7.3)
+func get_rotated_shape(room_type: RoomData.RoomType) -> Array:
+	var base_shape = RoomData.get_shape(room_type)
+	return RoomData.rotate_shape(base_shape, current_rotation)
+
 ## Count number of Bridge rooms currently placed (Phase 7.1 - count room instances, not tiles)
 func count_bridges() -> int:
 	var count = 0
@@ -248,14 +274,14 @@ func count_synergies() -> int:
 
 	return total
 
-## Check if a shaped room can be placed at given position (Phase 7.1)
-func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.RoomType) -> bool:
+## Check if a shaped room can be placed at given position (Phase 7.1/7.3 - with optional rotated shape)
+func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.RoomType, custom_shape: Array = []) -> bool:
 	# Can't place EMPTY
 	if room_type == RoomData.RoomType.EMPTY:
 		return false
 
-	# Get shape for this room type
-	var shape = RoomData.get_shape(room_type)
+	# Get shape for this room type (use custom_shape if provided, otherwise base shape)
+	var shape = custom_shape if not custom_shape.is_empty() else RoomData.get_shape(room_type)
 
 	# Check Bridge limit (only 1 allowed)
 	if room_type == RoomData.RoomType.BRIDGE and count_bridges() >= 1:
@@ -517,7 +543,17 @@ func _process(_delta):
 		# Hide cost indicator when not hovering or no room selected
 		cost_indicator.visible = false
 
-## Handle tile left-click - place selected room type from palette (Phase 7.1 - shaped rooms)
+## Handle keyboard input (Phase 7.3 - R key for rotation)
+func _unhandled_input(event: InputEvent):
+	if event is InputEventKey and event.pressed and not event.echo:
+		# R key to rotate selected room
+		if event.keycode == KEY_R:
+			# Only rotate if a room is selected (not EMPTY)
+			if selected_room_type != RoomData.RoomType.EMPTY:
+				rotate_selected_room()
+				get_viewport().set_input_as_handled()
+
+## Handle tile left-click - place selected room type from palette (Phase 7.1/7.3 - shaped rooms with rotation)
 func _on_tile_clicked(x: int, y: int):
 	var tile = get_tile_at(x, y)
 	if not tile:
@@ -527,8 +563,8 @@ func _on_tile_clicked(x: int, y: int):
 	if selected_room_type == RoomData.RoomType.EMPTY:
 		return
 
-	# Get shape for selected room type
-	var shape = RoomData.get_shape(selected_room_type)
+	# Get shape for selected room type with current rotation (Phase 7.3)
+	var shape = get_rotated_shape(selected_room_type)
 
 	# If clicking a tile that's already occupied by a room
 	if tile.is_occupied():
@@ -547,8 +583,8 @@ func _on_tile_clicked(x: int, y: int):
 			flash_shape_tiles_red(x, y, shape)
 			return
 
-	# Validate shaped room placement
-	var can_place = can_place_shaped_room(x, y, selected_room_type)
+	# Validate shaped room placement with rotated shape (Phase 7.3)
+	var can_place = can_place_shaped_room(x, y, selected_room_type, shape)
 
 	# If can't place, flash all tiles in shape red and return
 	if not can_place:
@@ -608,13 +644,17 @@ func _on_tile_right_clicked(x: int, y: int):
 	_update_ship_status()
 	update_synergies()
 
-## Handle room type selection from palette
+## Handle room type selection from palette (Phase 7.3 - reset rotation)
 func _on_room_type_selected(room_type: RoomData.RoomType):
 	selected_room_type = room_type
+	# Reset rotation to 0° when changing room selection
+	current_rotation = 0
+	# Update palette rotation display
+	room_palette.update_rotation_display(current_rotation)
 	# Update button availability based on new selection
 	update_palette_availability()
 
-## Handle tile hover - show preview (Phase 7.2 - per-tile mixed preview states)
+## Handle tile hover - show preview (Phase 7.2/7.3 - per-tile mixed preview states with rotation)
 func _on_tile_hovered(tile: GridTile):
 	hovered_tile = tile
 
@@ -622,8 +662,8 @@ func _on_tile_hovered(tile: GridTile):
 	if selected_room_type == RoomData.RoomType.EMPTY:
 		return
 
-	# Get shape for selected room type
-	var shape = RoomData.get_shape(selected_room_type)
+	# Get shape for selected room type with current rotation (Phase 7.3)
+	var shape = get_rotated_shape(selected_room_type)
 
 	# Show preview on all tiles in the shape with per-tile state feedback
 	for offset in shape:
@@ -644,11 +684,11 @@ func _on_tile_hovered(tile: GridTile):
 				else:
 					preview_tile.show_invalid_preview()  # Red border
 
-## Handle tile unhover - clear preview (Phase 7.2 - clear multi-tile preview)
+## Handle tile unhover - clear preview (Phase 7.2/7.3 - clear multi-tile preview with rotation)
 func _on_tile_unhovered(tile: GridTile):
 	# Clear preview from previously hovered tile and its shape
 	if hovered_tile and selected_room_type != RoomData.RoomType.EMPTY:
-		var shape = RoomData.get_shape(selected_room_type)
+		var shape = get_rotated_shape(selected_room_type)
 
 		# Clear preview on all tiles in the shape
 		for offset in shape:

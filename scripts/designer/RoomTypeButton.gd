@@ -4,12 +4,14 @@ class_name RoomTypeButton
 ## Button representing a room type in the palette
 
 signal room_type_selected(room_type: RoomData.RoomType)
+signal rotation_requested(room_type: RoomData.RoomType)  # Phase 7.3
 
 ## The room type this button represents
 @export var room_type: RoomData.RoomType = RoomData.RoomType.EMPTY
 
 ## UI elements
 @onready var room_icon: ColorRect = $HBoxContainer/Icon
+@onready var rotate_button: Button = $HBoxContainer/RotateButton  # Phase 7.3
 @onready var name_label: Label = $HBoxContainer/NameLabel
 @onready var cost_label: Label = $HBoxContainer/CostLabel
 @onready var count_label: Label = $HBoxContainer/CountLabel
@@ -47,6 +49,13 @@ static var tooltip_data = {
 func _ready():
 	pressed.connect(_on_pressed)
 	update_display()
+
+	# Connect rotation button (Phase 7.3)
+	rotate_button.pressed.connect(_on_rotate_button_pressed)
+
+	# Hide rotation button for rooms that don't rotate (Bridge/Armor are square)
+	if room_type == RoomData.RoomType.BRIDGE or room_type == RoomData.RoomType.ARMOR or room_type == RoomData.RoomType.EMPTY:
+		rotate_button.visible = false
 
 	# Connect tooltip signals
 	mouse_entered.connect(_on_mouse_entered_tooltip)
@@ -134,3 +143,22 @@ func _update_tooltip_text():
 	# Set stats (second part)
 	if parts.size() > 1:
 		tooltip_stats_label.text = parts[1]
+
+## Handle rotation button press (Phase 7.3)
+func _on_rotate_button_pressed():
+	# Emit rotation signal
+	emit_signal("rotation_requested", room_type)
+	# Don't select the room, just rotate it
+	# (prevents accidentally changing selection when just wanting to rotate)
+
+## Update rotation display on button (Phase 7.3)
+func update_rotation_display(rotation: int):
+	# Only update if rotation button is visible (non-square rooms)
+	if not rotate_button.visible:
+		return
+
+	# Show rotation angle on button
+	if rotation == 0:
+		rotate_button.text = "↻"  # Just arrow at 0°
+	else:
+		rotate_button.text = "↻%d°" % rotation

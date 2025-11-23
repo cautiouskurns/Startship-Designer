@@ -4,6 +4,7 @@ class_name RoomPalettePanel
 ## Panel containing room type selection buttons
 
 signal room_type_selected(room_type: RoomData.RoomType)
+signal rotation_requested  # Phase 7.3 - emitted when rotation button is pressed
 
 ## References to room type buttons
 @onready var bridge_button: RoomTypeButton = $VBoxContainer/BridgeButton
@@ -25,6 +26,7 @@ func _ready():
 	# Connect signals from all buttons
 	for button in all_buttons:
 		button.room_type_selected.connect(_on_room_type_button_pressed)
+		button.rotation_requested.connect(_on_rotation_button_pressed)  # Phase 7.3
 
 ## Handle room type button press
 func _on_room_type_button_pressed(room_type: RoomData.RoomType):
@@ -64,3 +66,14 @@ func get_selected_room_type() -> RoomData.RoomType:
 	if selected_button:
 		return selected_button.room_type
 	return RoomData.RoomType.EMPTY
+
+## Handle rotation button press (Phase 7.3)
+func _on_rotation_button_pressed(room_type: RoomData.RoomType):
+	# Forward rotation signal to ShipDesigner
+	emit_signal("rotation_requested")
+
+## Update rotation display on selected button (Phase 7.3)
+func update_rotation_display(rotation: int):
+	# Update rotation display on the currently selected button
+	if selected_button:
+		selected_button.update_rotation_display(rotation)

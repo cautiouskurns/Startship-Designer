@@ -156,3 +156,50 @@ static func get_shape_size(room_type: RoomType) -> Vector2i:
 		max_y = max(max_y, offset[1])
 
 	return Vector2i(max_x - min_x + 1, max_y - min_y + 1)
+
+## Rotate a room shape by given angle (0°, 90°, 180°, 270°) - Phase 7.3
+## Returns new shape array with rotated offsets, normalized to positive coordinates
+static func rotate_shape(shape: Array, rotation: int) -> Array:
+	# No rotation needed for 0° or invalid angles
+	if rotation == 0 or rotation not in [0, 90, 180, 270]:
+		return shape
+
+	var rotated_shape = []
+
+	# Apply rotation transform to each offset
+	for offset in shape:
+		var x = offset[0]
+		var y = offset[1]
+		var new_x: int
+		var new_y: int
+
+		match rotation:
+			90:  # 90° CW: [x,y] → [-y,x]
+				new_x = -y
+				new_y = x
+			180:  # 180°: [x,y] → [-x,-y]
+				new_x = -x
+				new_y = -y
+			270:  # 270° CW: [x,y] → [y,-x]
+				new_x = y
+				new_y = -x
+			_:
+				new_x = x
+				new_y = y
+
+		rotated_shape.append([new_x, new_y])
+
+	# Normalize to positive coordinates (shift so min x = 0, min y = 0)
+	var min_x = 0
+	var min_y = 0
+
+	for offset in rotated_shape:
+		min_x = min(min_x, offset[0])
+		min_y = min(min_y, offset[1])
+
+	# Shift all offsets
+	var normalized_shape = []
+	for offset in rotated_shape:
+		normalized_shape.append([offset[0] - min_x, offset[1] - min_y])
+
+	return normalized_shape
