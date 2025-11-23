@@ -22,6 +22,9 @@ var is_anchor: bool = false
 var style_box: StyleBoxFlat
 @onready var flash_overlay: ColorRect = $FlashOverlay
 
+## Room background (shows room color on this tile) - Phase 7.1 shaped rooms
+var room_background: ColorRect = null
+
 ## Power state overlay (shown when room is unpowered)
 var unpowered_overlay: ColorRect = null
 
@@ -104,13 +107,24 @@ func set_occupying_room(room: Room, anchor: bool = false) -> void:
 	occupying_room = room
 	is_anchor = anchor
 
+	# Create room background ColorRect showing room color (for all tiles, not just anchor)
+	# This makes T-shapes and complex shapes display correctly
+	if not room_background:
+		room_background = ColorRect.new()
+		room_background.size = Vector2(60, 60)
+		room_background.position = Vector2(2, 2)
+		room_background.z_index = 0  # Behind Room node and flash overlay
+		room_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		room_background.color = RoomData.get_color(room.room_type)
+		add_child(room_background)
+
 	if anchor:
-		# Only anchor tile owns the Room visual as a child
+		# Only anchor tile owns the Room visual as a child (for label/icon)
 		add_child(room)
 
-		# Center room in tile (will be scaled to cover all tiles later)
+		# Center room in tile (don't scale, just show label on anchor)
 		room.position = Vector2(2, 2)
-		room.z_index = 1  # Draw on top of FlashOverlay
+		room.z_index = 1  # Draw on top of background
 		room.visible = true
 		room.modulate = Color(1, 1, 1, 1)
 		room.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -125,6 +139,12 @@ func clear_occupying_room() -> void:
 
 	occupying_room = null
 	is_anchor = false
+
+	# Clear room background if it exists
+	if room_background:
+		remove_child(room_background)
+		room_background.queue_free()
+		room_background = null
 
 	# Also clear unpowered overlay if it exists
 	if unpowered_overlay:
@@ -148,13 +168,13 @@ func set_powered_state(powered: bool):
 	if not occupying_room:
 		return
 
-	# Only anchor tile shows power state visually (it owns the Room node)
-	if not is_anchor:
-		return
-
 	if powered:
-		# Powered: full opacity, no overlay
-		occupying_room.modulate = Color(1, 1, 1, 1)
+		# Powered: full opacity room background, full opacity Room node (if anchor)
+		if room_background:
+			room_background.modulate = Color(1, 1, 1, 1)
+
+		if is_anchor and occupying_room:
+			occupying_room.modulate = Color(1, 1, 1, 1)
 
 		# Remove unpowered overlay if it exists
 		if unpowered_overlay:
@@ -162,8 +182,12 @@ func set_powered_state(powered: bool):
 			unpowered_overlay.queue_free()
 			unpowered_overlay = null
 	else:
-		# Unpowered: 50% opacity + gray overlay
-		occupying_room.modulate = Color(1, 1, 1, 0.5)
+		# Unpowered: dim background and Room node + gray overlay
+		if room_background:
+			room_background.modulate = Color(1, 1, 1, 0.5)
+
+		if is_anchor and occupying_room:
+			occupying_room.modulate = Color(1, 1, 1, 0.5)
 
 		# Create gray overlay if it doesn't exist
 		if not unpowered_overlay:
@@ -171,7 +195,7 @@ func set_powered_state(powered: bool):
 			unpowered_overlay.color = Color(0.3, 0.3, 0.3, 0.3)  # Dark gray, semi-transparent
 			unpowered_overlay.size = Vector2(60, 60)
 			unpowered_overlay.position = Vector2(2, 2)
-			unpowered_overlay.z_index = 2  # Above room but below flash
+			unpowered_overlay.z_index = 2  # Above room background and Room node, below flash
 			unpowered_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			add_child(unpowered_overlay)
 

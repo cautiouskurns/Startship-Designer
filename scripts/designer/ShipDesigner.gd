@@ -286,27 +286,6 @@ func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.Roo
 
 	return true
 
-## Scale room visual to cover all occupied tiles (Phase 7.1)
-func _scale_room_visual(room: Room, shape: Array):
-	# Calculate bounding box of shape
-	var min_x = 0
-	var max_x = 0
-	var min_y = 0
-	var max_y = 0
-
-	for offset in shape:
-		min_x = min(min_x, offset[0])
-		max_x = max(max_x, offset[0])
-		min_y = min(min_y, offset[1])
-		max_y = max(max_y, offset[1])
-
-	# Calculate size in pixels (-4 for margins: 2px on each side)
-	var width = (max_x - min_x + 1) * TILE_SIZE - 4
-	var height = (max_y - min_y + 1) * TILE_SIZE - 4
-
-	# Scale the room to cover all tiles
-	room.custom_minimum_size = Vector2(width, height)
-	room.size = Vector2(width, height)
 
 ## Flash all tiles in shape red for invalid placement (Phase 7.1)
 func flash_shape_tiles_red(anchor_x: int, anchor_y: int, shape: Array):
@@ -601,9 +580,6 @@ func _on_tile_clicked(x: int, y: int):
 			room.add_occupied_tile(target_tile)
 			is_first = false
 
-	# Scale room visual to cover all occupied tiles
-	_scale_room_visual(room, shape)
-
 	# Add to placed rooms tracking array
 	placed_rooms.append(room)
 
@@ -638,7 +614,7 @@ func _on_room_type_selected(room_type: RoomData.RoomType):
 	# Update button availability based on new selection
 	update_palette_availability()
 
-## Handle tile hover - show preview (Phase 7.1 - multi-tile preview)
+## Handle tile hover - show preview (Phase 7.2 - per-tile mixed preview states)
 func _on_tile_hovered(tile: GridTile):
 	hovered_tile = tile
 
@@ -649,10 +625,7 @@ func _on_tile_hovered(tile: GridTile):
 	# Get shape for selected room type
 	var shape = RoomData.get_shape(selected_room_type)
 
-	# Check if shaped room can be placed here
-	var can_place = can_place_shaped_room(tile.grid_x, tile.grid_y, selected_room_type)
-
-	# Show preview on all tiles in the shape
+	# Show preview on all tiles in the shape with per-tile state feedback
 	for offset in shape:
 		var tile_x = tile.grid_x + offset[0]
 		var tile_y = tile.grid_y + offset[1]
@@ -661,13 +634,17 @@ func _on_tile_hovered(tile: GridTile):
 		if tile_x >= 0 and tile_x < GRID_WIDTH and tile_y >= 0 and tile_y < GRID_HEIGHT:
 			var preview_tile = get_tile_at(tile_x, tile_y)
 			if preview_tile:
-				# Show valid or invalid preview based on placement validity
-				if can_place:
-					preview_tile.show_valid_preview()
-				else:
-					preview_tile.show_invalid_preview()
+				# Check THIS specific tile's state for mixed preview feedback
+				var tile_empty = not preview_tile.is_occupied()
+				var row_valid = RoomData.can_place_in_row(selected_room_type, tile_y)
 
-## Handle tile unhover - clear preview (Phase 7.1 - clear multi-tile preview)
+				# Show cyan if tile is available, red if blocked
+				if tile_empty and row_valid:
+					preview_tile.show_valid_preview()  # Cyan border
+				else:
+					preview_tile.show_invalid_preview()  # Red border
+
+## Handle tile unhover - clear preview (Phase 7.2 - clear multi-tile preview)
 func _on_tile_unhovered(tile: GridTile):
 	# Clear preview from previously hovered tile and its shape
 	if hovered_tile and selected_room_type != RoomData.RoomType.EMPTY:
@@ -863,9 +840,6 @@ func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 			target_tile.set_occupying_room(room, is_first)
 			room.add_occupied_tile(target_tile)
 			is_first = false
-
-	# Scale room visual to cover all occupied tiles
-	_scale_room_visual(room, shape)
 
 	# Add to placed rooms tracking array
 	placed_rooms.append(room)
