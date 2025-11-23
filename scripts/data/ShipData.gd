@@ -2,11 +2,18 @@ class_name ShipData
 
 ## Represents a ship's configuration and stats for combat
 
-## 8x6 grid of room types
+## 8x6 grid of room types (Phase 7.1 - still used for backward compatibility and power calc)
 var grid: Array = []  # Array of Arrays (rows), each containing RoomType values
 
 ## 8x6 grid tracking which rooms are powered
 var power_grid: Array = []  # Array of Arrays (rows), each containing bool values
+
+## Phase 7.1: 8x6 grid of room instance IDs (-1 for empty tiles)
+var room_id_grid: Array = []  # Array of Arrays (rows), each containing int room_id values
+
+## Phase 7.1: Dictionary mapping room_id to room instance data
+## Format: {room_id: {type: RoomType, tiles: Array[Vector2i]}}
+var room_instances: Dictionary = {}
 
 ## Health points
 var max_hp: int = 0
@@ -45,10 +52,34 @@ func calculate_hull_hp() -> int:
 	var armor_count = count_room_type(RoomData.RoomType.ARMOR)
 	return 60 + (armor_count * 20)
 
-## Destroy room at grid position
+## Destroy room at grid position (old single-tile method, kept for backward compatibility)
 func destroy_room_at(x: int, y: int):
 	if y >= 0 and y < grid.size() and x >= 0 and x < grid[y].size():
 		grid[y][x] = RoomData.RoomType.EMPTY
+
+## Destroy entire room instance by room_id (Phase 7.1 - destroys all tiles of multi-tile room)
+func destroy_room_instance(room_id: int):
+	# Check if room instance exists
+	if not room_id in room_instances:
+		return
+
+	var room_data = room_instances[room_id]
+
+	# Clear all tiles occupied by this room
+	for tile_pos in room_data["tiles"]:
+		var x = tile_pos.x
+		var y = tile_pos.y
+
+		# Clear from grid
+		if y >= 0 and y < grid.size() and x >= 0 and x < grid[y].size():
+			grid[y][x] = RoomData.RoomType.EMPTY
+
+		# Clear from room_id_grid
+		if y >= 0 and y < room_id_grid.size() and x >= 0 and x < room_id_grid[y].size():
+			room_id_grid[y][x] = -1
+
+	# Remove from room_instances dictionary
+	room_instances.erase(room_id)
 
 ## Calculate power grid based on reactor positions
 func calculate_power_grid():
@@ -113,24 +144,47 @@ func count_powered_room_type(room_type: RoomData.RoomType) -> int:
 func recalculate_power():
 	calculate_power_grid()
 
-## Create ShipData from ShipDesigner's grid_tiles array
-static func from_designer_grid(grid_tiles: Array) -> ShipData:
+## Create ShipData from ShipDesigner's grid_tiles and placed_rooms arrays (Phase 7.1)
+static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = []) -> ShipData:
 	var room_grid = []
+	var room_id_grid_data = []
 
-	# Convert grid_tiles (1D array) to 2D array (8 columns × 6 rows)
+	# Convert grid_tiles (1D array) to 2D arrays (8 columns × 6 rows)
 	for y in range(6):  # 6 rows
 		var row = []
+		var id_row = []
 		for x in range(8):  # 8 columns
 			var index = y * 8 + x
 			if index < grid_tiles.size():
 				var tile = grid_tiles[index]
 				row.append(tile.get_room_type())
+
+				# Build room_id_grid (Phase 7.1)
+				if tile.is_occupied() and tile.occupying_room:
+					id_row.append(tile.occupying_room.room_id)
+				else:
+					id_row.append(-1)  # -1 means empty
 			else:
 				row.append(RoomData.RoomType.EMPTY)
+				id_row.append(-1)
 		room_grid.append(row)
+		room_id_grid_data.append(id_row)
 
 	# Create ship with placeholder HP, then calculate based on armor
 	var ship = ShipData.new(room_grid, 0)
+	ship.room_id_grid = room_id_grid_data
+
+	# Build room_instances dictionary (Phase 7.1)
+	for room in placed_rooms:
+		var tile_positions = []
+		for tile in room.get_occupied_tiles():
+			tile_positions.append(Vector2i(tile.grid_x, tile.grid_y))
+
+		ship.room_instances[room.room_id] = {
+			"type": room.room_type,
+			"tiles": tile_positions
+		}
+
 	var hull_hp = ship.calculate_hull_hp()
 	ship.max_hp = hull_hp
 	ship.current_hp = hull_hp

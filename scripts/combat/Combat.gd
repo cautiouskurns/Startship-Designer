@@ -352,7 +352,7 @@ func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption
 	tween.parallel().tween_property(damage_label, "modulate:a", 0.0, 0.8 * speed_multiplier)
 	tween.tween_callback(damage_label.queue_free)
 
-## Destroy random rooms from defender
+## Destroy random rooms from defender (Phase 7.1 - destroys entire multi-tile room instances)
 func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int):
 	if count <= 0:
 		return
@@ -364,60 +364,121 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 	var synergies = defender.calculate_synergy_bonuses()
 	var room_synergies = synergies["room_synergies"]
 
-	# Get all active room positions, excluding Bridge initially
-	var active_rooms = []
-	for pos in defender.get_active_room_positions():
-		var room_type = defender.grid[pos.y][pos.x]
-		if room_type != RoomData.RoomType.BRIDGE:
-			active_rooms.append(pos)
+	# Phase 7.1: Get list of unique room instances (excluding Bridge initially)
+	var active_room_ids = []
+	for room_id in defender.room_instances:
+		var room_data = defender.room_instances[room_id]
+		if room_data["type"] != RoomData.RoomType.BRIDGE:
+			active_room_ids.append(room_id)
+
+	# Fallback for old single-tile enemies (no room_instances yet)
+	# Get all active room positions if room_instances is empty
+	var active_rooms_fallback = []
+	if defender.room_instances.is_empty():
+		for pos in defender.get_active_room_positions():
+			var room_type = defender.grid[pos.y][pos.x]
+			if room_type != RoomData.RoomType.BRIDGE:
+				active_rooms_fallback.append(pos)
 
 	# Destroy random rooms sequentially with animation
 	var destroyed = 0
-	while destroyed < count and active_rooms.size() > 0:
-		# Pick random room
-		var index = randi() % active_rooms.size()
-		var pos = active_rooms[index]
-		var room_type = defender.grid[pos.y][pos.x]
+	while destroyed < count:
+		# Phase 7.1: Use room instance destruction if available
+		if not defender.room_instances.is_empty():
+			if active_room_ids.is_empty():
+				break  # No more rooms to destroy
 
-		# Check if this weapon has DURABILITY synergy (25% chance to resist destruction)
-		if room_type == RoomData.RoomType.WEAPON:
-			if pos in room_synergies:
-				if RoomData.SynergyType.DURABILITY in room_synergies[pos]:
-					# 25% chance to resist destruction
-					if randf() < 0.25:
-						# Weapon resisted destruction, try another room
-						active_rooms.remove_at(index)
-						continue
+			# Pick random room instance
+			var index = randi() % active_room_ids.size()
+			var room_id = active_room_ids[index]
+			var room_data = defender.room_instances[room_id]
+			var room_type = room_data["type"]
 
-		# Check if this is a reactor
-		if room_type == RoomData.RoomType.REACTOR:
-			reactor_destroyed = true
+			# Check if this weapon has DURABILITY synergy (25% chance to resist destruction)
+			var resisted = false
+			if room_type == RoomData.RoomType.WEAPON:
+				# Check if any tile of this room has DURABILITY synergy
+				for tile_pos in room_data["tiles"]:
+					if tile_pos in room_synergies:
+						if RoomData.SynergyType.DURABILITY in room_synergies[tile_pos]:
+							# 25% chance to resist destruction
+							if randf() < 0.25:
+								resisted = true
+								break
 
-		# Destroy it (data)
-		defender.destroy_room_at(pos.x, pos.y)
+			if resisted:
+				# Weapon resisted destruction, try another room
+				active_room_ids.remove_at(index)
+				continue
 
-		# Destroy it (visual with animation) - AWAIT
-		await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
+			# Check if this is a reactor
+			if room_type == RoomData.RoomType.REACTOR:
+				reactor_destroyed = true
 
-		# Small delay between room destructions
-		await get_tree().create_timer(0.1 * speed_multiplier).timeout
+			# Destroy entire room instance (data)
+			defender.destroy_room_instance(room_id)
 
-		# Remove from list
-		active_rooms.remove_at(index)
-		destroyed += 1
+			# Destroy visuals for all tiles of this room with animation
+			for tile_pos in room_data["tiles"]:
+				await defender_display.destroy_room_visual(tile_pos.x, tile_pos.y, speed_multiplier)
+
+			# Small delay between room destructions
+			await get_tree().create_timer(0.1 * speed_multiplier).timeout
+
+			# Remove from active list
+			active_room_ids.remove_at(index)
+			destroyed += 1
+
+		else:
+			# Fallback: Old single-tile destruction for enemy ships
+			if active_rooms_fallback.is_empty():
+				break
+
+			var index = randi() % active_rooms_fallback.size()
+			var pos = active_rooms_fallback[index]
+			var room_type = defender.grid[pos.y][pos.x]
+
+			# Check DURABILITY synergy
+			if room_type == RoomData.RoomType.WEAPON:
+				if pos in room_synergies:
+					if RoomData.SynergyType.DURABILITY in room_synergies[pos]:
+						if randf() < 0.25:
+							active_rooms_fallback.remove_at(index)
+							continue
+
+			if room_type == RoomData.RoomType.REACTOR:
+				reactor_destroyed = true
+
+			defender.destroy_room_at(pos.x, pos.y)
+			await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
+			await get_tree().create_timer(0.1 * speed_multiplier).timeout
+
+			active_rooms_fallback.remove_at(index)
+			destroyed += 1
 
 	# If all non-Bridge rooms destroyed and more damage remains, destroy Bridge
 	if destroyed < count and defender.has_bridge():
-		# Find Bridge position
-		for pos in defender.get_active_room_positions():
-			var room_type = defender.grid[pos.y][pos.x]
-			if room_type == RoomData.RoomType.BRIDGE:
-				# Destroy data
-				defender.destroy_room_at(pos.x, pos.y)
+		# Phase 7.1: Check if using room instances
+		if not defender.room_instances.is_empty():
+			# Find Bridge room instance
+			for room_id in defender.room_instances:
+				var room_data = defender.room_instances[room_id]
+				if room_data["type"] == RoomData.RoomType.BRIDGE:
+					# Destroy entire Bridge instance
+					defender.destroy_room_instance(room_id)
 
-				# Destroy visual with animation - AWAIT
-				await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
-				break
+					# Destroy visuals for all tiles
+					for tile_pos in room_data["tiles"]:
+						await defender_display.destroy_room_visual(tile_pos.x, tile_pos.y, speed_multiplier)
+					break
+		else:
+			# Fallback: Old single-tile Bridge destruction
+			for pos in defender.get_active_room_positions():
+				var room_type = defender.grid[pos.y][pos.x]
+				if room_type == RoomData.RoomType.BRIDGE:
+					defender.destroy_room_at(pos.x, pos.y)
+					await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
+					break
 
 	# If reactor was destroyed, recalculate power and update visuals
 	if reactor_destroyed:

@@ -11,8 +11,12 @@ signal tile_unhovered(tile: GridTile)
 @export var grid_x: int = 0
 @export var grid_y: int = 0
 
-## Current room placed in this tile (null if empty)
-var current_room: Node = null
+## Reference to room occupying this tile (Phase 7.1 - doesn't own, just references)
+var occupying_room: Room = null
+
+## Is this the anchor tile (where room was originally placed)?
+## Only anchor tile owns the Room visual node as a child
+var is_anchor: bool = false
 
 ## Style and visual elements
 var style_box: StyleBoxFlat
@@ -94,30 +98,33 @@ func _play_flash_red():
 	# Reset to white after animation completes
 	tween.tween_callback(func(): flash_overlay.color = Color(1, 1, 1, 0))
 
-## Set a room in this tile
-func set_room(room: Node) -> void:
-	# Clear existing room if any
-	clear_room()
+## Set occupying room reference (Phase 7.1 - for multi-tile rooms)
+## If anchor=true, this tile owns the visual (Room node becomes child)
+func set_occupying_room(room: Room, anchor: bool = false) -> void:
+	occupying_room = room
+	is_anchor = anchor
 
-	# Add new room
-	current_room = room
-	add_child(room)
+	if anchor:
+		# Only anchor tile owns the Room visual as a child
+		add_child(room)
 
-	# Center room in tile (2px margin on all sides for 60x60 room in 64x64 tile)
-	if room is Control:
-		# MUST set position AFTER add_child, before or during _ready() it gets overridden
+		# Center room in tile (will be scaled to cover all tiles later)
 		room.position = Vector2(2, 2)
 		room.z_index = 1  # Draw on top of FlashOverlay
-		room.visible = true  # Ensure visibility
-		room.modulate = Color(1, 1, 1, 1)  # Ensure full opacity
-		room.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Let clicks pass through to GridTile
+		room.visible = true
+		room.modulate = Color(1, 1, 1, 1)
+		room.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-## Clear the current room from this tile
-func clear_room() -> void:
-	if current_room:
-		remove_child(current_room)
-		current_room.queue_free()
-		current_room = null
+## Clear occupying room reference (Phase 7.1)
+## Note: Room instance is freed by ShipDesigner, not here
+func clear_occupying_room() -> void:
+	if is_anchor and occupying_room:
+		# Remove Room node from tree (but don't free it yet)
+		if occupying_room.get_parent() == self:
+			remove_child(occupying_room)
+
+	occupying_room = null
+	is_anchor = false
 
 	# Also clear unpowered overlay if it exists
 	if unpowered_overlay:
@@ -125,22 +132,29 @@ func clear_room() -> void:
 		unpowered_overlay.queue_free()
 		unpowered_overlay = null
 
-## Get the room type of current room (returns EMPTY if no room)
+## Get the room type of occupying room (returns EMPTY if no room)
 func get_room_type() -> RoomData.RoomType:
-	if current_room and current_room is Room:
-		return current_room.room_type
+	if occupying_room:
+		return occupying_room.room_type
 	return RoomData.RoomType.EMPTY
+
+## Check if this tile is occupied by a room (Phase 7.1)
+func is_occupied() -> bool:
+	return occupying_room != null
 
 ## Set the powered state of the room visually
 func set_powered_state(powered: bool):
 	# If no room, nothing to do
-	if not current_room:
+	if not occupying_room:
+		return
+
+	# Only anchor tile shows power state visually (it owns the Room node)
+	if not is_anchor:
 		return
 
 	if powered:
 		# Powered: full opacity, no overlay
-		if current_room is Control:
-			current_room.modulate = Color(1, 1, 1, 1)
+		occupying_room.modulate = Color(1, 1, 1, 1)
 
 		# Remove unpowered overlay if it exists
 		if unpowered_overlay:
@@ -149,8 +163,7 @@ func set_powered_state(powered: bool):
 			unpowered_overlay = null
 	else:
 		# Unpowered: 50% opacity + gray overlay
-		if current_room is Control:
-			current_room.modulate = Color(1, 1, 1, 0.5)
+		occupying_room.modulate = Color(1, 1, 1, 0.5)
 
 		# Create gray overlay if it doesn't exist
 		if not unpowered_overlay:

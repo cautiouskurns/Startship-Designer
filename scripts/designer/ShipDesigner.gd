@@ -70,6 +70,12 @@ var room_scenes = {
 ## Store all grid tiles
 var grid_tiles: Array[GridTile] = []
 
+## Track all placed room instances (Phase 7.1 - multi-tile rooms)
+var placed_rooms: Array[Room] = []
+
+## Room ID counter for tracking instances (Phase 7.1)
+var next_room_id: int = 1
+
 func _ready():
 	# Load mission budget from GameState
 	max_budget = GameState.get_mission_budget(GameState.current_mission)
@@ -128,13 +134,11 @@ func _create_grid():
 			# Store reference
 			grid_tiles.append(tile)
 
-## Calculate current budget from all placed rooms
+## Calculate current budget from all placed rooms (Phase 7.1 - count room instances, not tiles)
 func calculate_current_budget() -> int:
 	var total = 0
-	for tile in grid_tiles:
-		var room_type = tile.get_room_type()
-		if room_type != RoomData.RoomType.EMPTY:
-			total += RoomData.get_cost(room_type)
+	for room in placed_rooms:
+		total += RoomData.get_cost(room.room_type)
 	return total
 
 ## Update the budget display labels
@@ -203,18 +207,18 @@ func get_next_room_type(current: RoomData.RoomType) -> RoomData.RoomType:
 	var next_value = (int(current) + 1) % 7
 	return next_value as RoomData.RoomType
 
-## Count number of Bridge rooms currently placed
+## Count number of Bridge rooms currently placed (Phase 7.1 - count room instances, not tiles)
 func count_bridges() -> int:
 	var count = 0
-	for tile in grid_tiles:
-		if tile.get_room_type() == RoomData.RoomType.BRIDGE:
+	for room in placed_rooms:
+		if room.room_type == RoomData.RoomType.BRIDGE:
 			count += 1
 	return count
 
 ## Count number of unpowered rooms (excluding EMPTY and ARMOR)
 func count_unpowered_rooms() -> int:
 	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
 
 	var unpowered_count = 0
 	for tile in grid_tiles:
@@ -233,7 +237,7 @@ func count_unpowered_rooms() -> int:
 ## Count number of active synergies
 func count_synergies() -> int:
 	# Create temporary ShipData to calculate synergies
-	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	var synergy_counts = synergy_bonuses["counts"]
 
@@ -243,6 +247,100 @@ func count_synergies() -> int:
 		total += synergy_counts[synergy_type]
 
 	return total
+
+## Check if a shaped room can be placed at given position (Phase 7.1)
+func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.RoomType) -> bool:
+	# Can't place EMPTY
+	if room_type == RoomData.RoomType.EMPTY:
+		return false
+
+	# Get shape for this room type
+	var shape = RoomData.get_shape(room_type)
+
+	# Check Bridge limit (only 1 allowed)
+	if room_type == RoomData.RoomType.BRIDGE and count_bridges() >= 1:
+		return false
+
+	# Validate each tile in the shape
+	for offset in shape:
+		var tile_x = anchor_x + offset[0]
+		var tile_y = anchor_y + offset[1]
+
+		# Check bounds
+		if tile_x < 0 or tile_x >= GRID_WIDTH or tile_y < 0 or tile_y >= GRID_HEIGHT:
+			return false
+
+		# Check if tile is occupied
+		var tile = get_tile_at(tile_x, tile_y)
+		if tile.is_occupied():
+			return false
+
+		# Check row constraints for this specific tile
+		if not RoomData.can_place_in_row(room_type, tile_y):
+			return false
+
+	# Check budget
+	var new_cost = RoomData.get_cost(room_type)
+	if current_budget + new_cost > max_budget:
+		return false
+
+	return true
+
+## Scale room visual to cover all occupied tiles (Phase 7.1)
+func _scale_room_visual(room: Room, shape: Array):
+	# Calculate bounding box of shape
+	var min_x = 0
+	var max_x = 0
+	var min_y = 0
+	var max_y = 0
+
+	for offset in shape:
+		min_x = min(min_x, offset[0])
+		max_x = max(max_x, offset[0])
+		min_y = min(min_y, offset[1])
+		max_y = max(max_y, offset[1])
+
+	# Calculate size in pixels (-4 for margins: 2px on each side)
+	var width = (max_x - min_x + 1) * TILE_SIZE - 4
+	var height = (max_y - min_y + 1) * TILE_SIZE - 4
+
+	# Scale the room to cover all tiles
+	room.custom_minimum_size = Vector2(width, height)
+	room.size = Vector2(width, height)
+
+## Flash all tiles in shape red for invalid placement (Phase 7.1)
+func flash_shape_tiles_red(anchor_x: int, anchor_y: int, shape: Array):
+	for offset in shape:
+		var tile_x = anchor_x + offset[0]
+		var tile_y = anchor_y + offset[1]
+
+		# Only flash if tile is in bounds
+		if tile_x >= 0 and tile_x < GRID_WIDTH and tile_y >= 0 and tile_y < GRID_HEIGHT:
+			var tile = get_tile_at(tile_x, tile_y)
+			if tile:
+				tile._play_flash_red()
+
+## Remove entire room instance from all tiles it occupies (Phase 7.1)
+func _remove_room_at_tile(tile: GridTile):
+	if not tile or not tile.is_occupied():
+		return
+
+	var room = tile.occupying_room
+	if not room:
+		return
+
+	# Get all tiles occupied by this room
+	var occupied_tiles = room.get_occupied_tiles()
+
+	# Clear room reference from all occupied tiles
+	for occupied_tile in occupied_tiles:
+		occupied_tile.clear_occupying_room()
+
+	# Remove room from placed_rooms tracking array
+	placed_rooms.erase(room)
+
+	# Free the room instance
+	room.queue_free()
 
 ## Check if a room can be placed at given position
 func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_type: RoomData.RoomType) -> bool:
@@ -270,12 +368,12 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 ## Export current ship design as ShipData for combat
 func export_ship_data() -> ShipData:
 	# HP is calculated based on armor count in ShipData
-	return ShipData.from_designer_grid(grid_tiles)
+	return ShipData.from_designer_grid(grid_tiles, placed_rooms)
 
 ## Update power states for all tiles based on reactor positions
 func update_all_power_states():
 	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
 
 	# Update visual power state for each tile
 	for tile in grid_tiles:
@@ -299,7 +397,7 @@ func draw_power_lines():
 		child.queue_free()
 
 	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
 
 	# Find all reactors and draw lines to adjacent powered rooms
 	for y in range(GRID_HEIGHT):
@@ -398,7 +496,7 @@ func update_synergies():
 				created_synergies[synergy_key] = true
 
 	# Update synergy guide panel with counts
-	var temp_ship = ShipData.from_designer_grid(grid_tiles)
+	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
 
@@ -434,43 +532,74 @@ func _process(_delta):
 		# Hide cost indicator when not hovering or no room selected
 		cost_indicator.visible = false
 
-## Handle tile left-click - place selected room type from palette
+## Handle tile left-click - place selected room type from palette (Phase 7.1 - shaped rooms)
 func _on_tile_clicked(x: int, y: int):
 	var tile = get_tile_at(x, y)
 	if not tile:
 		return
 
-	# Get current room type at this tile
-	var current_type = tile.get_room_type()
-
 	# If no room type selected from palette, do nothing
 	if selected_room_type == RoomData.RoomType.EMPTY:
 		return
 
-	# If clicking same type, deselect it (clear the room)
-	if current_type == selected_room_type:
-		tile.clear_room()
-		_update_budget_display()
-		update_all_power_states()
-		update_palette_counts()
-		update_palette_availability()
-		_update_ship_status()
-		update_synergies()
-		return
+	# Get shape for selected room type
+	var shape = RoomData.get_shape(selected_room_type)
 
-	# Validate placement using helper method
-	var can_place = can_place_room_at(selected_room_type, x, y, current_type)
+	# If clicking a tile that's already occupied by a room
+	if tile.is_occupied():
+		# If it's the same room type as selected, remove the entire room
+		if tile.get_room_type() == selected_room_type:
+			_remove_room_at_tile(tile)
+			_update_budget_display()
+			update_all_power_states()
+			update_palette_counts()
+			update_palette_availability()
+			_update_ship_status()
+			update_synergies()
+			return
+		else:
+			# Different room type - can't place on occupied tile, flash red
+			flash_shape_tiles_red(x, y, shape)
+			return
 
-	# If can't place, flash red and return
+	# Validate shaped room placement
+	var can_place = can_place_shaped_room(x, y, selected_room_type)
+
+	# If can't place, flash all tiles in shape red and return
 	if not can_place:
-		tile._play_flash_red()
+		flash_shape_tiles_red(x, y, shape)
 		return
 
-	# Place the room
+	# Create and place the shaped room
 	var room_scene = room_scenes.get(selected_room_type)
-	if room_scene:
-		var room = room_scene.instantiate()
-		tile.set_room(room)
+	if not room_scene:
+		return
+
+	# Instantiate room
+	var room: Room = room_scene.instantiate()
+	room.room_type = selected_room_type
+	room.room_id = next_room_id
+	next_room_id += 1
+
+	# Place room on all tiles in shape
+	var is_first = true
+	for offset in shape:
+		var tile_x = x + offset[0]
+		var tile_y = y + offset[1]
+		var target_tile = get_tile_at(tile_x, tile_y)
+
+		if target_tile:
+			# Set occupying room (first tile is anchor, owns visual)
+			target_tile.set_occupying_room(room, is_first)
+			# Add tile to room's occupation list
+			room.add_occupied_tile(target_tile)
+			is_first = false
+
+	# Scale room visual to cover all occupied tiles
+	_scale_room_visual(room, shape)
+
+	# Add to placed rooms tracking array
+	placed_rooms.append(room)
 
 	# Update budget display and power states
 	_update_budget_display()
@@ -480,14 +609,14 @@ func _on_tile_clicked(x: int, y: int):
 	_update_ship_status()
 	update_synergies()
 
-## Handle tile right-click - remove room
+## Handle tile right-click - remove room (Phase 7.1 - removes entire multi-tile room)
 func _on_tile_right_clicked(x: int, y: int):
 	var tile = get_tile_at(x, y)
 	if not tile:
 		return
 
-	# Clear the room
-	tile.clear_room()
+	# Remove entire room instance (works for both single-tile and multi-tile rooms)
+	_remove_room_at_tile(tile)
 
 	# Update budget display and power states
 	_update_budget_display()
@@ -503,7 +632,7 @@ func _on_room_type_selected(room_type: RoomData.RoomType):
 	# Update button availability based on new selection
 	update_palette_availability()
 
-## Handle tile hover - show preview
+## Handle tile hover - show preview (Phase 7.1 - multi-tile preview)
 func _on_tile_hovered(tile: GridTile):
 	hovered_tile = tile
 
@@ -511,22 +640,47 @@ func _on_tile_hovered(tile: GridTile):
 	if selected_room_type == RoomData.RoomType.EMPTY:
 		return
 
-	# Check if placement is valid
-	var current_type = tile.get_room_type()
-	var can_place = can_place_room_at(selected_room_type, tile.grid_x, tile.grid_y, current_type)
+	# Get shape for selected room type
+	var shape = RoomData.get_shape(selected_room_type)
 
-	# Show appropriate preview
-	if can_place:
-		tile.show_valid_preview()
-	else:
-		tile.show_invalid_preview()
+	# Check if shaped room can be placed here
+	var can_place = can_place_shaped_room(tile.grid_x, tile.grid_y, selected_room_type)
 
-## Handle tile unhover - clear preview
+	# Show preview on all tiles in the shape
+	for offset in shape:
+		var tile_x = tile.grid_x + offset[0]
+		var tile_y = tile.grid_y + offset[1]
+
+		# Check bounds
+		if tile_x >= 0 and tile_x < GRID_WIDTH and tile_y >= 0 and tile_y < GRID_HEIGHT:
+			var preview_tile = get_tile_at(tile_x, tile_y)
+			if preview_tile:
+				# Show valid or invalid preview based on placement validity
+				if can_place:
+					preview_tile.show_valid_preview()
+				else:
+					preview_tile.show_invalid_preview()
+
+## Handle tile unhover - clear preview (Phase 7.1 - clear multi-tile preview)
 func _on_tile_unhovered(tile: GridTile):
-	hovered_tile = null
-	tile.clear_preview()
+	# Clear preview from previously hovered tile and its shape
+	if hovered_tile and selected_room_type != RoomData.RoomType.EMPTY:
+		var shape = RoomData.get_shape(selected_room_type)
 
-## Update room counts on palette panel
+		# Clear preview on all tiles in the shape
+		for offset in shape:
+			var tile_x = hovered_tile.grid_x + offset[0]
+			var tile_y = hovered_tile.grid_y + offset[1]
+
+			# Check bounds
+			if tile_x >= 0 and tile_x < GRID_WIDTH and tile_y >= 0 and tile_y < GRID_HEIGHT:
+				var preview_tile = get_tile_at(tile_x, tile_y)
+				if preview_tile:
+					preview_tile.clear_preview()
+
+	hovered_tile = null
+
+## Update room counts on palette panel (Phase 7.1 - count room instances, not tiles)
 func update_palette_counts():
 	# Count each room type
 	var counts = {
@@ -538,10 +692,10 @@ func update_palette_counts():
 		RoomData.RoomType.ARMOR: 0
 	}
 
-	for tile in grid_tiles:
-		var room_type = tile.get_room_type()
-		if counts.has(room_type):
-			counts[room_type] += 1
+	# Count room instances (not tiles, to avoid counting multi-tile rooms multiple times)
+	for room in placed_rooms:
+		if counts.has(room.room_type):
+			counts[room.room_type] += 1
 
 	# Update palette display
 	room_palette.update_counts(counts)
@@ -654,89 +808,158 @@ func _on_clear_grid_pressed():
 	_update_ship_status()
 	update_synergies()
 
-## Clear all rooms from the grid
+## Clear all rooms from the grid (Phase 7.1 - free room instances)
 func _clear_all_rooms():
-	for tile in grid_tiles:
-		tile.clear_room()
+	# Create a copy of placed_rooms array to iterate (since we'll modify the original)
+	var rooms_to_remove = placed_rooms.duplicate()
 
-## Place a room at grid position
+	# Remove each room instance
+	for room in rooms_to_remove:
+		# Get all tiles and clear references
+		var occupied_tiles = room.get_occupied_tiles()
+		for tile in occupied_tiles:
+			tile.clear_occupying_room()
+
+		# Free the room instance
+		room.queue_free()
+
+	# Clear the placed_rooms tracking array
+	placed_rooms.clear()
+
+## Place a shaped room at grid position (Phase 7.1 - anchor tile is top-left of room)
 func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
-	var tile = get_tile_at(x, y)
-	if not tile:
+	# Get shape for this room type
+	var shape = RoomData.get_shape(room_type)
+
+	# Validate placement (should always succeed in templates, but check anyway)
+	if not can_place_shaped_room(x, y, room_type):
+		push_warning("Template tried to place %s at (%d,%d) but placement failed!" % [RoomData.get_label(room_type), x, y])
 		return
 
+	# Create room instance
 	var room_scene = room_scenes.get(room_type)
-	if room_scene:
-		var room = room_scene.instantiate()
-		tile.set_room(room)
+	if not room_scene:
+		return
 
-## Balanced template - good for all missions
-## Budget: Mission 0=19, Mission 1=25, Mission 2=29
+	var room: Room = room_scene.instantiate()
+	room.room_type = room_type
+	room.room_id = next_room_id
+	next_room_id += 1
+
+	# Place room on all tiles in shape
+	var is_first = true
+	for offset in shape:
+		var tile_x = x + offset[0]
+		var tile_y = y + offset[1]
+		var target_tile = get_tile_at(tile_x, tile_y)
+
+		if target_tile:
+			target_tile.set_occupying_room(room, is_first)
+			room.add_occupied_tile(target_tile)
+			is_first = false
+
+	# Scale room visual to cover all occupied tiles
+	_scale_room_visual(room, shape)
+
+	# Add to placed rooms tracking array
+	placed_rooms.append(room)
+
+## Balanced template - good for all missions (Phase 7.1 - shaped rooms)
+## Bridge 2×2, Weapons/Shields/Engines 1×2, Reactor T-shape, Armor 1×1
+## Budget: Mission 0=15, Mission 1=23, Mission 2=29
 func _apply_balanced_template(mission: int):
-	# Common core: Bridge + Reactor
-	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)  # 5
-	_place_room_at(2, 2, RoomData.RoomType.REACTOR)  # 3 (total: 8)
+	# Core: Bridge (2×2 in center) + Reactor (T-shape adjacent for power)
+	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
+	_place_room_at(1, 1, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,2),(2,1),(2,2),(2,3)
 
-	# All missions: 2 Weapons, 1 Shield, 1 Armor
-	_place_room_at(2, 1, RoomData.RoomType.WEAPON)  # 2
-	_place_room_at(2, 3, RoomData.RoomType.WEAPON)  # 2
-	_place_room_at(3, 1, RoomData.RoomType.SHIELD)  # 3 (total: 15)
-	_place_room_at(3, 4, RoomData.RoomType.ARMOR)  # 4 (total: 19)
+	# Weapons (1×2 horizontal, rows 0-1 only)
+	_place_room_at(0, 0, RoomData.RoomType.WEAPON)     # 2 BP - (0,0),(1,0)
+	_place_room_at(4, 1, RoomData.RoomType.WEAPON)     # 2 BP - (4,1),(5,1)
+
+	# Shield (1×2 horizontal, adjacent to reactor)
+	_place_room_at(0, 2, RoomData.RoomType.SHIELD)     # 3 BP - (0,2),(1,2)
+	# Total: 15 BP
 
 	if mission >= 1:
-		# Mission 1+: Add reactor and engine
-		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
-		_place_room_at(4, 1, RoomData.RoomType.ENGINE)  # 2 (total: 24)
+		# Add Engine + Armor
+		_place_room_at(3, 4, RoomData.RoomType.ENGINE)   # 2 BP - (3,4),(4,4) rows 4-5
+		_place_room_at(5, 3, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(5, 2, RoomData.RoomType.ARMOR)    # 1 BP
+		# Add Reactor for more power
+		_place_room_at(5, 0, RoomData.RoomType.REACTOR)  # 3 BP - T-shape
+		# Total: 23 BP
 
 	if mission >= 2:
-		# Mission 2: Add weapon, shield
-		_place_room_at(4, 3, RoomData.RoomType.WEAPON)  # 2
-		_place_room_at(3, 3, RoomData.RoomType.SHIELD)  # 3 (total: 29)
+		# Add Weapon + Engine + Armor
+		_place_room_at(6, 1, RoomData.RoomType.WEAPON)   # 2 BP - (6,1),(7,1)
+		_place_room_at(5, 4, RoomData.RoomType.ENGINE)   # 2 BP - (5,4),(6,4)
+		_place_room_at(0, 4, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		# Total: 29 BP
 
-## Aggressive template - max damage
-## Budget: Mission 0=20, Mission 1=25, Mission 2=30
+## Aggressive template - max damage (Phase 7.1 - shaped rooms)
+## Focuses on weapons for high damage output
+## Budget: Mission 0=17, Mission 1=25, Mission 2=30
 func _apply_aggressive_template(mission: int):
-	# Common core: Bridge + Reactor
-	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)  # 5
-	_place_room_at(2, 2, RoomData.RoomType.REACTOR)  # 3 (total: 8)
+	# Core: Bridge + Reactor for power
+	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
+	_place_room_at(1, 0, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,1),(2,0),(2,1),(2,2)
 
-	# All missions: 3 Weapons, 1 Shield
-	_place_room_at(2, 1, RoomData.RoomType.WEAPON)  # 2
-	_place_room_at(2, 3, RoomData.RoomType.WEAPON)  # 2
-	_place_room_at(2, 0, RoomData.RoomType.WEAPON)  # 2
-	_place_room_at(3, 1, RoomData.RoomType.SHIELD)  # 3 (total: 17)
+	# Max weapons (1×2 horizontal, rows 0-1 only)
+	_place_room_at(0, 0, RoomData.RoomType.WEAPON)     # 2 BP - (0,0),(1,0)
+	_place_room_at(4, 0, RoomData.RoomType.WEAPON)     # 2 BP - (4,0),(5,0)
+	_place_room_at(4, 1, RoomData.RoomType.WEAPON)     # 2 BP - (4,1),(5,1)
+
+	# Minimal shield
+	_place_room_at(0, 2, RoomData.RoomType.SHIELD)     # 3 BP - (0,2),(1,2)
+	# Total: 17 BP
 
 	if mission >= 1:
-		# Mission 1+: Add reactor, weapon, engine
-		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
-		_place_room_at(4, 1, RoomData.RoomType.WEAPON)  # 2
-		_place_room_at(3, 0, RoomData.RoomType.ENGINE)  # 2 (total: 24)
+		# Add more weapons + engine
+		_place_room_at(6, 0, RoomData.RoomType.WEAPON)   # 2 BP - (6,0),(7,0)
+		_place_room_at(6, 1, RoomData.RoomType.WEAPON)   # 2 BP - (6,1),(7,1)
+		_place_room_at(3, 4, RoomData.RoomType.ENGINE)   # 2 BP - (3,4),(4,4)
+		_place_room_at(0, 4, RoomData.RoomType.ENGINE)   # 2 BP - (0,4),(1,4)
+		# Total: 25 BP
 
 	if mission >= 2:
-		# Mission 2: Add 2 more weapons
-		_place_room_at(4, 3, RoomData.RoomType.WEAPON)  # 2
-		_place_room_at(3, 3, RoomData.RoomType.WEAPON)  # 2 (total: 28)
+		# Add Reactor for more power + armor
+		_place_room_at(5, 2, RoomData.RoomType.REACTOR)  # 3 BP - T-shape
+		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		# Total: 30 BP
 
-## Tank template - high defense
-## Budget: Mission 0=20, Mission 1=25, Mission 2=30
+## Tank template - high defense (Phase 7.1 - shaped rooms)
+## Focuses on shields and armor for survivability
+## Budget: Mission 0=17, Mission 1=26, Mission 2=30
 func _apply_tank_template(mission: int):
-	# Common core: Bridge + Reactor
-	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)  # 5
-	_place_room_at(2, 2, RoomData.RoomType.REACTOR)  # 3 (total: 8)
+	# Core: Bridge + Reactor
+	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
+	_place_room_at(1, 1, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,2),(2,1),(2,2),(2,3)
 
-	# All missions: 1 Weapon, 2 Shields, 1 Armor
-	_place_room_at(2, 1, RoomData.RoomType.WEAPON)  # 2
-	_place_room_at(2, 3, RoomData.RoomType.SHIELD)  # 3
-	_place_room_at(3, 1, RoomData.RoomType.SHIELD)  # 3
-	_place_room_at(3, 4, RoomData.RoomType.ARMOR)  # 4 (total: 20)
+	# Minimal weapon
+	_place_room_at(4, 0, RoomData.RoomType.WEAPON)     # 2 BP - (4,0),(5,0)
 
-	if mission == 1:
-		# Mission 1: Add reactor, weapon
-		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
-		_place_room_at(4, 1, RoomData.RoomType.WEAPON)  # 2 (total: 25)
+	# Max shields (1×2 horizontal)
+	_place_room_at(0, 2, RoomData.RoomType.SHIELD)     # 3 BP - (0,2),(1,2)
+	_place_room_at(5, 2, RoomData.RoomType.SHIELD)     # 3 BP - (5,2),(6,2)
 
-	if mission == 2:
-		# Mission 2: Add reactor, shield, armor
-		_place_room_at(4, 2, RoomData.RoomType.REACTOR)  # 3
-		_place_room_at(4, 1, RoomData.RoomType.SHIELD)  # 3
-		_place_room_at(2, 4, RoomData.RoomType.ARMOR)  # 4 (total: 30)
+	# Armor
+	_place_room_at(5, 3, RoomData.RoomType.ARMOR)      # 1 BP
+	# Total: 17 BP
+
+	if mission >= 1:
+		# Add more shields + reactor + engine + armor
+		_place_room_at(5, 0, RoomData.RoomType.REACTOR)  # 3 BP - T-shape
+		_place_room_at(0, 4, RoomData.RoomType.SHIELD)   # 3 BP - (0,4),(1,4)
+		_place_room_at(3, 4, RoomData.RoomType.ENGINE)   # 2 BP - (3,4),(4,4)
+		_place_room_at(7, 2, RoomData.RoomType.ARMOR)    # 1 BP
+		# Total: 26 BP
+
+	if mission >= 2:
+		# Add more armor
+		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(6, 4, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(0, 3, RoomData.RoomType.ARMOR)    # 1 BP
+		# Total: 30 BP

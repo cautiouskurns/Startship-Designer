@@ -11,15 +11,26 @@ enum RoomType {
 	ARMOR
 }
 
-## Room costs in budget points
+## Room costs in budget points (Phase 7.1 updated costs)
 static var costs = {
 	RoomType.EMPTY: 0,
-	RoomType.BRIDGE: 2,
-	RoomType.WEAPON: 3,
-	RoomType.SHIELD: 3,
-	RoomType.ENGINE: 2,
-	RoomType.REACTOR: 2,
-	RoomType.ARMOR: 1
+	RoomType.BRIDGE: 5,  # Changed from 2 (occupies 4 tiles)
+	RoomType.WEAPON: 2,  # Changed from 3 (occupies 2 tiles)
+	RoomType.SHIELD: 3,  # Unchanged (occupies 2 tiles)
+	RoomType.ENGINE: 2,  # Unchanged (occupies 2 tiles)
+	RoomType.REACTOR: 3,  # Changed from 2 (occupies 4 tiles in T-shape)
+	RoomType.ARMOR: 1   # Unchanged (occupies 1 tile)
+}
+
+## Room shapes - array of [x_offset, y_offset] tile positions relative to anchor
+static var shapes = {
+	RoomType.EMPTY: [[0, 0]],
+	RoomType.BRIDGE: [[0, 0], [1, 0], [0, 1], [1, 1]],  # 2×2 square
+	RoomType.WEAPON: [[0, 0], [1, 0]],  # 1×2 horizontal bar
+	RoomType.SHIELD: [[0, 0], [1, 0]],  # 1×2 horizontal bar
+	RoomType.ENGINE: [[0, 0], [1, 0]],  # 1×2 horizontal bar
+	RoomType.REACTOR: [[0, 1], [1, 0], [1, 1], [1, 2]],  # T-shape (center top, 3 below)
+	RoomType.ARMOR: [[0, 0]]   # 1×1 single tile
 }
 
 ## Room colors (hex values from design doc)
@@ -122,3 +133,26 @@ static func get_synergy_type(room_type_a: RoomType, room_type_b: RoomType) -> Sy
 ## Get color for synergy type
 static func get_synergy_color(synergy_type: SynergyType) -> Color:
 	return synergy_colors.get(synergy_type, Color.WHITE)
+
+## Get shape (array of tile offsets) for a room type
+static func get_shape(room_type: RoomType) -> Array:
+	return shapes.get(room_type, [[0, 0]])
+
+## Get bounding box size for a room shape (for tooltips/display)
+static func get_shape_size(room_type: RoomType) -> Vector2i:
+	var shape = get_shape(room_type)
+	if shape.is_empty():
+		return Vector2i(1, 1)
+
+	var min_x = 0
+	var max_x = 0
+	var min_y = 0
+	var max_y = 0
+
+	for offset in shape:
+		min_x = min(min_x, offset[0])
+		max_x = max(max_x, offset[0])
+		min_y = min(min_y, offset[1])
+		max_y = max(max_y, offset[1])
+
+	return Vector2i(max_x - min_x + 1, max_y - min_y + 1)
