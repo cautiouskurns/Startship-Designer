@@ -6,7 +6,7 @@ signal launch_pressed
 ## Grid dimensions
 const GRID_WIDTH = 8
 const GRID_HEIGHT = 6
-const TILE_SIZE = 64
+const TILE_SIZE = 96
 
 ## Budget values
 var max_budget: int = 30  # Loaded from GameState based on mission

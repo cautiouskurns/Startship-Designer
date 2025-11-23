@@ -418,9 +418,11 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			# Destroy entire room instance (data)
 			defender.destroy_room_instance(room_id)
 
-			# Destroy visuals for all tiles of this room with animation
-			for tile_pos in room_data["tiles"]:
-				await defender_display.destroy_room_visual(tile_pos.x, tile_pos.y, speed_multiplier)
+			# Phase 7.4: Destroy entire shaped room visual with all tiles simultaneously
+			var first_tile = room_data["tiles"][0]
+			await defender_display.destroy_room_visual(
+				first_tile.x, first_tile.y, speed_multiplier, room_data["tiles"], room_id
+			)
 
 			# Small delay between room destructions
 			await get_tree().create_timer(0.1 * speed_multiplier).timeout
@@ -458,7 +460,7 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 
 	# If all non-Bridge rooms destroyed and more damage remains, destroy Bridge
 	if destroyed < count and defender.has_bridge():
-		# Phase 7.1: Check if using room instances
+		# Phase 7.1/7.4: Check if using room instances
 		if not defender.room_instances.is_empty():
 			# Find Bridge room instance
 			for room_id in defender.room_instances:
@@ -467,9 +469,11 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 					# Destroy entire Bridge instance
 					defender.destroy_room_instance(room_id)
 
-					# Destroy visuals for all tiles
-					for tile_pos in room_data["tiles"]:
-						await defender_display.destroy_room_visual(tile_pos.x, tile_pos.y, speed_multiplier)
+					# Phase 7.4: Destroy visuals for entire shaped Bridge simultaneously
+					var first_tile = room_data["tiles"][0]
+					await defender_display.destroy_room_visual(
+						first_tile.x, first_tile.y, speed_multiplier, room_data["tiles"], room_id
+					)
 					break
 		else:
 			# Fallback: Old single-tile Bridge destruction

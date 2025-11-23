@@ -4,16 +4,16 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0.172549, 0.172549, 0.172549, 1)
-border_width_left = 1
-border_width_top = 1
+border_width_left = 0
+border_width_top = 0
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(1, 1, 1, 1)
 
 [node name="GridTile" type="Panel"]
-custom_minimum_size = Vector2(64, 64)
-offset_right = 64.0
-offset_bottom = 64.0
+custom_minimum_size = Vector2(96, 96)
+offset_right = 96.0
+offset_bottom = 96.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")
 script = ExtResource("1")
 
