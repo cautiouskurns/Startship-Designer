@@ -33,8 +33,8 @@ func setup(tile_a: GridTile, tile_b: GridTile, synergy: RoomData.SynergyType):
 	synergy_type = synergy
 	connected_tiles = [tile_a, tile_b]
 
-	# Position at midpoint between tile centers (tiles are 64x64, so add 32 to get center)
-	var tile_center_offset = Vector2(32, 32)
+	# Position at midpoint between tile centers (calculate based on actual tile size)
+	var tile_center_offset = tile_a.size / 2.0
 	var tile_a_center = tile_a.position + tile_center_offset
 	var tile_b_center = tile_b.position + tile_center_offset
 	position = (tile_a_center + tile_b_center) / 2.0

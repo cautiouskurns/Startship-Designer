@@ -1,6 +1,7 @@
-[gd_scene load_steps=11 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=12 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
+[ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/SynergyGuidePanel.tscn" id="4"]
@@ -175,16 +176,19 @@ theme_override_styles/disabled = SubResource("StyleBoxFlat_launch_disabled")
 disabled = true
 text = "LAUNCH"
 
-[node name="PowerLinesContainer" type="Node2D" parent="."]
+[node name="ShipGrid" type="Node2D" parent="."]
+position = Vector2(384, 168)
+script = ExtResource("1_grid")
+
+[node name="PowerLinesContainer" type="Node2D" parent="ShipGrid"]
 z_index = -1
-position = Vector2(384, 168)
 
-[node name="GridContainer" type="Node2D" parent="."]
-position = Vector2(560, 323)
+[node name="GridContainer" type="Node2D" parent="ShipGrid"]
+position = Vector2(137, 107)
 
-[node name="SynergyContainer" type="Node2D" parent="."]
+[node name="SynergyContainer" type="Node2D" parent="ShipGrid"]
 z_index = 1
-position = Vector2(384, 168)
+position = Vector2(137, 107)
 
 [node name="CostIndicator" type="Label" parent="."]
 visible = false

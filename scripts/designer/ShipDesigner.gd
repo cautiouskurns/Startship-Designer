@@ -3,23 +3,15 @@ extends Control
 ## Signal emitted when player clicks Launch button with valid ship design
 signal launch_pressed
 
-## Grid dimensions
-const GRID_WIDTH = 8
-const GRID_HEIGHT = 6
-const TILE_SIZE = 96
-
 ## Budget values
 var max_budget: int = 30  # Loaded from GameState based on mission
 var current_budget: int = 0
 
-## Grid container node
-@onready var grid_container: Node2D = $GridContainer
+## Ship grid (handles all grid/tile management)
+@onready var ship_grid: ShipGrid = $ShipGrid
 
-## Power lines container
-@onready var power_lines_container: Node2D = $PowerLinesContainer
-
-## Synergy container
-@onready var synergy_container: Node2D = $SynergyContainer
+## Synergy container (now inside ShipGrid for correct positioning)
+@onready var synergy_container: Node2D = $ShipGrid/SynergyContainer
 
 ## Budget UI elements
 @onready var budget_label: Label = $BudgetPanel/BudgetLabel
@@ -54,9 +46,6 @@ var current_rotation: int = 0  # 0, 90, 180, or 270
 ## Currently hovered tile
 var hovered_tile: GridTile = null
 
-## Preload GridTile scene
-var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
-
 ## Preload SynergyIndicator scene
 var synergy_indicator_scene = preload("res://scenes/designer/components/SynergyIndicator.tscn")
 
@@ -70,9 +59,6 @@ var room_scenes = {
 	RoomData.RoomType.ARMOR: preload("res://scenes/components/rooms/Armor.tscn")
 }
 
-## Store all grid tiles
-var grid_tiles: Array[GridTile] = []
-
 ## Track all placed room instances (Phase 7.1 - multi-tile rooms)
 var placed_rooms: Array[Room] = []
 
@@ -83,8 +69,13 @@ func _ready():
 	# Load mission budget from GameState
 	max_budget = GameState.get_mission_budget(GameState.current_mission)
 
-	_create_grid()
 	_update_budget_display()
+
+	# Connect ship grid signals
+	ship_grid.tile_clicked.connect(_on_tile_clicked)
+	ship_grid.tile_right_clicked.connect(_on_tile_right_clicked)
+	ship_grid.tile_hovered.connect(_on_tile_hovered)
+	ship_grid.tile_unhovered.connect(_on_tile_unhovered)
 
 	# Connect launch button signals
 	launch_button.pressed.connect(_on_launch_pressed)
@@ -111,32 +102,6 @@ func _ready():
 
 	# Initialize status panel
 	_update_ship_status()
-
-func _create_grid():
-	"""Create an 8x6 grid of tiles"""
-	for y in range(GRID_HEIGHT):
-		for x in range(GRID_WIDTH):
-			# Instantiate a new tile
-			var tile: GridTile = grid_tile_scene.instantiate()
-
-			# Set grid coordinates
-			tile.grid_x = x
-			tile.grid_y = y
-
-			# Position the tile
-			tile.position = Vector2(x * TILE_SIZE, y * TILE_SIZE)
-
-			# Connect tile signals
-			tile.tile_clicked.connect(_on_tile_clicked)
-			tile.tile_right_clicked.connect(_on_tile_right_clicked)
-			tile.tile_hovered.connect(_on_tile_hovered)
-			tile.tile_unhovered.connect(_on_tile_unhovered)
-
-			# Add to grid container
-			grid_container.add_child(tile)
-
-			# Store reference
-			grid_tiles.append(tile)
 
 ## Calculate current budget from all placed rooms (Phase 7.1 - count room instances, not tiles)
 func calculate_current_budget() -> int:
@@ -198,13 +163,6 @@ func _get_remaining_color(remaining: int) -> Color:
 	else:
 		return Color(0.886, 0.290, 0.290)  # Red #E24A4A
 
-## Get tile at grid coordinates
-func get_tile_at(x: int, y: int) -> GridTile:
-	var index = y * GRID_WIDTH + x
-	if index >= 0 and index < grid_tiles.size():
-		return grid_tiles[index]
-	return null
-
 ## Get next room type in cycling order
 func get_next_room_type(current: RoomData.RoomType) -> RoomData.RoomType:
 	# Cycle: EMPTY → BRIDGE → WEAPON → SHIELD → ENGINE → REACTOR → ARMOR → EMPTY
@@ -244,10 +202,10 @@ func count_bridges() -> int:
 ## Count number of unpowered rooms (excluding EMPTY and ARMOR)
 func count_unpowered_rooms() -> int:
 	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
 
 	var unpowered_count = 0
-	for tile in grid_tiles:
+	for tile in ship_grid.get_all_tiles():
 		var room_type = tile.get_room_type()
 
 		# Skip empty tiles and armor (armor doesn't need power)
@@ -263,7 +221,7 @@ func count_unpowered_rooms() -> int:
 ## Count number of active synergies
 func count_synergies() -> int:
 	# Create temporary ShipData to calculate synergies
-	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	var synergy_counts = synergy_bonuses["counts"]
 
@@ -293,11 +251,11 @@ func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.Roo
 		var tile_y = anchor_y + offset[1]
 
 		# Check bounds
-		if tile_x < 0 or tile_x >= GRID_WIDTH or tile_y < 0 or tile_y >= GRID_HEIGHT:
+		if not ship_grid.is_in_bounds(tile_x, tile_y):
 			return false
 
 		# Check if tile is occupied
-		var tile = get_tile_at(tile_x, tile_y)
+		var tile = ship_grid.get_tile_at(tile_x, tile_y)
 		if tile.is_occupied():
 			return false
 
@@ -320,8 +278,8 @@ func flash_shape_tiles_red(anchor_x: int, anchor_y: int, shape: Array):
 		var tile_y = anchor_y + offset[1]
 
 		# Only flash if tile is in bounds
-		if tile_x >= 0 and tile_x < GRID_WIDTH and tile_y >= 0 and tile_y < GRID_HEIGHT:
-			var tile = get_tile_at(tile_x, tile_y)
+		if ship_grid.is_in_bounds(tile_x, tile_y):
+			var tile = ship_grid.get_tile_at(tile_x, tile_y)
 			if tile:
 				tile._play_flash_red()
 
@@ -373,15 +331,15 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 ## Export current ship design as ShipData for combat
 func export_ship_data() -> ShipData:
 	# HP is calculated based on armor count in ShipData
-	return ShipData.from_designer_grid(grid_tiles, placed_rooms)
+	return ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
 
 ## Update power states for all tiles based on reactor positions
 func update_all_power_states():
 	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
 
 	# Update visual power state for each tile
-	for tile in grid_tiles:
+	for tile in ship_grid.get_all_tiles():
 		# Skip empty tiles
 		if tile.get_room_type() == RoomData.RoomType.EMPTY:
 			continue
@@ -392,56 +350,8 @@ func update_all_power_states():
 		# Update visual state
 		tile.set_powered_state(is_powered)
 
-	# Update power lines visual
-	draw_power_lines()
-
-## Draw power lines from reactors to powered rooms
-func draw_power_lines():
-	# Clear existing lines
-	for child in power_lines_container.get_children():
-		child.queue_free()
-
-	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
-
-	# Find all reactors and draw lines to adjacent powered rooms
-	for y in range(GRID_HEIGHT):
-		for x in range(GRID_WIDTH):
-			var tile = get_tile_at(x, y)
-			if not tile or tile.get_room_type() != RoomData.RoomType.REACTOR:
-				continue
-
-			# This is a reactor - check all adjacent tiles
-			var adjacent_positions = [
-				Vector2i(x - 1, y), Vector2i(x + 1, y),
-				Vector2i(x, y - 1), Vector2i(x, y + 1)
-			]
-
-			for adj_pos in adjacent_positions:
-				# Check bounds
-				if adj_pos.x < 0 or adj_pos.x >= GRID_WIDTH or adj_pos.y < 0 or adj_pos.y >= GRID_HEIGHT:
-					continue
-
-				var adj_tile = get_tile_at(adj_pos.x, adj_pos.y)
-				if not adj_tile:
-					continue
-
-				var adj_type = adj_tile.get_room_type()
-				# Skip empty tiles, bridges (self-powered), and other reactors
-				if adj_type == RoomData.RoomType.EMPTY or adj_type == RoomData.RoomType.BRIDGE or adj_type == RoomData.RoomType.REACTOR:
-					continue
-
-				# Check if this adjacent room is actually powered
-				if not temp_ship.is_room_powered(adj_pos.x, adj_pos.y):
-					continue
-
-				# Draw line from reactor center to room center
-				var line = Line2D.new()
-				line.add_point(Vector2(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2))
-				line.add_point(Vector2(adj_pos.x * TILE_SIZE + TILE_SIZE / 2, adj_pos.y * TILE_SIZE + TILE_SIZE / 2))
-				line.width = 2
-				line.default_color = Color(0.29, 0.89, 0.89, 0.5)  # Cyan with transparency
-				power_lines_container.add_child(line)
+	# Update power lines visual (delegated to ShipGrid)
+	ship_grid.draw_power_lines(temp_ship)
 
 ## Update synergy indicators based on room adjacencies
 func update_synergies():
@@ -453,9 +363,9 @@ func update_synergies():
 	var created_synergies = {}
 
 	# Check each tile for potential synergies
-	for y in range(GRID_HEIGHT):
-		for x in range(GRID_WIDTH):
-			var tile = get_tile_at(x, y)
+	for y in range(ship_grid.GRID_HEIGHT):
+		for x in range(ship_grid.GRID_WIDTH):
+			var tile = ship_grid.get_tile_at(x, y)
 			if not tile:
 				continue
 
@@ -471,10 +381,10 @@ func update_synergies():
 
 			for adj_pos in adjacent_checks:
 				# Check bounds
-				if adj_pos.x < 0 or adj_pos.x >= GRID_WIDTH or adj_pos.y < 0 or adj_pos.y >= GRID_HEIGHT:
+				if not ship_grid.is_in_bounds(adj_pos.x, adj_pos.y):
 					continue
 
-				var adj_tile = get_tile_at(adj_pos.x, adj_pos.y)
+				var adj_tile = ship_grid.get_tile_at(adj_pos.x, adj_pos.y)
 				if not adj_tile:
 					continue
 
@@ -507,17 +417,14 @@ func update_synergies():
 				created_synergies[synergy_key] = true
 
 	# Update synergy guide panel with counts
-	var temp_ship = ShipData.from_designer_grid(grid_tiles, placed_rooms)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
 
 ## Pulse power lines brightness and update cost indicator
 func _process(_delta):
-	# Pulse alpha between 0.3 and 0.7
-	var pulse = 0.5 + 0.2 * sin(Time.get_ticks_msec() / 500.0)
-	for child in power_lines_container.get_children():
-		if child is Line2D:
-			child.default_color = Color(0.29, 0.89, 0.89, pulse)
+	# Pulse power lines (delegated to ShipGrid)
+	ship_grid.pulse_power_lines()
 
 	# Update cost indicator
 	if selected_room_type != RoomData.RoomType.EMPTY and hovered_tile != null:
@@ -555,7 +462,7 @@ func _unhandled_input(event: InputEvent):
 
 ## Handle tile left-click - place selected room type from palette (Phase 7.1/7.3 - shaped rooms with rotation)
 func _on_tile_clicked(x: int, y: int):
-	var tile = get_tile_at(x, y)
+	var tile = ship_grid.get_tile_at(x, y)
 	if not tile:
 		return
 
@@ -607,7 +514,7 @@ func _on_tile_clicked(x: int, y: int):
 	for offset in shape:
 		var tile_x = x + offset[0]
 		var tile_y = y + offset[1]
-		var target_tile = get_tile_at(tile_x, tile_y)
+		var target_tile = ship_grid.get_tile_at(tile_x, tile_y)
 
 		if target_tile:
 			# Set occupying room (first tile is anchor, owns visual)
@@ -629,7 +536,7 @@ func _on_tile_clicked(x: int, y: int):
 
 ## Handle tile right-click - remove room (Phase 7.1 - removes entire multi-tile room)
 func _on_tile_right_clicked(x: int, y: int):
-	var tile = get_tile_at(x, y)
+	var tile = ship_grid.get_tile_at(x, y)
 	if not tile:
 		return
 
@@ -671,8 +578,8 @@ func _on_tile_hovered(tile: GridTile):
 		var tile_y = tile.grid_y + offset[1]
 
 		# Check bounds
-		if tile_x >= 0 and tile_x < GRID_WIDTH and tile_y >= 0 and tile_y < GRID_HEIGHT:
-			var preview_tile = get_tile_at(tile_x, tile_y)
+		if ship_grid.is_in_bounds(tile_x, tile_y):
+			var preview_tile = ship_grid.get_tile_at(tile_x, tile_y)
 			if preview_tile:
 				# Check THIS specific tile's state for mixed preview feedback
 				var tile_empty = not preview_tile.is_occupied()
@@ -696,8 +603,8 @@ func _on_tile_unhovered(tile: GridTile):
 			var tile_y = hovered_tile.grid_y + offset[1]
 
 			# Check bounds
-			if tile_x >= 0 and tile_x < GRID_WIDTH and tile_y >= 0 and tile_y < GRID_HEIGHT:
-				var preview_tile = get_tile_at(tile_x, tile_y)
+			if ship_grid.is_in_bounds(tile_x, tile_y):
+				var preview_tile = ship_grid.get_tile_at(tile_x, tile_y)
 				if preview_tile:
 					preview_tile.clear_preview()
 
@@ -745,7 +652,7 @@ func update_palette_availability():
 				can_place_somewhere = false
 			else:
 				# Check if there's at least one valid row for this room type
-				for y in range(GRID_HEIGHT):
+				for y in range(ship_grid.GRID_HEIGHT):
 					if RoomData.can_place_in_row(room_type, y):
 						can_place_somewhere = true
 						break
@@ -874,7 +781,7 @@ func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 	for offset in shape:
 		var tile_x = x + offset[0]
 		var tile_y = y + offset[1]
-		var target_tile = get_tile_at(tile_x, tile_y)
+		var target_tile = ship_grid.get_tile_at(tile_x, tile_y)
 
 		if target_tile:
 			target_tile.set_occupying_room(room, is_first)
