@@ -114,25 +114,20 @@ static var synergy_colors = {
 	SynergyType.DURABILITY: Color(0.886, 0.290, 0.290)       # Red #E24A4A
 }
 
-## Check if room can be placed in column (Phase 10.2 - dynamic constraints based on hull grid width)
+## Check if room can be placed in column (Phase 10.4 - expanded weapon placement for tapered hulls)
 ## Ship points RIGHT (→) in combat, so weapons go on right (front), engines on left (back)
 static func can_place_in_column(room_type: RoomType, column: int, grid_width: int = -1) -> bool:
 	# If grid_width provided, calculate constraints dynamically based on hull
 	if grid_width > 0:
 		match room_type:
 			RoomType.WEAPON:
-				# Frigate (10 wide): Rightmost 2 columns [8, 9]
-				# Cruiser (8 wide): Rightmost 2 columns [6, 7]
-				# Battleship (7 wide): Rightmost 3 columns [4, 5, 6]
-				if grid_width >= 10:
-					# Frigate: columns 8-9
-					return column in [grid_width - 2, grid_width - 1]
-				elif grid_width >= 8:
-					# Cruiser: columns 6-7
-					return column in [grid_width - 2, grid_width - 1]
-				else:
-					# Battleship (7 wide): columns 4-6 (rightmost 3)
-					return column in [grid_width - 3, grid_width - 2, grid_width - 1]
+				# Phase 10.4: Expanded to account for tapered hulls
+				# Weapons allowed in right half of ship (front section)
+				# Frigate (10 wide): Right half columns [4, 5, 6, 7, 8, 9]
+				# Cruiser (8 wide): Right half columns [3, 4, 5, 6, 7]
+				# Battleship (7 wide): Right half columns [2, 3, 4, 5, 6]
+				var half_point = grid_width / 2
+				return column >= half_point - 1
 			RoomType.ENGINE:
 				# Always leftmost 2 columns [0, 1] (back of ship)
 				return column in [0, 1]

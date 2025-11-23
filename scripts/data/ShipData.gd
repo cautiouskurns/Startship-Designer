@@ -170,31 +170,34 @@ func count_powered_room_type(room_type: RoomData.RoomType) -> int:
 func recalculate_power():
 	calculate_power_grid()
 
-## Create ShipData from ShipDesigner's grid_tiles and placed_rooms arrays (Phase 10.2 - dynamic grid size)
+## Create ShipData from ShipDesigner's grid_tiles and placed_rooms arrays (Phase 10.4 - sparse grids for shaped hulls)
 static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = [], grid_width: int = 8, grid_height: int = 6) -> ShipData:
 	var room_grid = []
 	var room_id_grid_data = []
 
-	# Convert grid_tiles (1D array) to 2D arrays with dynamic dimensions
+	# Initialize 2D arrays with EMPTY values (Phase 10.4 - handles sparse grids)
 	for y in range(grid_height):
 		var row = []
 		var id_row = []
 		for x in range(grid_width):
-			var index = y * grid_width + x
-			if index < grid_tiles.size():
-				var tile = grid_tiles[index]
-				row.append(tile.get_room_type())
-
-				# Build room_id_grid (Phase 7.1)
-				if tile.is_occupied() and tile.occupying_room:
-					id_row.append(tile.occupying_room.room_id)
-				else:
-					id_row.append(-1)  # -1 means empty
-			else:
-				row.append(RoomData.RoomType.EMPTY)
-				id_row.append(-1)
+			row.append(RoomData.RoomType.EMPTY)
+			id_row.append(-1)
 		room_grid.append(row)
 		room_id_grid_data.append(id_row)
+
+	# Fill in data from actual tiles (Phase 10.4 - works with shaped hulls where some positions don't exist)
+	for tile in grid_tiles:
+		var x = tile.grid_x
+		var y = tile.grid_y
+
+		# Set room type
+		room_grid[y][x] = tile.get_room_type()
+
+		# Set room ID if occupied
+		if tile.is_occupied() and tile.occupying_room:
+			room_id_grid_data[y][x] = tile.occupying_room.room_id
+		else:
+			room_id_grid_data[y][x] = -1
 
 	# Create ship with placeholder HP, then calculate based on armor
 	var ship = ShipData.new(room_grid, 0)
@@ -220,254 +223,122 @@ static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = [], grid
 
 	return ship
 
-## Create Mission 1 Scout enemy ship (hard-coded)
+## Helper to create enemy ships with shaped rooms (Phase 10.4)
+## room_placements: Array of {type: RoomType, x: int, y: int}
+static func create_enemy_ship_with_shaped_rooms(room_placements: Array, hp: int, grid_width: int = 8, grid_height: int = 6) -> ShipData:
+	# Initialize grids
+	var room_grid = []
+	var room_id_grid_data = []
+
+	for y in range(grid_height):
+		var row = []
+		var id_row = []
+		for x in range(grid_width):
+			row.append(RoomData.RoomType.EMPTY)
+			id_row.append(-1)
+		room_grid.append(row)
+		room_id_grid_data.append(id_row)
+
+	# Place shaped rooms
+	var room_instances_dict = {}
+	var next_room_id = 1
+
+	for placement in room_placements:
+		var room_type = placement["type"]
+		var anchor_x = placement["x"]
+		var anchor_y = placement["y"]
+		var room_id = next_room_id
+		next_room_id += 1
+
+		# Get shape for this room type
+		var shape = RoomData.get_shape(room_type)
+		var tile_positions = []
+
+		# Place all tiles in the shape
+		for offset in shape:
+			var tile_x = anchor_x + offset[0]
+			var tile_y = anchor_y + offset[1]
+
+			# Bounds check
+			if tile_y >= 0 and tile_y < grid_height and tile_x >= 0 and tile_x < grid_width:
+				room_grid[tile_y][tile_x] = room_type
+				room_id_grid_data[tile_y][tile_x] = room_id
+				tile_positions.append(Vector2i(tile_x, tile_y))
+
+		# Add to room_instances dictionary
+		room_instances_dict[room_id] = {
+			"type": room_type,
+			"tiles": tile_positions
+		}
+
+	# Create ship
+	var ship = ShipData.new(room_grid, hp)
+	ship.room_id_grid = room_id_grid_data
+	ship.room_instances = room_instances_dict
+
+	# Calculate power grid
+	ship.calculate_power_grid()
+
+	return ship
+
+## Create Mission 1 Scout enemy ship (Phase 10.4 - shaped rooms facing LEFT toward player)
+## Enemy faces LEFT (←): weapons on left, engines on right
 static func create_mission1_scout() -> ShipData:
-	var room_grid = []
+	var room_placements = [
+		# Weapon (1×2) at front left - facing player
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 0},
+		# Reactor (T-shape) for power
+		{"type": RoomData.RoomType.REACTOR, "x": 1, "y": 1},
+		# Bridge (2×2) at center
+		{"type": RoomData.RoomType.BRIDGE, "x": 3, "y": 2},
+		# Shield (1×2) powered by reactor
+		{"type": RoomData.RoomType.SHIELD, "x": 0, "y": 3},
+		# Engine (1×2) at back right
+		{"type": RoomData.RoomType.ENGINE, "x": 6, "y": 4}
+	]
 
-	# Row 0: 1 Weapon + 1 Reactor (rows 0-1 allowed for weapons)
-	room_grid.append([
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.REACTOR,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
+	return create_enemy_ship_with_shaped_rooms(room_placements, 40)
 
-	# Row 1: 1 Weapon (powered by reactor above)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 2: 1 Shield (powered by reactor above)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.SHIELD,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 3: 1 Bridge (rows 2-3 allowed for bridge)
-	room_grid.append([
-		RoomData.RoomType.BRIDGE,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 4: 2 Engines (rows 4-5 allowed for engines)
-	room_grid.append([
-		RoomData.RoomType.ENGINE,
-		RoomData.RoomType.ENGINE,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 5: Empty
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	var ship = ShipData.new(room_grid, 40)  # 40 HP for Mission 1 Scout
-
-	# Calculate power grid
-	ship.calculate_power_grid()
-
-	return ship
-
-## Create Mission 2 Raider enemy ship (hard-coded)
+## Create Mission 2 Raider enemy ship (Phase 10.4 - shaped rooms facing LEFT toward player)
+## Enemy faces LEFT (←): weapons on left, engines on right
 static func create_mission2_raider() -> ShipData:
-	var room_grid = []
+	var room_placements = [
+		# Weapons (two 1×2) at front left - facing player
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 0},
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 4},
+		# Reactor (T-shape) for power
+		{"type": RoomData.RoomType.REACTOR, "x": 1, "y": 1},
+		# Shields (two 1×2) for defense
+		{"type": RoomData.RoomType.SHIELD, "x": 2, "y": 0},
+		{"type": RoomData.RoomType.SHIELD, "x": 5, "y": 2},
+		# Bridge (2×2) at center
+		{"type": RoomData.RoomType.BRIDGE, "x": 3, "y": 2}
+	]
 
-	# Row 0: 2 Weapons + 1 Reactor
-	room_grid.append([
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.REACTOR,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
+	return create_enemy_ship_with_shaped_rooms(room_placements, 60)
 
-	# Row 1: 1 Weapon + 1 Shield (powered by reactor above)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.SHIELD,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 2: 1 Shield + 1 Reactor (powers shields and bridge below)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.SHIELD,
-		RoomData.RoomType.REACTOR,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 3: 1 Bridge (powered by reactor above)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.BRIDGE,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 4: 1 Engine (NOT powered - too far from reactors)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.ENGINE,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 5: Empty
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	var ship = ShipData.new(room_grid, 60)  # 60 HP for Mission 2 Raider
-
-	# Calculate power grid
-	ship.calculate_power_grid()
-
-	return ship
-
-## Create Mission 3 Dreadnought enemy ship (hard-coded)
+## Create Mission 3 Dreadnought enemy ship (Phase 10.4 - shaped rooms facing LEFT toward player)
+## Enemy faces LEFT (←): weapons on left, engines on right
 static func create_mission3_dreadnought() -> ShipData:
-	var room_grid = []
+	var room_placements = [
+		# Weapons (three 1×2) at front left - heavy firepower facing player
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 0},
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 3},
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 5},
+		# Reactors (two T-shapes) for full power coverage
+		{"type": RoomData.RoomType.REACTOR, "x": 2, "y": 0},
+		{"type": RoomData.RoomType.REACTOR, "x": 3, "y": 3},
+		# Shields (three 1×2) for heavy defense
+		{"type": RoomData.RoomType.SHIELD, "x": 1, "y": 1},
+		{"type": RoomData.RoomType.SHIELD, "x": 4, "y": 2},
+		{"type": RoomData.RoomType.SHIELD, "x": 5, "y": 4},
+		# Bridge (2×2) at center
+		{"type": RoomData.RoomType.BRIDGE, "x": 5, "y": 1},
+		# Engine (1×2) at back right
+		{"type": RoomData.RoomType.ENGINE, "x": 6, "y": 4}
+	]
 
-	# Row 0: 3 Weapons + 1 Reactor
-	room_grid.append([
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.REACTOR,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 1: 2 Weapons + 1 Reactor (powers weapons and shields below)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.REACTOR,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 2: 2 Shields + 1 Reactor (center reactor powers shields and bridge)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.SHIELD,
-		RoomData.RoomType.REACTOR,
-		RoomData.RoomType.SHIELD,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 3: 1 Shield + 1 Bridge (both powered by reactor above)
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.SHIELD,
-		RoomData.RoomType.BRIDGE,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 4: 2 Engines (NOT powered - would need reactor nearby)
-	room_grid.append([
-		RoomData.RoomType.ENGINE,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.ENGINE,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	# Row 5: Empty
-	room_grid.append([
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY,
-		RoomData.RoomType.EMPTY
-	])
-
-	var ship = ShipData.new(room_grid, 100)  # 100 HP for Mission 3 Dreadnought
-
-	# Calculate power grid
-	ship.calculate_power_grid()
-
-	return ship
+	return create_enemy_ship_with_shaped_rooms(room_placements, 100)
 
 ## Calculate synergy bonuses based on adjacent compatible rooms
 ## Returns a Dictionary with synergy counts and per-room bonuses

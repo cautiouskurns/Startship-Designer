@@ -19,11 +19,19 @@ enum HullType {
 ## Currently selected hull type
 var current_hull: HullType = HullType.CRUISER
 
-## Hull type definitions
+## Hull type definitions (Phase 10.4 - shaped hulls)
+## grid_shape: 'X' = valid tile, '.' = empty space
+## Ships taper from LEFT (wide engine side) to RIGHT (narrow weapon/bridge side)
 const HULL_TYPES = {
 	HullType.FRIGATE: {
 		"name": "FRIGATE",
 		"grid_size": Vector2i(10, 4),
+		"grid_shape": [
+			"XXXXXX....",  # Row 0: wide back → narrow front
+			"XXXXXXXX..",  # Row 1: sleek angular profile
+			"XXXXXXXX..",  # Row 2: sleek angular profile
+			"XXXXXX...."   # Row 3: wide back → narrow front
+		],
 		"bonus_type": "initiative",
 		"bonus_value": 2,
 		"description": "+2 Initiative"
@@ -31,6 +39,14 @@ const HULL_TYPES = {
 	HullType.CRUISER: {
 		"name": "CRUISER",
 		"grid_size": Vector2i(8, 6),
+		"grid_shape": [
+			"XXXXX...",  # Row 0: tapered front
+			"XXXXXX..",  # Row 1: expanding
+			"XXXXXXX.",  # Row 2: widest point
+			"XXXXXXX.",  # Row 3: widest point
+			"XXXXXX..",  # Row 4: tapering
+			"XXXXX..."   # Row 5: tapered front
+		],
 		"bonus_type": "none",
 		"bonus_value": 0,
 		"description": "Balanced"
@@ -38,6 +54,15 @@ const HULL_TYPES = {
 	HullType.BATTLESHIP: {
 		"name": "BATTLESHIP",
 		"grid_size": Vector2i(7, 7),
+		"grid_shape": [
+			"XXXXX..",  # Row 0: broad back
+			"XXXXXX.",  # Row 1: expanding
+			"XXXXXXX",  # Row 2: full width - imposing
+			"XXXXXXX",  # Row 3: full width - thickest
+			"XXXXXXX",  # Row 4: full width - imposing
+			"XXXXXX.",  # Row 5: tapering
+			"XXXXX.."   # Row 6: front
+		],
 		"bonus_type": "hull_hp",
 		"bonus_value": 20,
 		"description": "+20 HP"

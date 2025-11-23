@@ -1,16 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://combat_scene_001"]
+[gd_scene load_steps=5 format=3 uid="uid://cx3fp2r8sjcev"]
 
-[ext_resource type="Script" path="res://scripts/combat/Combat.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/combat/ShipDisplay.gd" id="2"]
+[ext_resource type="Script" uid="uid://c6duepdtvkntj" path="res://scripts/combat/Combat.gd" id="1"]
+[ext_resource type="Script" uid="uid://dy1qjw1ce5hly" path="res://scripts/combat/ShipDisplay.gd" id="2"]
+[ext_resource type="Script" uid="uid://dowx3hl2sfer5" path="res://scripts/combat/CombatLog.gd" id="3"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_green"]
 bg_color = Color(0.290196, 0.886275, 0.290196, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_yellow"]
-bg_color = Color(0.886275, 0.831373, 0.290196, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_red"]
-bg_color = Color(0.886275, 0.290196, 0.290196, 1)
 
 [node name="Combat" type="Control"]
 layout_mode = 3
@@ -31,21 +26,22 @@ grow_vertical = 2
 color = Color(0.0392157, 0.0392157, 0.101961, 1)
 
 [node name="PlayerShipDisplay" type="Node2D" parent="."]
-position = Vector2(200, 360)
+position = Vector2(200, 359)
+scale = Vector2(0.6, 0.6)
 script = ExtResource("2")
 
 [node name="EnemyShipDisplay" type="Node2D" parent="."]
 position = Vector2(1080, 360)
+scale = Vector2(0.6, 0.6)
 script = ExtResource("2")
 
 [node name="PlayerHealthBar" type="ProgressBar" parent="."]
 layout_mode = 0
-offset_left = 50.0
+offset_left = 277.0
 offset_top = 250.0
-offset_right = 350.0
+offset_right = 577.0
 offset_bottom = 290.0
 theme_override_styles/fill = SubResource("StyleBoxFlat_hp_green")
-max_value = 100.0
 value = 100.0
 show_percentage = false
 
@@ -64,12 +60,11 @@ vertical_alignment = 1
 
 [node name="EnemyHealthBar" type="ProgressBar" parent="."]
 layout_mode = 0
-offset_left = 930.0
-offset_top = 250.0
-offset_right = 1230.0
-offset_bottom = 290.0
+offset_left = 1261.0
+offset_top = 244.0
+offset_right = 1561.0
+offset_bottom = 284.0
 theme_override_styles/fill = SubResource("StyleBoxFlat_hp_green")
-max_value = 100.0
 value = 100.0
 show_percentage = false
 
@@ -103,6 +98,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TurnGlow" type="ColorRect" parent="TurnIndicator"]
+z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -114,7 +110,6 @@ offset_bottom = 10.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.29, 0.89, 0.89, 0.3)
-z_index = -1
 
 [node name="RedesignButton" type="Button" parent="."]
 layout_mode = 0
@@ -129,10 +124,10 @@ text = "REDESIGN"
 layout_mode = 0
 offset_left = 1100.0
 offset_top = 20.0
-offset_right = 1210.0
+offset_right = 1230.0
 offset_bottom = 70.0
 theme_override_font_sizes/font_size = 18
-text = "FF: 1x"
+text = "Speed: 0.5x"
 
 [node name="ResultOverlay" type="ColorRect" parent="."]
 visible = false
@@ -226,3 +221,16 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 24
 text = "RETURN TO MENU"
+
+[node name="CombatLog" type="ScrollContainer" parent="."]
+layout_mode = 0
+offset_left = 1589.0
+offset_top = 782.0
+offset_right = 1889.0
+offset_bottom = 1050.0
+script = ExtResource("3")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CombatLog"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3

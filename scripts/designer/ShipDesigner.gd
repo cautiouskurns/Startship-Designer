@@ -69,10 +69,11 @@ func _ready():
 	# Load mission budget from GameState
 	max_budget = GameState.get_mission_budget(GameState.current_mission)
 
-	# Initialize ship grid with hull-specific dimensions (Phase 10.1)
+	# Initialize ship grid with hull-specific dimensions (Phase 10.4 - shaped hulls)
 	var hull_data = GameState.get_current_hull_data()
 	var grid_size: Vector2i = hull_data["grid_size"]
-	ship_grid.initialize(grid_size.x, grid_size.y)
+	var grid_shape: Array = hull_data.get("grid_shape", [])  # Optional hull shape
+	ship_grid.initialize(grid_size.x, grid_size.y, grid_shape)
 
 	_update_budget_display()
 

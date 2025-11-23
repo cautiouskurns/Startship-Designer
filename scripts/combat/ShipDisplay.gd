@@ -1,14 +1,16 @@
 extends Node2D
 class_name ShipDisplay
 
-## Displays a ship's 8x6 grid of rooms visually
+## Displays a ship's grid of rooms visually (Phase 10.4 - supports shaped hulls)
 
 const TILE_SIZE = 96
-const GRID_WIDTH = 8
-const GRID_HEIGHT = 6
 
 ## Ship data to display
 var ship_data: ShipData = null
+
+## Dynamic grid dimensions (Phase 10.4 - based on ship's grid size)
+var GRID_WIDTH: int = 8
+var GRID_HEIGHT: int = 6
 
 ## Dictionary to track room nodes by position "x,y" -> room node (for legacy single-tile rendering)
 var room_nodes: Dictionary = {}
@@ -26,9 +28,19 @@ var room_scenes = {
 	RoomData.RoomType.ARMOR: preload("res://scenes/components/rooms/Armor.tscn")
 }
 
-## Set the ship data and render the grid
+## Set the ship data and render the grid (Phase 10.4 - sets dynamic grid size)
 func set_ship_data(data: ShipData):
 	ship_data = data
+
+	# Set grid dimensions based on ship's actual grid size (Phase 10.4)
+	if ship_data and not ship_data.grid.is_empty():
+		GRID_HEIGHT = ship_data.grid.size()
+		GRID_WIDTH = ship_data.grid[0].size() if GRID_HEIGHT > 0 else 8
+	else:
+		# Fallback to default
+		GRID_WIDTH = 8
+		GRID_HEIGHT = 6
+
 	_render_ship()
 
 ## Render the ship's grid (Phase 7.4 - routes to shaped or legacy rendering)

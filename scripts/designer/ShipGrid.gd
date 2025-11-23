@@ -9,6 +9,10 @@ var GRID_HEIGHT: int = 6
 const TILE_SIZE = 96
 const TILE_SPACING = 10  # Gap between tiles in pixels
 
+## Phase 10.4: Valid tile positions for shaped hulls
+## Dictionary of "x,y" -> true for positions that exist in hull shape
+var valid_positions: Dictionary = {}
+
 ## Child nodes for organization
 @onready var grid_container: Node2D = $GridContainer
 @onready var power_lines_container: Node2D = $PowerLinesContainer
@@ -18,6 +22,10 @@ var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
 
 ## Store all grid tiles
 var grid_tiles: Array[GridTile] = []
+
+## Phase 10.4: Dictionary for fast tile lookup in shaped hulls
+## Key: "x,y" -> GridTile
+var tile_lookup: Dictionary = {}
 
 ## Signals forwarded from tiles
 signal tile_clicked(x: int, y: int)
@@ -33,17 +41,48 @@ func _ready():
 	# Grid will be created by ShipDesigner after setting dimensions
 	pass
 
-## Initialize grid with custom dimensions (Phase 10.1 - for hull selection)
-func initialize(width: int, height: int):
+## Initialize grid with custom dimensions (Phase 10.4 - supports shaped hulls)
+## hull_shape: optional array of strings where 'X' = valid tile, '.' = empty
+func initialize(width: int, height: int, hull_shape: Array = []):
 	GRID_WIDTH = width
 	GRID_HEIGHT = height
+
+	# Parse hull shape if provided (Phase 10.4)
+	if not hull_shape.is_empty():
+		_parse_hull_shape(hull_shape)
+	else:
+		# No shape provided - all positions valid (full rectangle)
+		valid_positions.clear()
+		for y in range(height):
+			for x in range(width):
+				valid_positions["%d,%d" % [x, y]] = true
+
 	grid_initialized = true
 	_create_grid()
 
-## Create an 8x6 grid of tiles
+## Parse hull shape strings into valid position set (Phase 10.4)
+func _parse_hull_shape(hull_shape: Array):
+	valid_positions.clear()
+	for y in range(hull_shape.size()):
+		var row_str: String = hull_shape[y]
+		for x in range(row_str.length()):
+			if row_str[x] == 'X':
+				valid_positions["%d,%d" % [x, y]] = true
+
+## Create grid tiles (Phase 10.4 - only at valid positions for shaped hulls)
 func _create_grid():
+	# Clear existing tiles and lookup
+	for child in grid_container.get_children():
+		child.queue_free()
+	grid_tiles.clear()
+	tile_lookup.clear()
+
 	for y in range(GRID_HEIGHT):
 		for x in range(GRID_WIDTH):
+			# Phase 10.4: Skip invalid positions for shaped hulls
+			if not is_in_bounds(x, y):
+				continue
+
 			# Instantiate a new tile
 			var tile: GridTile = grid_tile_scene.instantiate()
 
@@ -63,8 +102,9 @@ func _create_grid():
 			# Add to grid container
 			grid_container.add_child(tile)
 
-			# Store reference
+			# Store references
 			grid_tiles.append(tile)
+			tile_lookup["%d,%d" % [x, y]] = tile
 
 ## Forward tile signals
 func _on_tile_clicked(x: int, y: int):
@@ -79,16 +119,20 @@ func _on_tile_hovered(tile: GridTile):
 func _on_tile_unhovered(tile: GridTile):
 	emit_signal("tile_unhovered", tile)
 
-## Get tile at grid coordinates
+## Get tile at grid coordinates (Phase 10.4 - uses lookup dictionary for shaped hulls)
 func get_tile_at(x: int, y: int) -> GridTile:
-	var index = y * GRID_WIDTH + x
-	if index >= 0 and index < grid_tiles.size():
-		return grid_tiles[index]
-	return null
+	var key = "%d,%d" % [x, y]
+	return tile_lookup.get(key, null)
 
-## Check if coordinates are within grid bounds
+## Check if coordinates are within grid bounds (Phase 10.4 - checks hull shape)
 func is_in_bounds(x: int, y: int) -> bool:
-	return x >= 0 and x < GRID_WIDTH and y >= 0 and y < GRID_HEIGHT
+	# First check rectangle bounds
+	if x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT:
+		return false
+
+	# Then check if position is valid in hull shape
+	var key = "%d,%d" % [x, y]
+	return valid_positions.has(key)
 
 ## Get all tiles in a shape from anchor position
 func get_tiles_in_shape(anchor_x: int, anchor_y: int, shape: Array) -> Array[GridTile]:

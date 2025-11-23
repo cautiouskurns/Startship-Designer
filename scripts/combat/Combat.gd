@@ -22,6 +22,9 @@ extends Control
 ## Fast Forward button
 @onready var ff_button: Button = $FFButton
 
+## Combat log
+@onready var combat_log: CombatLog = $CombatLog
+
 ## Result overlay nodes
 @onready var result_overlay: ColorRect = $ResultOverlay
 @onready var result_label: Label = $ResultOverlay/ResultLabel
@@ -40,14 +43,17 @@ var combat_active: bool = false
 var turn_count: int = 0
 var current_mission: int = 0
 
-## Speed control
-var speed_multiplier: float = 1.0  # 1.0 = normal, 0.5 = fast forward (2x speed)
+## Speed control (2.0 = 0.5x speed by default)
+var speed_multiplier: float = 2.0  # 4.0 = 0.25x, 2.0 = 0.5x, 1.0 = 1x, 0.5 = 2x
 
 func _ready():
 	# Connect buttons
 	redesign_button.pressed.connect(_on_redesign_pressed)
 	victory_return_button.pressed.connect(_on_victory_return_pressed)
 	ff_button.pressed.connect(_on_ff_pressed)
+
+	# Set initial speed button text
+	ff_button.text = "Speed: 0.5x"
 
 	# Connect hover scale effects
 	redesign_button.mouse_entered.connect(_on_button_hover_start.bind(redesign_button))
@@ -92,7 +98,20 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	_update_enemy_health()
 
 	# Determine initiative (who goes first)
-	is_player_turn = _determine_initiative()
+	var initiative_data = _determine_initiative_detailed()
+	is_player_turn = initiative_data["player_first"]
+
+	# Log initiative
+	if combat_log:
+		var bonus_text = ""
+		if hull_data["bonus_type"] == "initiative":
+			bonus_text = "(+%d Initiative bonus)" % hull_data["bonus_value"]
+		combat_log.add_initiative(
+			"player" if is_player_turn else "enemy",
+			initiative_data["player_engines"],
+			initiative_data["enemy_engines"],
+			bonus_text
+		)
 
 	# Set initial turn indicator with visual emphasis
 	_update_turn_indicator(is_player_turn)
@@ -162,6 +181,10 @@ func _update_health_bar_color(bar: ProgressBar):
 func run_combat_loop():
 	combat_active = true
 
+	# Log combat start
+	if combat_log:
+		combat_log.add_combat_start()
+
 	# Show "COMBAT START!" message
 	var start_label = Label.new()
 	start_label.text = "COMBAT START!"
@@ -227,6 +250,12 @@ func _execute_turn():
 	# Update turn indicator with visual emphasis
 	_update_turn_indicator(is_player_turn)
 
+	# Log turn start
+	var attacker_name = "PLAYER" if is_player_attacking else "ENEMY"
+	var defender_name = "ENEMY" if is_player_attacking else "PLAYER"
+	if combat_log:
+		combat_log.add_turn_start(turn_count, is_player_turn)
+
 	# Wait to see turn indicator
 	await get_tree().create_timer(0.5 * speed_multiplier).timeout
 
@@ -237,23 +266,21 @@ func _execute_turn():
 	await get_tree().create_timer(0.2 * speed_multiplier).timeout
 
 	# Calculate damage
+	var weapons = attacker.count_powered_room_type(RoomData.RoomType.WEAPON)
 	var damage = _calculate_damage(attacker)
 	var shield_absorption = _calculate_shield_absorption(defender, damage)
 	var net_damage = max(0, damage - shield_absorption)
 
-	# Debug output
-	print("Turn %d: %s attacks for %d damage, %d absorbed by shields, %d net damage" % [
-		turn_count,
-		"PLAYER" if is_player_attacking else "ENEMY",
-		damage,
-		shield_absorption,
-		net_damage
-	])
+	# Log attack
+	if combat_log:
+		combat_log.add_attack(attacker_name, weapons, damage, shield_absorption, net_damage)
 
 	# Apply damage to HP
 	defender.current_hp = max(0, defender.current_hp - net_damage)
 
-	print("  Defender HP: %d / %d" % [defender.current_hp, defender.max_hp])
+	# Log HP remaining
+	if combat_log:
+		combat_log.add_hp_remaining(defender_name, defender.current_hp, defender.max_hp)
 
 	# Update health display
 	if is_player_attacking:
@@ -272,13 +299,13 @@ func _execute_turn():
 	# Destroy rooms (1 per 20 damage)
 	var rooms_to_destroy = int(net_damage / 20)
 	if rooms_to_destroy > 0:
-		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy)
+		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy, defender_name)
 
 	# Wait a moment to see final state
 	await get_tree().create_timer(0.3 * speed_multiplier).timeout
 
-## Determine which ship shoots first based on engine count
-func _determine_initiative() -> bool:
+## Determine which ship shoots first based on engine count (returns detailed data)
+func _determine_initiative_detailed() -> Dictionary:
 	var player_engines = player_data.count_powered_room_type(RoomData.RoomType.ENGINE)
 	var enemy_engines = enemy_data.count_powered_room_type(RoomData.RoomType.ENGINE)
 
@@ -295,7 +322,11 @@ func _determine_initiative() -> bool:
 		player_engines += hull_data["bonus_value"]
 
 	# Higher engine count shoots first, player wins ties
-	return player_engines >= enemy_engines
+	return {
+		"player_first": player_engines >= enemy_engines,
+		"player_engines": player_engines,
+		"enemy_engines": enemy_engines
+	}
 
 ## Calculate damage dealt by attacker
 func _calculate_damage(attacker: ShipData) -> int:
@@ -388,7 +419,7 @@ func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption
 	tween.tween_callback(damage_label.queue_free)
 
 ## Destroy random rooms from defender (Phase 7.1 - destroys entire multi-tile room instances)
-func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int):
+func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int, defender_name: String = ""):
 	if count <= 0:
 		return
 
@@ -443,12 +474,18 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 
 			if resisted:
 				# Weapon resisted destruction, try another room
+				if combat_log:
+					combat_log.add_durability_resist(RoomData.get_label(room_type), defender_name)
 				active_room_ids.remove_at(index)
 				continue
 
 			# Check if this is a reactor
 			if room_type == RoomData.RoomType.REACTOR:
 				reactor_destroyed = true
+
+			# Log destruction
+			if combat_log:
+				combat_log.add_room_destroyed(RoomData.get_label(room_type), defender_name)
 
 			# Destroy entire room instance (data)
 			defender.destroy_room_instance(room_id)
@@ -480,11 +517,17 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 				if pos in room_synergies:
 					if RoomData.SynergyType.DURABILITY in room_synergies[pos]:
 						if randf() < 0.25:
+							if combat_log:
+								combat_log.add_durability_resist(RoomData.get_label(room_type), defender_name)
 							active_rooms_fallback.remove_at(index)
 							continue
 
 			if room_type == RoomData.RoomType.REACTOR:
 				reactor_destroyed = true
+
+			# Log destruction
+			if combat_log:
+				combat_log.add_room_destroyed(RoomData.get_label(room_type), defender_name)
 
 			defender.destroy_room_at(pos.x, pos.y)
 			await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
@@ -521,6 +564,8 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 
 	# If reactor was destroyed, recalculate power and update visuals
 	if reactor_destroyed:
+		if combat_log:
+			combat_log.add_reactor_destroyed(defender_name)
 		defender.recalculate_power()
 		defender_display.update_power_visuals(defender)
 
@@ -546,6 +591,10 @@ func _update_turn_indicator(player_turn: bool):
 
 ## Show combat end screen
 func _show_combat_end(winner: String):
+	# Log victory/defeat
+	if combat_log:
+		combat_log.add_victory(winner)
+
 	# Flash winner green, loser red
 	if winner == "player":
 		_flash_ship(player_ship_display, Color(0.29, 0.89, 0.29))  # Green
@@ -611,13 +660,18 @@ func _on_button_hover_end(button: Button):
 	var tween = create_tween()
 	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)
 
-## Handle Fast Forward button press - toggle speed
+## Handle Fast Forward button press - cycle through speeds
 func _on_ff_pressed():
-	if speed_multiplier == 1.0:
-		# Switch to fast forward (2x speed)
-		speed_multiplier = 0.5
-		ff_button.text = "FF: 2x"
-	else:
-		# Switch back to normal speed
+	# Cycle: 0.5x → 1x → 2x → 0.25x → 0.5x
+	if speed_multiplier == 2.0:  # 0.5x → 1x
 		speed_multiplier = 1.0
-		ff_button.text = "FF: 1x"
+		ff_button.text = "Speed: 1x"
+	elif speed_multiplier == 1.0:  # 1x → 2x
+		speed_multiplier = 0.5
+		ff_button.text = "Speed: 2x"
+	elif speed_multiplier == 0.5:  # 2x → 0.25x
+		speed_multiplier = 4.0
+		ff_button.text = "Speed: 0.25x"
+	else:  # 0.25x → 0.5x
+		speed_multiplier = 2.0
+		ff_button.text = "Speed: 0.5x"
