@@ -21,6 +21,11 @@ class_name ShipStatusPanel
 @onready var synergy_icon_label: Label = $VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine/SynergyIconLabel
 @onready var synergy_text_label: Label = $VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine/SynergyTextLabel
 
+## Hull bonus status elements (Phase 10.3)
+## NOTE: If these don't exist in scene, add HullStatusRow by duplicating another status row in Godot editor
+@onready var hull_icon_label: Label = $VBoxContainer/MarginContainer/Content/HullStatusRow/StatusLine/HullIconLabel
+@onready var hull_text_label: Label = $VBoxContainer/MarginContainer/Content/HullStatusRow/StatusLine/HullTextLabel
+
 ## Colors
 const COLOR_GREEN = Color(0.290, 0.886, 0.290)  # #4AE24A
 const COLOR_YELLOW = Color(0.886, 0.831, 0.290)  # #E2D44A
@@ -98,3 +103,34 @@ func update_synergy_status(synergy_count: int):
 		# No synergies - gray
 		synergy_icon_label.add_theme_color_override("font_color", COLOR_GRAY)
 		synergy_text_label.add_theme_color_override("font_color", COLOR_GRAY)
+
+## Update hull bonus status (Phase 10.3)
+func update_hull_bonus(hull_data: Dictionary):
+	# Check if UI elements exist (they may not if scene hasn't been updated yet)
+	if not hull_icon_label or not hull_text_label:
+		return
+
+	var hull_name: String = hull_data.get("name", "UNKNOWN")
+	var bonus_type: String = hull_data.get("bonus_type", "none")
+	var bonus_value: int = hull_data.get("bonus_value", 0)
+
+	# Set icon and text based on bonus type
+	match bonus_type:
+		"initiative":
+			# Frigate: +2 Initiative
+			hull_icon_label.text = "✓"
+			hull_text_label.text = " Hull: +%d Initiative (%s)" % [bonus_value, hull_name]
+			hull_icon_label.add_theme_color_override("font_color", COLOR_PURPLE)
+			hull_text_label.add_theme_color_override("font_color", COLOR_PURPLE)
+		"hull_hp":
+			# Battleship: +20 HP
+			hull_icon_label.text = "✓"
+			hull_text_label.text = " Hull: +%d HP (%s)" % [bonus_value, hull_name]
+			hull_icon_label.add_theme_color_override("font_color", COLOR_PURPLE)
+			hull_text_label.add_theme_color_override("font_color", COLOR_PURPLE)
+		_:
+			# Cruiser: Balanced (no bonus)
+			hull_icon_label.text = "○"
+			hull_text_label.text = " Hull: Balanced (%s)" % hull_name
+			hull_icon_label.add_theme_color_override("font_color", COLOR_GRAY)
+			hull_text_label.add_theme_color_override("font_color", COLOR_GRAY)

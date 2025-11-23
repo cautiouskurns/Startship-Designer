@@ -159,6 +159,10 @@ func _update_ship_status():
 	var synergy_count = count_synergies()
 	ship_status_panel.update_synergy_status(synergy_count)
 
+	# Update Hull bonus status (Phase 10.3)
+	var hull_data = GameState.get_current_hull_data()
+	ship_status_panel.update_hull_bonus(hull_data)
+
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:
 	if remaining > 5:
@@ -206,8 +210,8 @@ func count_bridges() -> int:
 
 ## Count number of unpowered rooms (excluding EMPTY and ARMOR)
 func count_unpowered_rooms() -> int:
-	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
+	# Create temporary ShipData to calculate power grid (Phase 10.2 - pass grid dimensions)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
 
 	var unpowered_count = 0
 	for tile in ship_grid.get_all_tiles():
@@ -225,8 +229,8 @@ func count_unpowered_rooms() -> int:
 
 ## Count number of active synergies
 func count_synergies() -> int:
-	# Create temporary ShipData to calculate synergies
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
+	# Create temporary ShipData to calculate synergies (Phase 10.2 - pass grid dimensions)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	var synergy_counts = synergy_bonuses["counts"]
 
@@ -264,8 +268,8 @@ func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.Roo
 		if tile.is_occupied():
 			return false
 
-		# Check row constraints for this specific tile (Phase 10.2 - pass grid height)
-		if not RoomData.can_place_in_row(room_type, tile_y, ship_grid.GRID_HEIGHT):
+		# Check column constraints for this specific tile (Phase 10.2 - pass grid width)
+		if not RoomData.can_place_in_column(room_type, tile_x, ship_grid.GRID_WIDTH):
 			return false
 
 	# Check budget
@@ -320,8 +324,8 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 	if room_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
 		return false
 
-	# Check row constraints (Phase 10.2 - pass grid height)
-	if not RoomData.can_place_in_row(room_type, y, ship_grid.GRID_HEIGHT):
+	# Check column constraints (Phase 10.2 - pass grid width)
+	if not RoomData.can_place_in_column(room_type, x, ship_grid.GRID_WIDTH):
 		return false
 
 	# Check budget
@@ -335,13 +339,13 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 
 ## Export current ship design as ShipData for combat
 func export_ship_data() -> ShipData:
-	# HP is calculated based on armor count in ShipData
-	return ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
+	# HP is calculated based on armor count in ShipData (Phase 10.2 - pass grid dimensions)
+	return ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
 
 ## Update power states for all tiles based on reactor positions
 func update_all_power_states():
-	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
+	# Create temporary ShipData to calculate power grid (Phase 10.2 - pass grid dimensions)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
 
 	# Update visual power state for each tile
 	for tile in ship_grid.get_all_tiles():
@@ -421,8 +425,8 @@ func update_synergies():
 				# Mark as created
 				created_synergies[synergy_key] = true
 
-	# Update synergy guide panel with counts
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms)
+	# Update synergy guide panel with counts (Phase 10.2 - pass grid dimensions)
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
 
@@ -588,10 +592,10 @@ func _on_tile_hovered(tile: GridTile):
 			if preview_tile:
 				# Check THIS specific tile's state for mixed preview feedback
 				var tile_empty = not preview_tile.is_occupied()
-				var row_valid = RoomData.can_place_in_row(selected_room_type, tile_y, ship_grid.GRID_HEIGHT)
+				var column_valid = RoomData.can_place_in_column(selected_room_type, tile_x, ship_grid.GRID_WIDTH)
 
 				# Show cyan if tile is available, red if blocked
-				if tile_empty and row_valid:
+				if tile_empty and column_valid:
 					preview_tile.show_valid_preview()  # Cyan border
 				else:
 					preview_tile.show_invalid_preview()  # Red border
@@ -656,9 +660,9 @@ func update_palette_availability():
 			if room_type == RoomData.RoomType.BRIDGE and count_bridges() >= 1:
 				can_place_somewhere = false
 			else:
-				# Check if there's at least one valid row for this room type
-				for y in range(ship_grid.GRID_HEIGHT):
-					if RoomData.can_place_in_row(room_type, y, ship_grid.GRID_HEIGHT):
+				# Check if there's at least one valid column for this room type (Phase 10.2)
+				for x in range(ship_grid.GRID_WIDTH):
+					if RoomData.can_place_in_column(room_type, x, ship_grid.GRID_WIDTH):
 						can_place_somewhere = true
 						break
 
@@ -796,40 +800,42 @@ func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 	# Add to placed rooms tracking array
 	placed_rooms.append(room)
 
-## Balanced template - good for all missions (Phase 7.1 - shaped rooms)
+## Balanced template - good for all missions (Phase 10.2 - column-based constraints)
+## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Bridge 2×2, Weapons/Shields/Engines 1×2, Reactor T-shape, Armor 1×1
 ## Budget: Mission 0=15, Mission 1=23, Mission 2=29
 func _apply_balanced_template(mission: int):
-	# Core: Bridge (2×2 in center) + Reactor (T-shape adjacent for power)
+	# Core: Bridge (2×2 in center) + Reactor (T-shape for power distribution)
 	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
 	_place_room_at(1, 1, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,2),(2,1),(2,2),(2,3)
 
-	# Weapons (1×2 horizontal, rows 0-1 only)
-	_place_room_at(0, 0, RoomData.RoomType.WEAPON)     # 2 BP - (0,0),(1,0)
-	_place_room_at(4, 1, RoomData.RoomType.WEAPON)     # 2 BP - (4,1),(5,1)
+	# Weapons (1×2 horizontal, RIGHT side cols 6-7 = front of ship)
+	_place_room_at(6, 0, RoomData.RoomType.WEAPON)     # 2 BP - (6,0),(7,0) FRONT
+	_place_room_at(6, 2, RoomData.RoomType.WEAPON)     # 2 BP - (6,2),(7,2) FRONT
 
-	# Shield (1×2 horizontal, adjacent to reactor)
-	_place_room_at(0, 2, RoomData.RoomType.SHIELD)     # 3 BP - (0,2),(1,2)
+	# Shield (1×2 horizontal, middle of ship)
+	_place_room_at(2, 4, RoomData.RoomType.SHIELD)     # 3 BP - (2,4),(3,4)
 	# Total: 15 BP
 
 	if mission >= 1:
-		# Add Engine + Armor
-		_place_room_at(3, 4, RoomData.RoomType.ENGINE)   # 2 BP - (3,4),(4,4) rows 4-5
+		# Add Engines (LEFT side cols 0-1 = back of ship) + Armor + Reactor
+		_place_room_at(0, 0, RoomData.RoomType.ENGINE)   # 2 BP - (0,0),(1,0) BACK
+		_place_room_at(0, 4, RoomData.RoomType.ENGINE)   # 2 BP - (0,4),(1,4) BACK
 		_place_room_at(5, 3, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(5, 2, RoomData.RoomType.ARMOR)    # 1 BP
 		# Add Reactor for more power
-		_place_room_at(5, 0, RoomData.RoomType.REACTOR)  # 3 BP - T-shape
+		_place_room_at(4, 0, RoomData.RoomType.REACTOR)  # 3 BP - T: (4,1),(5,0),(5,1),(5,2)
 		# Total: 23 BP
 
 	if mission >= 2:
-		# Add Weapon + Engine + Armor
-		_place_room_at(6, 1, RoomData.RoomType.WEAPON)   # 2 BP - (6,1),(7,1)
-		_place_room_at(5, 4, RoomData.RoomType.ENGINE)   # 2 BP - (5,4),(6,4)
-		_place_room_at(0, 4, RoomData.RoomType.ARMOR)    # 1 BP
+		# Add more Weapon + Armor
+		_place_room_at(6, 4, RoomData.RoomType.WEAPON)   # 2 BP - (6,4),(7,4) FRONT
+		_place_room_at(4, 4, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
 		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
 		# Total: 29 BP
 
-## Aggressive template - max damage (Phase 7.1 - shaped rooms)
+## Aggressive template - max damage (Phase 10.2 - column-based constraints)
+## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Focuses on weapons for high damage output
 ## Budget: Mission 0=17, Mission 1=25, Mission 2=30
 func _apply_aggressive_template(mission: int):
@@ -837,31 +843,34 @@ func _apply_aggressive_template(mission: int):
 	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
 	_place_room_at(1, 0, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,1),(2,0),(2,1),(2,2)
 
-	# Max weapons (1×2 horizontal, rows 0-1 only)
-	_place_room_at(0, 0, RoomData.RoomType.WEAPON)     # 2 BP - (0,0),(1,0)
-	_place_room_at(4, 0, RoomData.RoomType.WEAPON)     # 2 BP - (4,0),(5,0)
-	_place_room_at(4, 1, RoomData.RoomType.WEAPON)     # 2 BP - (4,1),(5,1)
+	# Max weapons (1×2 horizontal, RIGHT side cols 6-7 = front)
+	_place_room_at(6, 0, RoomData.RoomType.WEAPON)     # 2 BP - (6,0),(7,0) FRONT
+	_place_room_at(6, 2, RoomData.RoomType.WEAPON)     # 2 BP - (6,2),(7,2) FRONT
+	_place_room_at(6, 4, RoomData.RoomType.WEAPON)     # 2 BP - (6,4),(7,4) FRONT
 
 	# Minimal shield
-	_place_room_at(0, 2, RoomData.RoomType.SHIELD)     # 3 BP - (0,2),(1,2)
+	_place_room_at(4, 4, RoomData.RoomType.SHIELD)     # 3 BP - (4,4),(5,4)
 	# Total: 17 BP
 
 	if mission >= 1:
-		# Add more weapons + engine
-		_place_room_at(6, 0, RoomData.RoomType.WEAPON)   # 2 BP - (6,0),(7,0)
-		_place_room_at(6, 1, RoomData.RoomType.WEAPON)   # 2 BP - (6,1),(7,1)
-		_place_room_at(3, 4, RoomData.RoomType.ENGINE)   # 2 BP - (3,4),(4,4)
-		_place_room_at(0, 4, RoomData.RoomType.ENGINE)   # 2 BP - (0,4),(1,4)
+		# Add more weapons + engines (LEFT side cols 0-1 = back)
+		_place_room_at(0, 0, RoomData.RoomType.ENGINE)   # 2 BP - (0,0),(1,0) BACK
+		_place_room_at(0, 4, RoomData.RoomType.ENGINE)   # 2 BP - (0,4),(1,4) BACK
+		_place_room_at(4, 0, RoomData.RoomType.REACTOR)  # 3 BP - T: (4,1),(5,0),(5,1),(5,2)
+		_place_room_at(2, 4, RoomData.RoomType.ARMOR)    # 1 BP
 		# Total: 25 BP
 
 	if mission >= 2:
-		# Add Reactor for more power + armor
-		_place_room_at(5, 2, RoomData.RoomType.REACTOR)  # 3 BP - T-shape
-		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		# Add more armor
 		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(3, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(4, 5, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(3, 0, RoomData.RoomType.ARMOR)    # 1 BP
 		# Total: 30 BP
 
-## Tank template - high defense (Phase 7.1 - shaped rooms)
+## Tank template - high defense (Phase 10.2 - column-based constraints)
+## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Focuses on shields and armor for survivability
 ## Budget: Mission 0=17, Mission 1=26, Mission 2=30
 func _apply_tank_template(mission: int):
@@ -869,22 +878,22 @@ func _apply_tank_template(mission: int):
 	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
 	_place_room_at(1, 1, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,2),(2,1),(2,2),(2,3)
 
-	# Minimal weapon
-	_place_room_at(4, 0, RoomData.RoomType.WEAPON)     # 2 BP - (4,0),(5,0)
+	# Minimal weapon (RIGHT side cols 6-7 = front)
+	_place_room_at(6, 0, RoomData.RoomType.WEAPON)     # 2 BP - (6,0),(7,0) FRONT
 
 	# Max shields (1×2 horizontal)
-	_place_room_at(0, 2, RoomData.RoomType.SHIELD)     # 3 BP - (0,2),(1,2)
-	_place_room_at(5, 2, RoomData.RoomType.SHIELD)     # 3 BP - (5,2),(6,2)
+	_place_room_at(4, 0, RoomData.RoomType.SHIELD)     # 3 BP - (4,0),(5,0)
+	_place_room_at(4, 4, RoomData.RoomType.SHIELD)     # 3 BP - (4,4),(5,4)
 
 	# Armor
-	_place_room_at(5, 3, RoomData.RoomType.ARMOR)      # 1 BP
+	_place_room_at(6, 2, RoomData.RoomType.ARMOR)      # 1 BP
 	# Total: 17 BP
 
 	if mission >= 1:
-		# Add more shields + reactor + engine + armor
-		_place_room_at(5, 0, RoomData.RoomType.REACTOR)  # 3 BP - T-shape
-		_place_room_at(0, 4, RoomData.RoomType.SHIELD)   # 3 BP - (0,4),(1,4)
-		_place_room_at(3, 4, RoomData.RoomType.ENGINE)   # 2 BP - (3,4),(4,4)
+		# Add more shields + engines (LEFT side cols 0-1 = back) + armor
+		_place_room_at(2, 4, RoomData.RoomType.SHIELD)   # 3 BP - (2,4),(3,4)
+		_place_room_at(6, 4, RoomData.RoomType.SHIELD)   # 3 BP - (6,4),(7,4)
+		_place_room_at(0, 0, RoomData.RoomType.ENGINE)   # 2 BP - (0,0),(1,0) BACK
 		_place_room_at(7, 2, RoomData.RoomType.ARMOR)    # 1 BP
 		# Total: 26 BP
 
@@ -892,6 +901,6 @@ func _apply_tank_template(mission: int):
 		# Add more armor
 		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
 		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(6, 4, RoomData.RoomType.ARMOR)    # 1 BP
 		_place_room_at(0, 3, RoomData.RoomType.ARMOR)    # 1 BP
+		_place_room_at(0, 4, RoomData.RoomType.ARMOR)    # 1 BP
 		# Total: 30 BP

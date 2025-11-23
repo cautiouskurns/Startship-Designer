@@ -55,18 +55,19 @@ static var labels = {
 	RoomType.ARMOR: "ARMOR"
 }
 
-## Placement constraints (row indices, -1 means any row)
-## Weapons: rows 0-1 (top 2 rows)
-## Engines: rows 4-5 (bottom 2 rows)
-## Others: any row
-static var placement_rows = {
+## Placement constraints (column indices, -1 means any column)
+## Ship points RIGHT in combat (→), so:
+## Weapons: rightmost columns (front/bow of ship)
+## Engines: leftmost columns (back/stern of ship)
+## Others: any column
+static var placement_columns = {
 	RoomType.EMPTY: [],
-	RoomType.BRIDGE: [],      # Any row
-	RoomType.WEAPON: [0, 1],  # Top 2 rows only
-	RoomType.SHIELD: [],      # Any row
-	RoomType.ENGINE: [4, 5],  # Bottom 2 rows only
-	RoomType.REACTOR: [],     # Any row
-	RoomType.ARMOR: []        # Any row
+	RoomType.BRIDGE: [],       # Any column
+	RoomType.WEAPON: [6, 7],   # Rightmost 2 columns (default for 8-wide grid)
+	RoomType.SHIELD: [],       # Any column
+	RoomType.ENGINE: [0, 1],   # Leftmost 2 columns (back of ship)
+	RoomType.REACTOR: [],      # Any column
+	RoomType.ARMOR: []         # Any column
 }
 
 ## Get cost for a room type
@@ -113,32 +114,39 @@ static var synergy_colors = {
 	SynergyType.DURABILITY: Color(0.886, 0.290, 0.290)       # Red #E24A4A
 }
 
-## Check if room can be placed in row (Phase 10.2 - dynamic constraints based on hull grid height)
-static func can_place_in_row(room_type: RoomType, row: int, grid_height: int = -1) -> bool:
-	# If grid_height provided, calculate constraints dynamically based on hull
-	if grid_height > 0:
+## Check if room can be placed in column (Phase 10.2 - dynamic constraints based on hull grid width)
+## Ship points RIGHT (→) in combat, so weapons go on right (front), engines on left (back)
+static func can_place_in_column(room_type: RoomType, column: int, grid_width: int = -1) -> bool:
+	# If grid_width provided, calculate constraints dynamically based on hull
+	if grid_width > 0:
 		match room_type:
 			RoomType.WEAPON:
-				# Frigate/Cruiser (4/6 rows): Top 2 rows [0, 1]
-				# Battleship (7 rows): Top 3 rows [0, 1, 2]
-				if grid_height >= 7:
-					return row in [0, 1, 2]
+				# Frigate (10 wide): Rightmost 2 columns [8, 9]
+				# Cruiser (8 wide): Rightmost 2 columns [6, 7]
+				# Battleship (7 wide): Rightmost 3 columns [4, 5, 6]
+				if grid_width >= 10:
+					# Frigate: columns 8-9
+					return column in [grid_width - 2, grid_width - 1]
+				elif grid_width >= 8:
+					# Cruiser: columns 6-7
+					return column in [grid_width - 2, grid_width - 1]
 				else:
-					return row in [0, 1]
+					# Battleship (7 wide): columns 4-6 (rightmost 3)
+					return column in [grid_width - 3, grid_width - 2, grid_width - 1]
 			RoomType.ENGINE:
-				# Always bottom 2 rows [grid_height - 2, grid_height - 1]
-				return row in [grid_height - 2, grid_height - 1]
+				# Always leftmost 2 columns [0, 1] (back of ship)
+				return column in [0, 1]
 			_:
 				# All other room types can be placed anywhere
 				return true
 
-	# Fallback to static placement_rows if grid_height not provided (backwards compatibility)
-	var allowed_rows = placement_rows.get(room_type, [])
-	# If empty array, any row is allowed
-	if allowed_rows.is_empty():
+	# Fallback to static placement_columns if grid_width not provided (backwards compatibility)
+	var allowed_columns = placement_columns.get(room_type, [])
+	# If empty array, any column is allowed
+	if allowed_columns.is_empty():
 		return true
-	# Otherwise check if room is in allowed list
-	return row in allowed_rows
+	# Otherwise check if column is in allowed list
+	return column in allowed_columns
 
 ## Get synergy type between two room types (order-independent)
 static func get_synergy_type(room_type_a: RoomType, room_type_b: RoomType) -> SynergyType:

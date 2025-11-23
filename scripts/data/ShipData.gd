@@ -81,7 +81,7 @@ func destroy_room_instance(room_id: int):
 	# Remove from room_instances dictionary
 	room_instances.erase(room_id)
 
-## Calculate power grid based on reactor positions
+## Calculate power grid based on reactor positions (Phase 10.2 - multi-tile room support)
 func calculate_power_grid():
 	# Initialize power_grid with same dimensions as grid
 	power_grid.clear()
@@ -91,7 +91,10 @@ func calculate_power_grid():
 			power_row.append(false)
 		power_grid.append(power_row)
 
-	# Determine which rooms are powered
+	# Phase 10.2: Track which room instances are powered (not individual tiles)
+	var powered_room_ids = {}  # Dictionary of room_id -> true for powered rooms
+
+	# First pass: Determine which room instances should be powered
 	for y in range(grid.size()):
 		for x in range(grid[y].size()):
 			var room_type = grid[y][x]
@@ -100,9 +103,18 @@ func calculate_power_grid():
 			if room_type == RoomData.RoomType.EMPTY:
 				continue
 
+			# Get room ID for this tile (if using room instances)
+			var room_id = -1
+			if not room_id_grid.is_empty():
+				if y < room_id_grid.size() and x < room_id_grid[y].size():
+					room_id = room_id_grid[y][x]
+
 			# Bridge and Reactor always powered (special cases)
 			if room_type == RoomData.RoomType.BRIDGE or room_type == RoomData.RoomType.REACTOR:
-				power_grid[y][x] = true
+				if room_id != -1:
+					powered_room_ids[room_id] = true
+				else:
+					power_grid[y][x] = true  # Fallback for old single-tile system
 				continue
 
 			# Check 4 adjacent tiles for reactors
@@ -118,8 +130,22 @@ func calculate_power_grid():
 				if pos.y >= 0 and pos.y < grid.size() and pos.x >= 0 and pos.x < grid[pos.y].size():
 					# Check if adjacent tile is a reactor
 					if grid[pos.y][pos.x] == RoomData.RoomType.REACTOR:
-						power_grid[y][x] = true
+						# Power entire room instance (if using room instances)
+						if room_id != -1:
+							powered_room_ids[room_id] = true
+						else:
+							# Fallback for old single-tile system
+							power_grid[y][x] = true
 						break
+
+	# Second pass: Apply power to all tiles belonging to powered room instances
+	for y in range(grid.size()):
+		for x in range(grid[y].size()):
+			if not room_id_grid.is_empty():
+				if y < room_id_grid.size() and x < room_id_grid[y].size():
+					var room_id = room_id_grid[y][x]
+					if room_id in powered_room_ids:
+						power_grid[y][x] = true
 
 ## Check if room at position is powered
 func is_room_powered(x: int, y: int) -> bool:
@@ -144,17 +170,17 @@ func count_powered_room_type(room_type: RoomData.RoomType) -> int:
 func recalculate_power():
 	calculate_power_grid()
 
-## Create ShipData from ShipDesigner's grid_tiles and placed_rooms arrays (Phase 7.1)
-static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = []) -> ShipData:
+## Create ShipData from ShipDesigner's grid_tiles and placed_rooms arrays (Phase 10.2 - dynamic grid size)
+static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = [], grid_width: int = 8, grid_height: int = 6) -> ShipData:
 	var room_grid = []
 	var room_id_grid_data = []
 
-	# Convert grid_tiles (1D array) to 2D arrays (8 columns × 6 rows)
-	for y in range(6):  # 6 rows
+	# Convert grid_tiles (1D array) to 2D arrays with dynamic dimensions
+	for y in range(grid_height):
 		var row = []
 		var id_row = []
-		for x in range(8):  # 8 columns
-			var index = y * 8 + x
+		for x in range(grid_width):
+			var index = y * grid_width + x
 			if index < grid_tiles.size():
 				var tile = grid_tiles[index]
 				row.append(tile.get_room_type())

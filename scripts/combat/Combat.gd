@@ -97,6 +97,26 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	# Set initial turn indicator with visual emphasis
 	_update_turn_indicator(is_player_turn)
 
+	# Show initiative message if hull bonus gave player advantage (Phase 10.3)
+	if is_player_turn and hull_data["bonus_type"] == "initiative":
+		var init_label = Label.new()
+		init_label.text = "Player shoots first! (+%d Initiative)" % hull_data["bonus_value"]
+		init_label.add_theme_font_size_override("font_size", 40)
+		init_label.add_theme_color_override("font_color", Color(0.29, 0.89, 0.89, 1))  # Cyan
+		init_label.add_theme_constant_override("outline_size", 4)
+		init_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		init_label.position = Vector2(480, 300)  # Above center
+		init_label.z_index = 100
+		add_child(init_label)
+
+		# Animate
+		var tween = create_tween()
+		tween.tween_property(init_label, "scale", Vector2(1.1, 1.1), 0.2)
+		tween.tween_property(init_label, "scale", Vector2(1.0, 1.0), 0.2)
+		tween.tween_interval(1.0)
+		tween.tween_property(init_label, "modulate:a", 0.0, 0.3)
+		tween.tween_callback(init_label.queue_free)
+
 	# Start combat loop (deferred to allow scene to fully initialize)
 	run_combat_loop.call_deferred()
 
