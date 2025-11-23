@@ -9,6 +9,41 @@ var missions_unlocked: Array[bool] = [true, false, false]
 ## Currently selected mission (0 = Patrol, 1 = Convoy, 2 = Fleet)
 var current_mission: int = 0
 
+## Hull types (Phase 10.1)
+enum HullType {
+	FRIGATE,
+	CRUISER,
+	BATTLESHIP
+}
+
+## Currently selected hull type
+var current_hull: HullType = HullType.CRUISER
+
+## Hull type definitions
+const HULL_TYPES = {
+	HullType.FRIGATE: {
+		"name": "FRIGATE",
+		"grid_size": Vector2i(10, 4),
+		"bonus_type": "initiative",
+		"bonus_value": 2,
+		"description": "+2 Initiative"
+	},
+	HullType.CRUISER: {
+		"name": "CRUISER",
+		"grid_size": Vector2i(8, 6),
+		"bonus_type": "none",
+		"bonus_value": 0,
+		"description": "Balanced"
+	},
+	HullType.BATTLESHIP: {
+		"name": "BATTLESHIP",
+		"grid_size": Vector2i(7, 7),
+		"bonus_type": "hull_hp",
+		"bonus_value": 20,
+		"description": "+20 HP"
+	}
+}
+
 ## Mission data
 const MISSION_NAMES = [
 	"PATROL DUTY",
@@ -57,3 +92,18 @@ func get_mission_brief(index: int) -> String:
 func reset_progression():
 	missions_unlocked = [true, false, false]
 	current_mission = 0
+	current_hull = HullType.CRUISER
+
+## Get hull data for a specific hull type (Phase 10.1)
+func get_hull_data(hull_type: HullType) -> Dictionary:
+	if HULL_TYPES.has(hull_type):
+		return HULL_TYPES[hull_type]
+	return HULL_TYPES[HullType.CRUISER]  # Default fallback
+
+## Get current hull data (Phase 10.1)
+func get_current_hull_data() -> Dictionary:
+	return get_hull_data(current_hull)
+
+## Set current hull type (Phase 10.1)
+func set_hull(hull_type: HullType):
+	current_hull = hull_type

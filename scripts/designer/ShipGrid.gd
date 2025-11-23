@@ -1,11 +1,11 @@
 extends Node2D
 class_name ShipGrid
 
-## Manages the 8x6 grid of tiles for ship design
+## Manages the grid of tiles for ship design (dynamic size based on hull)
 
-## Grid dimensions
-const GRID_WIDTH = 8
-const GRID_HEIGHT = 6
+## Grid dimensions (Phase 10.1 - made dynamic for hull selection)
+var GRID_WIDTH: int = 8
+var GRID_HEIGHT: int = 6
 const TILE_SIZE = 96
 const TILE_SPACING = 10  # Gap between tiles in pixels
 
@@ -25,7 +25,19 @@ signal tile_right_clicked(x: int, y: int)
 signal tile_hovered(tile: GridTile)
 signal tile_unhovered(tile: GridTile)
 
+## Flag to prevent auto-creation in _ready (Phase 10.1)
+var grid_initialized: bool = false
+
 func _ready():
+	# Don't auto-create grid - wait for initialize() call
+	# Grid will be created by ShipDesigner after setting dimensions
+	pass
+
+## Initialize grid with custom dimensions (Phase 10.1 - for hull selection)
+func initialize(width: int, height: int):
+	GRID_WIDTH = width
+	GRID_HEIGHT = height
+	grid_initialized = true
 	_create_grid()
 
 ## Create an 8x6 grid of tiles

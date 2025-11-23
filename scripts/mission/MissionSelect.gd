@@ -92,13 +92,13 @@ func _on_mission2_hovered():
 func _on_mission3_hovered():
 	_show_brief(2)
 
-## Load mission and transition to designer
+## Load mission and transition to hull selection (Phase 10.1)
 func _load_mission(mission_index: int):
 	# Set current mission in GameState
 	GameState.current_mission = mission_index
 
-	# Load ShipDesigner scene
-	get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
+	# Load Hull Selection scene (Phase 10.1 - choose hull before designing)
+	get_tree().change_scene_to_file("res://scenes/hull/HullSelect.tscn")
 
 ## Back button pressed
 func _on_back_pressed():

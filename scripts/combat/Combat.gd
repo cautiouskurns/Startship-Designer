@@ -62,6 +62,16 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	player_data = player_ship
 	current_mission = mission_index
 
+	# Apply hull bonuses (Phase 10.1)
+	var hull_data = GameState.get_current_hull_data()
+	var bonus_type: String = hull_data["bonus_type"]
+	var bonus_value: int = hull_data["bonus_value"]
+
+	if bonus_type == "hull_hp":
+		# Apply HP bonus (Battleship)
+		player_data.max_hp += bonus_value
+		player_data.current_hp += bonus_value
+
 	# Load enemy based on mission
 	match mission_index:
 		0:
@@ -258,6 +268,11 @@ func _determine_initiative() -> bool:
 
 	player_engines += player_synergies["counts"][RoomData.SynergyType.INITIATIVE]
 	enemy_engines += enemy_synergies["counts"][RoomData.SynergyType.INITIATIVE]
+
+	# Apply hull initiative bonus (Phase 10.1 - Frigate gets +2)
+	var hull_data = GameState.get_current_hull_data()
+	if hull_data["bonus_type"] == "initiative":
+		player_engines += hull_data["bonus_value"]
 
 	# Higher engine count shoots first, player wins ties
 	return player_engines >= enemy_engines
