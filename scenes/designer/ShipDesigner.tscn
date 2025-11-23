@@ -127,9 +127,9 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 21.0
-offset_top = -460.0
+offset_top = -461.0
 offset_right = 301.0
-offset_bottom = -260.0
+offset_bottom = -261.0
 grow_vertical = 0
 
 [node name="ClearGridButton" type="Button" parent="."]

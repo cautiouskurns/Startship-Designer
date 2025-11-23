@@ -477,6 +477,12 @@ func update_synergies():
 				if adj_room_type == RoomData.RoomType.EMPTY:
 					continue
 
+				# Phase 7.1: Skip if both tiles belong to the same room instance
+				# (prevents synergies between tiles of multi-tile rooms like 2×2 Bridge)
+				if tile.occupying_room and adj_tile.occupying_room:
+					if tile.occupying_room == adj_tile.occupying_room:
+						continue  # Same room instance, skip synergy
+
 				# Check if these two room types create a synergy
 				var synergy_type = RoomData.get_synergy_type(room_type, adj_room_type)
 				if synergy_type == RoomData.SynergyType.NONE:

@@ -481,6 +481,17 @@ func calculate_synergy_bonuses() -> Dictionary:
 				if adj_room_type == RoomData.RoomType.EMPTY:
 					continue
 
+				# Phase 7.1: Skip if both tiles belong to the same room instance
+				# Check room_id_grid to see if they're the same multi-tile room
+				if not room_id_grid.is_empty():
+					if y < room_id_grid.size() and x < room_id_grid[y].size():
+						if adj_pos.y < room_id_grid.size() and adj_pos.x < room_id_grid[adj_pos.y].size():
+							var room_id_a = room_id_grid[y][x]
+							var room_id_b = room_id_grid[adj_pos.y][adj_pos.x]
+							# If both have valid room IDs and they're the same, skip
+							if room_id_a != -1 and room_id_b != -1 and room_id_a == room_id_b:
+								continue  # Same room instance, skip synergy
+
 				var synergy_type = RoomData.get_synergy_type(room_type, adj_room_type)
 				if synergy_type == RoomData.SynergyType.NONE:
 					continue
