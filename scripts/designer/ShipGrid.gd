@@ -5,12 +5,12 @@ class_name ShipGrid
 
 ## Grid dimensions (Phase 10.1 - made dynamic for hull selection)
 # Default dimensions for FREE DESIGN mode
-const DEFAULT_FREE_DESIGN_WIDTH: int = 25
-const DEFAULT_FREE_DESIGN_HEIGHT: int = 25
+const DEFAULT_FREE_DESIGN_WIDTH: int = 50
+const DEFAULT_FREE_DESIGN_HEIGHT: int = 50
 
 var GRID_WIDTH: int = 8
 var GRID_HEIGHT: int = 6
-const TILE_SIZE = 25
+const TILE_SIZE = 15
 const TILE_SPACING = 2  # Gap between tiles in pixels
 
 ## Phase 10.4: Valid tile positions for shaped hulls

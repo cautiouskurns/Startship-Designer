@@ -540,6 +540,17 @@ func _process(_delta):
 		# Hide cost indicator when not hovering or no room selected
 		cost_indicator.visible = false
 
+## Handle input before GUI processing (Feature 2.1 - conduit drag completion)
+func _input(event: InputEvent):
+	# Feature 2.1: Detect mouse release to complete conduit drag placement
+	# Use _input instead of _unhandled_input to catch release before GUI consumes it
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+			if is_dragging_conduit:
+				_complete_drag_placement()
+				get_viewport().set_input_as_handled()
+				return
+
 ## Handle keyboard and mouse input
 func _unhandled_input(event: InputEvent):
 	# Mouse wheel for zoom
@@ -576,6 +587,7 @@ func _apply_zoom_and_pan():
 	ship_grid.position = Vector2(960, 540) + pan_offset
 
 ## Handle tile left-click - place selected room type from palette (Phase 7.1/7.3 - shaped rooms with rotation)
+## Feature 2.1: Conduits use drag-to-place instead of single-click
 func _on_tile_clicked(x: int, y: int):
 	var tile = ship_grid.get_tile_at(x, y)
 	if not tile:
@@ -583,6 +595,16 @@ func _on_tile_clicked(x: int, y: int):
 
 	# If no room type selected from palette, do nothing
 	if selected_room_type == RoomData.RoomType.EMPTY:
+		return
+
+	# Feature 2.1: Start drag-to-place mode for conduits
+	if selected_room_type == RoomData.RoomType.CONDUIT:
+		# Start dragging from this tile
+		is_dragging_conduit = true
+		drag_start_tile = tile
+		drag_current_line = [Vector2i(x, y)]
+		# Show initial preview on start tile
+		_update_drag_preview()
 		return
 
 	# Get shape for selected room type with current rotation (Phase 7.3)
@@ -683,11 +705,20 @@ func _on_room_type_selected(room_type: RoomData.RoomType):
 	update_palette_availability()
 
 ## Handle tile hover - show preview (Phase 7.2/7.3 - per-tile mixed preview states with rotation)
+## Feature 2.1: Update drag line when dragging conduits
 func _on_tile_hovered(tile: GridTile):
 	hovered_tile = tile
 
 	# Only show preview if room type is selected
 	if selected_room_type == RoomData.RoomType.EMPTY:
+		return
+
+	# Feature 2.1: Update drag line for conduits
+	if is_dragging_conduit and drag_start_tile:
+		# Calculate new drag line from start to current tile
+		drag_current_line = _calculate_drag_line(drag_start_tile.grid_x, drag_start_tile.grid_y, tile.grid_x, tile.grid_y)
+		# Update preview
+		_update_drag_preview()
 		return
 
 	# Get shape for selected room type with current rotation (Phase 7.3)
@@ -730,6 +761,152 @@ func _on_tile_unhovered(tile: GridTile):
 					preview_tile.clear_preview()
 
 	hovered_tile = null
+
+## Feature 2.1: Calculate drag line from start to end position (horizontal OR vertical, not diagonal)
+func _calculate_drag_line(start_x: int, start_y: int, end_x: int, end_y: int) -> Array[Vector2i]:
+	var line: Array[Vector2i] = []
+
+	# Calculate deltas
+	var dx = abs(end_x - start_x)
+	var dy = abs(end_y - start_y)
+
+	# Determine if line is more horizontal or vertical
+	if dx >= dy:
+		# Horizontal line (lock Y to start_y)
+		var min_x = min(start_x, end_x)
+		var max_x = max(start_x, end_x)
+		for x in range(min_x, max_x + 1):
+			line.append(Vector2i(x, start_y))
+	else:
+		# Vertical line (lock X to start_x)
+		var min_y = min(start_y, end_y)
+		var max_y = max(start_y, end_y)
+		for y in range(min_y, max_y + 1):
+			line.append(Vector2i(start_x, y))
+
+	return line
+
+## Feature 2.1: Update drag preview - show valid/invalid state for all tiles in line
+func _update_drag_preview():
+	# Clear all tile previews first
+	for tile in ship_grid.get_all_tiles():
+		tile.clear_preview()
+
+	# Show preview on each tile in drag line
+	for pos in drag_current_line:
+		if not ship_grid.is_in_bounds(pos.x, pos.y):
+			continue
+
+		var tile = ship_grid.get_tile_at(pos.x, pos.y)
+		if not tile:
+			continue
+
+		# Check if this specific tile can have a conduit placed on it
+		var tile_empty = not tile.is_occupied()
+		var can_afford = (current_budget + RoomData.get_cost(RoomData.RoomType.CONDUIT) * drag_current_line.size()) <= max_budget
+
+		# Show cyan if valid, red if blocked
+		if tile_empty and can_afford:
+			tile.show_valid_preview()
+		else:
+			tile.show_invalid_preview()
+
+## Feature 2.1: Place a single conduit at given position
+func _place_single_conduit(x: int, y: int) -> bool:
+	# Check if we can place a conduit here
+	if not ship_grid.is_in_bounds(x, y):
+		return false
+
+	var tile = ship_grid.get_tile_at(x, y)
+	if not tile or tile.is_occupied():
+		return false
+
+	# Check budget
+	if current_budget + RoomData.get_cost(RoomData.RoomType.CONDUIT) > max_budget:
+		return false
+
+	# Create and place conduit
+	var conduit_scene = room_scenes.get(RoomData.RoomType.CONDUIT)
+	if not conduit_scene:
+		return false
+
+	var conduit: Room = conduit_scene.instantiate()
+	conduit.room_type = RoomData.RoomType.CONDUIT
+	conduit.room_id = next_room_id
+	next_room_id += 1
+
+	# Place on tile
+	tile.set_occupying_room(conduit, true)
+	conduit.add_occupied_tile(tile)
+
+	# Add to tracking
+	placed_rooms.append(conduit)
+
+	return true
+
+## Feature 2.1: Complete drag placement - place all conduits in line
+func _complete_drag_placement():
+	if drag_current_line.is_empty():
+		_clear_drag_state()
+		return
+
+	# Validate entire line before placing any
+	var can_place_all = true
+	for pos in drag_current_line:
+		if not ship_grid.is_in_bounds(pos.x, pos.y):
+			can_place_all = false
+			break
+
+		var tile = ship_grid.get_tile_at(pos.x, pos.y)
+		if not tile or tile.is_occupied():
+			can_place_all = false
+			break
+
+	# Check total budget
+	var total_cost = RoomData.get_cost(RoomData.RoomType.CONDUIT) * drag_current_line.size()
+	if current_budget + total_cost > max_budget:
+		can_place_all = false
+
+	# Place all or flash red
+	if can_place_all:
+		# Place each conduit
+		for pos in drag_current_line:
+			_place_single_conduit(pos.x, pos.y)
+
+		# Update displays
+		_update_budget_display()
+		update_all_power_states()
+		update_palette_counts()
+		update_palette_availability()
+		_update_ship_status()
+		_update_ship_stats()
+		update_synergies()
+
+		# Play success sound
+		AudioManager.play_room_lock()
+	else:
+		# Flash red on invalid placement
+		for pos in drag_current_line:
+			if ship_grid.is_in_bounds(pos.x, pos.y):
+				var tile = ship_grid.get_tile_at(pos.x, pos.y)
+				if tile:
+					tile._play_flash_red()
+
+		# Play failure sound
+		AudioManager.play_failure()
+
+	# Clear drag state
+	_clear_drag_state()
+
+## Feature 2.1: Clear drag state and previews
+func _clear_drag_state():
+	is_dragging_conduit = false
+	drag_start_tile = null
+	drag_current_line.clear()
+
+	# Clear all tile previews
+	for tile in ship_grid.get_all_tiles():
+		tile.clear_preview()
 
 ## Update room counts on palette panel (Phase 7.1 - count room instances, not tiles)
 func update_palette_counts():
