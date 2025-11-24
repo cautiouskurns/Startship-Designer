@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://b3vn8y4qxc7h2" path="res://scenes/designer/components/TemplateNameDialog.tscn" id="5_template_name"]
 [ext_resource type="PackedScene" uid="uid://cc7qm3y5r8vph" path="res://scenes/designer/components/TemplateListPanel.tscn" id="6_template_list"]
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="7_ship_stats"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/starfield.png" id="8_starfield"]
+[ext_resource type="Texture2D" uid="uid://y1akstmn6odh" path="res://assets/sprites/ui/starfield.png" id="8_starfield"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_budget"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -58,9 +58,9 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -200.0
+offset_left = 132.0
 offset_top = 30.0
-offset_right = 200.0
+offset_right = 532.0
 offset_bottom = 80.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -74,9 +74,9 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -1887.0
+offset_left = -1248.0
 offset_top = 20.0
-offset_right = -1687.0
+offset_right = -1048.0
 offset_bottom = 80.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_budget")
@@ -98,8 +98,8 @@ vertical_alignment = 1
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 34.0
-offset_bottom = 52.0
+offset_top = 35.0
+offset_bottom = 58.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(0.290196, 0.886275, 0.290196, 1)
 theme_override_font_sizes/font_size = 16
@@ -128,10 +128,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -320.0
-offset_top = -323.0
-offset_right = -20.0
-offset_bottom = -123.0
+offset_left = -1552.0
+offset_top = -243.0
+offset_right = -1252.0
+offset_bottom = -43.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -140,10 +140,10 @@ layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 30.0
-offset_top = -229.0
-offset_right = 310.0
-offset_bottom = -29.0
+offset_left = 28.0
+offset_top = -224.0
+offset_right = 308.0
+offset_bottom = -24.0
 grow_vertical = 0
 
 [node name="ClearGridButton" type="Button" parent="."]
@@ -192,10 +192,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -170.0
-offset_top = -70.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = -183.0
+offset_top = -75.0
+offset_right = -33.0
+offset_bottom = -25.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -232,5 +232,17 @@ theme_override_font_sizes/font_size = 18
 text = "+3"
 
 [node name="TemplateNameDialog" parent="." instance=ExtResource("5_template_name")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+grow_horizontal = 1
+grow_vertical = 1
 
 [node name="TemplateListPanel" parent="." instance=ExtResource("6_template_list")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+grow_horizontal = 1
+grow_vertical = 1

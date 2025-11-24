@@ -1,7 +1,7 @@
 extends Node
 
 ## AudioManager Singleton
-## Manages all sound effects in the game
+## Manages all sound effects and background music in the game
 
 # AudioStreamPlayer nodes (allows multiple sounds to play simultaneously)
 var button_click_player: AudioStreamPlayer
@@ -17,6 +17,9 @@ var explosion_player: AudioStreamPlayer
 var reactor_powerdown_player: AudioStreamPlayer
 var room_lock_player: AudioStreamPlayer
 
+# Music player
+var music_player: AudioStreamPlayer
+
 # Preloaded sound resources
 var button_click_sound = preload("res://assets/sounds/SFX/button_click.wav")
 var success_sound = preload("res://assets/sounds/SFX/success.wav")
@@ -30,6 +33,13 @@ var laser_fire_sound = preload("res://assets/sounds/SFX/ES_Blaster, Laser, Boom 
 var explosion_sound = preload("res://assets/sounds/SFX/ES_Loud Powerful Blast, Heavy impact, Deep Rumble, Subtle Wooden Debris, Low Explosion Sweetener 01 - Epidemic Sound - 0000-3522.wav")
 var reactor_powerdown_sound = preload("res://assets/sounds/SFX/ES_Charge Down, Power Off, Descend - Epidemic Sound - 0000-2889.wav")
 var room_lock_sound = preload("res://assets/sounds/SFX/ES_Metal Padlock, Large, Movement - Epidemic Sound - 0000-0340.wav")
+
+# Music tracks
+var music_tracks = [
+	preload("res://assets/sounds/music/Stellar Blueprints.mp3"),
+	preload("res://assets/sounds/music/Stellar Blueprints (1).mp3")
+]
+var current_track_index: int = 0
 
 func _ready():
 	# Initialize AudioStreamPlayer nodes
@@ -80,6 +90,15 @@ func _ready():
 	room_lock_player = AudioStreamPlayer.new()
 	room_lock_player.stream = room_lock_sound
 	add_child(room_lock_player)
+
+	# Initialize music player
+	music_player = AudioStreamPlayer.new()
+	music_player.volume_db = -5.0  # Slightly quieter than SFX
+	add_child(music_player)
+	music_player.finished.connect(_on_music_finished)
+
+	# Start background music
+	start_music()
 
 ## Play button click sound
 func play_button_click():
@@ -140,3 +159,25 @@ func play_reactor_powerdown():
 func play_room_lock():
 	if room_lock_player:
 		room_lock_player.play()
+
+## Start background music playback
+func start_music():
+	if music_player and music_tracks.size() > 0:
+		music_player.stream = music_tracks[current_track_index]
+		music_player.play()
+
+## Called when a music track finishes - rotates to next track
+func _on_music_finished():
+	# Move to next track (loop back to 0 after last track)
+	current_track_index = (current_track_index + 1) % music_tracks.size()
+	start_music()
+
+## Stop background music
+func stop_music():
+	if music_player:
+		music_player.stop()
+
+## Set music volume (-80 to 0 dB)
+func set_music_volume(volume_db: float):
+	if music_player:
+		music_player.volume_db = volume_db

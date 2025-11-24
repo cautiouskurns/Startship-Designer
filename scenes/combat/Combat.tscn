@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://dowx3hl2sfer5" path="res://scripts/combat/CombatLog.gd" id="3"]
 [ext_resource type="Script" uid="uid://dly506ra5y862" path="res://scripts/combat/CombatFX.gd" id="4"]
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="5_ship_stats"]
-[ext_resource type="Texture2D" path="res://assets/sprites/ui/starfield.png" id="6_starfield"]
+[ext_resource type="Texture2D" uid="uid://y1akstmn6odh" path="res://assets/sprites/ui/starfield.png" id="6_starfield"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_green"]
 bg_color = Color(0.290196, 0.886275, 0.290196, 1)

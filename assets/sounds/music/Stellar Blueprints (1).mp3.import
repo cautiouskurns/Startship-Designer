@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dkpti3rpcy7o5"
+path="res://.godot/imported/Stellar Blueprints (1).mp3-34fd958c33ecdb1ab996b4eae0dec41e.mp3str"
+
+[deps]
+
+source_file="res://assets/sounds/music/Stellar Blueprints (1).mp3"
+dest_files=["res://.godot/imported/Stellar Blueprints (1).mp3-34fd958c33ecdb1ab996b4eae0dec41e.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

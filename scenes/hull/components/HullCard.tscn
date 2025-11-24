@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://hull_card_001"]
+[gd_scene load_steps=3 format=3 uid="uid://b4b4k61nqtq47"]
 
-[ext_resource type="Script" path="res://scripts/hull/HullCard.gd" id="1"]
+[ext_resource type="Script" uid="uid://ifcyvxvivnxg" path="res://scripts/hull/HullCard.gd" id="1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
