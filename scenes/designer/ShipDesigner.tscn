@@ -128,10 +128,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -1552.0
-offset_top = -243.0
-offset_right = -1252.0
-offset_bottom = -43.0
+offset_left = -1890.0
+offset_top = -486.0
+offset_right = -1590.0
+offset_bottom = -286.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -215,11 +215,11 @@ script = ExtResource("1_grid")
 z_index = -1
 
 [node name="GridContainer" type="Node2D" parent="ShipGrid"]
-position = Vector2(137, 107)
+position = Vector2(0, 2)
 
 [node name="SynergyContainer" type="Node2D" parent="ShipGrid"]
 z_index = 1
-position = Vector2(137, 107)
+position = Vector2(0, 2)
 
 [node name="CostIndicator" type="Label" parent="."]
 visible = false
@@ -234,15 +234,7 @@ text = "+3"
 [node name="TemplateNameDialog" parent="." instance=ExtResource("5_template_name")]
 layout_mode = 0
 anchors_preset = 0
-anchor_right = 0.0
-anchor_bottom = 0.0
-grow_horizontal = 1
-grow_vertical = 1
 
 [node name="TemplateListPanel" parent="." instance=ExtResource("6_template_list")]
 layout_mode = 0
 anchors_preset = 0
-anchor_right = 0.0
-anchor_bottom = 0.0
-grow_horizontal = 1
-grow_vertical = 1

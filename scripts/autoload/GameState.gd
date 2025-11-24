@@ -13,11 +13,15 @@ var current_mission: int = 0
 enum HullType {
 	FRIGATE,
 	CRUISER,
-	BATTLESHIP
+	BATTLESHIP,
+	FREE_DESIGN  # Custom free design mode - uses ShipGrid.gd dimensions
 }
 
 ## Currently selected hull type
 var current_hull: HullType = HullType.CRUISER
+
+## Template to load when entering designer (set by HullSelect, cleared after load)
+var template_to_load = null
 
 ## Hull type definitions (Phase 10.4 - shaped hulls)
 ## grid_shape: 'X' = valid tile, '.' = empty space
@@ -66,6 +70,14 @@ const HULL_TYPES = {
 		"bonus_type": "hull_hp",
 		"bonus_value": 20,
 		"description": "+20 HP"
+	},
+	HullType.FREE_DESIGN: {
+		"name": "FREE DESIGN",
+		"grid_size": Vector2i(ShipGrid.DEFAULT_FREE_DESIGN_WIDTH, ShipGrid.DEFAULT_FREE_DESIGN_HEIGHT),
+		"grid_shape": [],  # No shape restrictions
+		"bonus_type": "none",
+		"bonus_value": 0,
+		"description": "No Restrictions"
 	}
 }
 

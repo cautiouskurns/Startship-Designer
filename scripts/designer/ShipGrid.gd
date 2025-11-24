@@ -4,10 +4,14 @@ class_name ShipGrid
 ## Manages the grid of tiles for ship design (dynamic size based on hull)
 
 ## Grid dimensions (Phase 10.1 - made dynamic for hull selection)
+# Default dimensions for FREE DESIGN mode
+const DEFAULT_FREE_DESIGN_WIDTH: int = 25
+const DEFAULT_FREE_DESIGN_HEIGHT: int = 25
+
 var GRID_WIDTH: int = 8
 var GRID_HEIGHT: int = 6
-const TILE_SIZE = 96
-const TILE_SPACING = 10  # Gap between tiles in pixels
+const TILE_SIZE = 25
+const TILE_SPACING = 5  # Gap between tiles in pixels
 
 ## Phase 10.4: Valid tile positions for shaped hulls
 ## Dictionary of "x,y" -> true for positions that exist in hull shape
@@ -77,6 +81,11 @@ func _create_grid():
 	grid_tiles.clear()
 	tile_lookup.clear()
 
+	# Calculate center offset to position grid from its center
+	var total_grid_width = GRID_WIDTH * (TILE_SIZE + TILE_SPACING) - TILE_SPACING
+	var total_grid_height = GRID_HEIGHT * (TILE_SIZE + TILE_SPACING) - TILE_SPACING
+	var center_offset = Vector2(-total_grid_width / 2.0, -total_grid_height / 2.0)
+
 	for y in range(GRID_HEIGHT):
 		for x in range(GRID_WIDTH):
 			# Phase 10.4: Skip invalid positions for shaped hulls
@@ -90,8 +99,11 @@ func _create_grid():
 			tile.grid_x = x
 			tile.grid_y = y
 
-			# Position the tile with spacing
-			tile.position = Vector2(x * (TILE_SIZE + TILE_SPACING), y * (TILE_SIZE + TILE_SPACING))
+			# Position the tile with spacing, centered
+			tile.position = Vector2(x * (TILE_SIZE + TILE_SPACING), y * (TILE_SIZE + TILE_SPACING)) + center_offset
+
+			# Set tile size dynamically based on TILE_SIZE constant
+			tile.custom_minimum_size = Vector2(TILE_SIZE, TILE_SIZE)
 
 			# Connect tile signals (forward to ShipGrid signals)
 			tile.tile_clicked.connect(_on_tile_clicked)
@@ -101,6 +113,9 @@ func _create_grid():
 
 			# Add to grid container
 			grid_container.add_child(tile)
+
+			# Force size update after adding to tree
+			tile.reset_size()
 
 			# Store references
 			grid_tiles.append(tile)

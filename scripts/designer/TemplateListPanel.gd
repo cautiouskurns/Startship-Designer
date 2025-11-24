@@ -3,15 +3,18 @@ extends ColorRect
 ## Panel for browsing and loading templates (Phase 10.8)
 
 signal template_selected(template: ShipTemplate)
+signal start_fresh_requested
 
 @onready var template_list: VBoxContainer = $Panel/ScrollContainer/TemplateList
 @onready var no_templates_label: Label = $Panel/NoTemplatesLabel
 @onready var close_button: Button = $Panel/CloseButton
+@onready var start_fresh_button: Button = $Panel/StartFreshButton
 @onready var hull_filter: Label = $Panel/HullFilter
 
 func _ready():
-	# Connect close button
+	# Connect buttons
 	close_button.pressed.connect(_on_close_pressed)
+	start_fresh_button.pressed.connect(_on_start_fresh_pressed)
 
 	# Listen for template changes
 	TemplateManager.templates_changed.connect(_refresh_list)
@@ -103,13 +106,21 @@ func _create_template_item(template: ShipTemplate) -> Panel:
 	return panel
 
 func _on_load_template(template: ShipTemplate):
+	AudioManager.play_button_click()
 	template_selected.emit(template)
 	hide_panel()
 
 func _on_delete_template(template: ShipTemplate):
+	AudioManager.play_button_click()
 	# Delete from manager
 	TemplateManager.delete_player_template(template.template_name)
 	# List will refresh automatically via signal
 
 func _on_close_pressed():
+	AudioManager.play_button_click()
+	hide_panel()
+
+func _on_start_fresh_pressed():
+	AudioManager.play_button_click()
+	start_fresh_requested.emit()
 	hide_panel()

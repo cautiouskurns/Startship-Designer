@@ -122,6 +122,7 @@ func _ready():
 	# Connect template UI signals (Phase 10.8)
 	template_name_dialog.template_name_entered.connect(_on_template_name_entered)
 	template_list_panel.template_selected.connect(_on_template_selected)
+	template_list_panel.start_fresh_requested.connect(_on_start_fresh_requested)
 
 	# Initialize palette display
 	update_palette_counts()
@@ -132,6 +133,17 @@ func _ready():
 
 	# Initialize stats panel (Phase 10.9)
 	_update_ship_stats()
+
+	# Check if a template should be auto-loaded (from hull selection)
+	if GameState.template_to_load:
+		var template = GameState.template_to_load
+		GameState.template_to_load = null  # Clear after loading
+		# Apply template
+		var success = template.apply_to_designer(self)
+		if success:
+			print("Auto-loaded template: %s" % template.template_name)
+		else:
+			push_error("Failed to auto-load template")
 
 ## Calculate current budget from all placed rooms (Phase 7.1 - count room instances, not tiles)
 func calculate_current_budget() -> int:
@@ -1199,3 +1211,20 @@ func _on_template_selected(template: ShipTemplate):
 	else:
 		push_error("Failed to load template '%s'" % template.template_name)
 		AudioManager.play_failure()
+
+## Handle start fresh request (clear grid and start designing from scratch)
+func _on_start_fresh_requested():
+	# Clear all rooms from grid
+	_clear_all_rooms()
+
+	# Update all displays
+	_update_budget_display()
+	update_all_power_states()
+	update_palette_counts()
+	update_palette_availability()
+	_update_ship_status()
+	_update_ship_stats()
+	update_synergies()
+
+	print("Starting fresh - grid cleared for custom design")
+	AudioManager.play_success()

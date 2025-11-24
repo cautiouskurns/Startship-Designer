@@ -110,3 +110,22 @@ func _on_mouse_exited():
 	style_box.border_width_right = 1
 	style_box.border_width_bottom = 1
 	style_box.border_color = Color(0.4, 0.4, 0.4, 1)
+
+## Setup card as "Free Design" option (uses ShipGrid.gd dimensions)
+func setup_free_design():
+	hull_type = GameState.HullType.FREE_DESIGN
+	var hull_data = GameState.get_hull_data(GameState.HullType.FREE_DESIGN)
+
+	if hull_name_label:
+		hull_name_label.text = hull_data["name"]
+	if grid_size_label:
+		var grid_size: Vector2i = hull_data["grid_size"]
+		grid_size_label.text = "%d×%d Grid" % [grid_size.x, grid_size.y]
+	if bonus_label:
+		bonus_label.text = hull_data["description"]
+	if select_button:
+		select_button.text = "START"
+
+	# Draw grid preview for free design
+	if grid_preview:
+		_draw_grid_preview(hull_data["grid_size"])
