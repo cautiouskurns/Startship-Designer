@@ -3,10 +3,10 @@
 [ext_resource type="Script" uid="uid://cdcsi45ggef6q" path="res://scripts/components/GridTile.gd" id="1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
-bg_color = Color(0.172549, 0.172549, 0.172549, 1)
+bg_color = Color(0.172549, 0.172549, 0.172549, 0.2)
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(1, 1, 1, 1)
+border_color = Color(0.3, 0.3, 0.3, 0.4)
 
 [node name="GridTile" type="Panel"]
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")

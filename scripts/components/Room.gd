@@ -39,7 +39,7 @@ func resize_to_tile():
 	# Get parent (GridTile) size and subtract margin
 	if get_parent() and get_parent() is GridTile:
 		var tile_size = get_parent().size
-		var room_size = tile_size - Vector2(4, 4)  # 2px margin on each side
+		var room_size = tile_size - Vector2(1, 1)  # 0.5px margin on each side for barely visible gap
 		custom_minimum_size = room_size
 		size = room_size
 

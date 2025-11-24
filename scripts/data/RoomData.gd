@@ -114,34 +114,11 @@ static var synergy_colors = {
 	SynergyType.DURABILITY: Color(0.886, 0.290, 0.290)       # Red #E24A4A
 }
 
-## Check if room can be placed in column (Phase 10.4 - expanded weapon placement for tapered hulls)
-## Ship points RIGHT (→) in combat, so weapons go on right (front), engines on left (back)
+## Check if room can be placed in column
+## Constraints removed - all rooms can be placed anywhere
 static func can_place_in_column(room_type: RoomType, column: int, grid_width: int = -1) -> bool:
-	# If grid_width provided, calculate constraints dynamically based on hull
-	if grid_width > 0:
-		match room_type:
-			RoomType.WEAPON:
-				# Phase 10.4: Expanded to account for tapered hulls
-				# Weapons allowed in right half of ship (front section)
-				# Frigate (10 wide): Right half columns [4, 5, 6, 7, 8, 9]
-				# Cruiser (8 wide): Right half columns [3, 4, 5, 6, 7]
-				# Battleship (7 wide): Right half columns [2, 3, 4, 5, 6]
-				var half_point = int(grid_width / 2.0)
-				return column >= half_point - 1
-			RoomType.ENGINE:
-				# Always leftmost 2 columns [0, 1] (back of ship)
-				return column in [0, 1]
-			_:
-				# All other room types can be placed anywhere
-				return true
-
-	# Fallback to static placement_columns if grid_width not provided (backwards compatibility)
-	var allowed_columns = placement_columns.get(room_type, [])
-	# If empty array, any column is allowed
-	if allowed_columns.is_empty():
-		return true
-	# Otherwise check if column is in allowed list
-	return column in allowed_columns
+	# No placement constraints - allow all rooms in all columns
+	return true
 
 ## Get synergy type between two room types (order-independent)
 static func get_synergy_type(room_type_a: RoomType, room_type_b: RoomType) -> SynergyType:

@@ -74,6 +74,14 @@ var placed_rooms: Array[Room] = []
 ## Room ID counter for tracking instances (Phase 7.1)
 var next_room_id: int = 1
 
+## Zoom and pan variables
+var zoom_level: float = 1.0
+var min_zoom: float = 0.5
+var max_zoom: float = 3.0
+var zoom_step: float = 0.1
+var pan_offset: Vector2 = Vector2.ZERO
+var pan_speed: float = 10.0  # Pixels per frame when holding WASD
+
 func _ready():
 	# Load mission budget from GameState
 	max_budget = GameState.get_mission_budget(GameState.current_mission)
@@ -481,10 +489,26 @@ func update_synergies():
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
 
-## Pulse power lines brightness and update cost indicator
+## Pulse power lines brightness, update cost indicator, and handle WASD panning
 func _process(_delta):
 	# Pulse power lines (delegated to ShipGrid)
 	ship_grid.pulse_power_lines()
+
+	# Handle WASD panning when zoomed
+	var pan_direction = Vector2.ZERO
+	if Input.is_key_pressed(KEY_W):
+		pan_direction.y += 1
+	if Input.is_key_pressed(KEY_S):
+		pan_direction.y -= 1
+	if Input.is_key_pressed(KEY_A):
+		pan_direction.x += 1
+	if Input.is_key_pressed(KEY_D):
+		pan_direction.x -= 1
+
+	# Only pan if zoomed in and direction pressed
+	if pan_direction != Vector2.ZERO:
+		pan_offset += pan_direction * pan_speed
+		_apply_zoom_and_pan()
 
 	# Update cost indicator
 	if selected_room_type != RoomData.RoomType.EMPTY and hovered_tile != null:
@@ -510,8 +534,18 @@ func _process(_delta):
 		# Hide cost indicator when not hovering or no room selected
 		cost_indicator.visible = false
 
-## Handle keyboard input (Phase 7.3 - R key for rotation)
+## Handle keyboard and mouse input
 func _unhandled_input(event: InputEvent):
+	# Mouse wheel for zoom
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			_zoom_in()
+			get_viewport().set_input_as_handled()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			_zoom_out()
+			get_viewport().set_input_as_handled()
+
+	# Keyboard input
 	if event is InputEventKey and event.pressed and not event.echo:
 		# R key to rotate selected room
 		if event.keycode == KEY_R:
@@ -519,6 +553,21 @@ func _unhandled_input(event: InputEvent):
 			if selected_room_type != RoomData.RoomType.EMPTY:
 				rotate_selected_room()
 				get_viewport().set_input_as_handled()
+
+## Zoom in
+func _zoom_in():
+	zoom_level = min(zoom_level + zoom_step, max_zoom)
+	_apply_zoom_and_pan()
+
+## Zoom out
+func _zoom_out():
+	zoom_level = max(zoom_level - zoom_step, min_zoom)
+	_apply_zoom_and_pan()
+
+## Apply zoom and pan transformation to ship_grid
+func _apply_zoom_and_pan():
+	ship_grid.scale = Vector2(zoom_level, zoom_level)
+	ship_grid.position = Vector2(960, 540) + pan_offset
 
 ## Handle tile left-click - place selected room type from palette (Phase 7.1/7.3 - shaped rooms with rotation)
 func _on_tile_clicked(x: int, y: int):

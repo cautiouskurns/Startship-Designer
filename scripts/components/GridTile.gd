@@ -107,9 +107,9 @@ func set_occupying_room(room: Room, anchor: bool = false) -> void:
 	# This makes T-shapes and complex shapes display correctly
 	if not room_background:
 		room_background = ColorRect.new()
-		var bg_size = size - Vector2(4, 4)  # 2px margin on each side
+		var bg_size = size - Vector2(1, 1)  # 0.5px margin on each side for barely visible gap
 		room_background.size = bg_size
-		room_background.position = Vector2(2, 2)
+		room_background.position = Vector2(0.5, 0.5)
 		room_background.z_index = 0  # Behind Room node and flash overlay
 		room_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		room_background.color = RoomData.get_color(room.room_type)
@@ -123,7 +123,7 @@ func set_occupying_room(room: Room, anchor: bool = false) -> void:
 		room.resize_to_tile()
 
 		# Center room in tile (don't scale, just show label on anchor)
-		room.position = Vector2(2, 2)
+		room.position = Vector2(0.5, 0.5)
 		room.z_index = 1  # Draw on top of background
 		room.visible = true
 		room.modulate = Color(1, 1, 1, 1)
@@ -193,9 +193,9 @@ func set_powered_state(powered: bool):
 		if not unpowered_overlay:
 			unpowered_overlay = ColorRect.new()
 			unpowered_overlay.color = Color(0.3, 0.3, 0.3, 0.3)  # Dark gray, semi-transparent
-			var overlay_size = size - Vector2(4, 4)  # 2px margin on each side
+			var overlay_size = size - Vector2(1, 1)  # 0.5px margin on each side
 			unpowered_overlay.size = overlay_size
-			unpowered_overlay.position = Vector2(2, 2)
+			unpowered_overlay.position = Vector2(0.5, 0.5)
 			unpowered_overlay.z_index = 2  # Above room background and Room node, below flash
 			unpowered_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			add_child(unpowered_overlay)
@@ -222,9 +222,9 @@ func show_invalid_preview():
 	if not preview_overlay:
 		preview_overlay = ColorRect.new()
 		preview_overlay.color = Color(0.886, 0.290, 0.290, 0.5)  # Red, 50% opacity
-		var overlay_size = size - Vector2(4, 4)  # 2px margin on each side
+		var overlay_size = size - Vector2(1, 1)  # 0.5px margin on each side
 		preview_overlay.size = overlay_size
-		preview_overlay.position = Vector2(2, 2)
+		preview_overlay.position = Vector2(0.5, 0.5)
 		preview_overlay.z_index = 2  # Above room but below flash
 		preview_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(preview_overlay)
@@ -232,7 +232,7 @@ func show_invalid_preview():
 ## Clear preview (restore default border)
 func clear_preview():
 	# Restore border to default (right and bottom only for grid pattern)
-	style_box.border_color = Color(1, 1, 1)  # White
+	style_box.border_color = Color(0.3, 0.3, 0.3, 0.4)  # Dark gray, transparent
 	style_box.border_width_left = 0
 	style_box.border_width_top = 0
 	style_box.border_width_right = 1
