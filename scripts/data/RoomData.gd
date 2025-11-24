@@ -11,6 +11,14 @@ enum RoomType {
 	ARMOR
 }
 
+## Helper function to generate rectangular room shape from width and height
+static func make_rect_shape(width: int, height: int) -> Array:
+	var shape = []
+	for y in range(height):
+		for x in range(width):
+			shape.append([x, y])
+	return shape
+
 ## Room costs in budget points (Phase 7.1 updated costs)
 static var costs = {
 	RoomType.EMPTY: 0,
@@ -22,15 +30,15 @@ static var costs = {
 	RoomType.ARMOR: 1   # Unchanged (occupies 1 tile)
 }
 
-## Room shapes - array of [x_offset, y_offset] tile positions relative to anchor
+## Room shapes - just specify width×height, helper function generates coordinates
 static var shapes = {
-	RoomType.EMPTY: [[0, 0]],
-	RoomType.BRIDGE: [[0, 0], [1, 0], [0, 1], [1, 1]],  # 2×2 square
-	RoomType.WEAPON: [[0, 0], [1, 0]],  # 1×2 horizontal bar
-	RoomType.SHIELD: [[0, 0], [1, 0]],  # 1×2 horizontal bar
-	RoomType.ENGINE: [[0, 0], [1, 0], [0, 1], [1, 1]],  # 2×2 square (Phase 10.7)
-	RoomType.REACTOR: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],  # 3×2 rectangle (Phase 10.7)
-	RoomType.ARMOR: [[0, 0]]   # 1×1 single tile
+	RoomType.EMPTY: make_rect_shape(1, 1),   # 1×1
+	RoomType.BRIDGE: make_rect_shape(4, 4),  # 2×2 square
+	RoomType.WEAPON: make_rect_shape(2, 1),  # 2×1 horizontal bar
+	RoomType.SHIELD: make_rect_shape(2, 1),  # 2×1 horizontal bar
+	RoomType.ENGINE: make_rect_shape(2, 2),  # 2×2 square
+	RoomType.REACTOR: make_rect_shape(3, 2), # 3×2 rectangle
+	RoomType.ARMOR: make_rect_shape(1, 1)    # 1×1 single tile
 }
 
 ## Room colors (hex values from design doc)
