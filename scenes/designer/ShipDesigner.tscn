@@ -208,7 +208,7 @@ disabled = true
 text = "LAUNCH"
 
 [node name="ShipGrid" type="Node2D" parent="."]
-position = Vector2(384, 168)
+position = Vector2(960, 540)
 script = ExtResource("1_grid")
 
 [node name="PowerLinesContainer" type="Node2D" parent="ShipGrid"]

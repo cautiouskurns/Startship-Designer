@@ -19,9 +19,9 @@ var occupied_tiles: Array[GridTile] = []
 var room_id: int = 0
 
 func _ready():
-	# Set fixed size (60x60 with 4px margin from 64x64 tile)
-	custom_minimum_size = Vector2(60, 60)
-	size = Vector2(60, 60)
+	# Size dynamically based on parent tile size (tile minus margin)
+	# This ensures rooms scale with TILE_SIZE constant changes
+	# Will be resized after being added to tree
 
 	# Position is set by parent (GridTile in designer, ShipDisplay in combat)
 	# Don't override it here
@@ -33,6 +33,15 @@ func _ready():
 	for child in get_children():
 		if child is Control:
 			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+## Resize to match parent tile (called after adding to tree)
+func resize_to_tile():
+	# Get parent (GridTile) size and subtract margin
+	if get_parent() and get_parent() is GridTile:
+		var tile_size = get_parent().size
+		var room_size = tile_size - Vector2(4, 4)  # 2px margin on each side
+		custom_minimum_size = room_size
+		size = room_size
 
 ## Set powered state and update visual
 func set_powered(powered: bool):

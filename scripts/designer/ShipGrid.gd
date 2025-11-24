@@ -163,11 +163,21 @@ func get_tiles_in_shape(anchor_x: int, anchor_y: int, shape: Array) -> Array[Gri
 
 ## Convert grid coordinates to pixel position
 func grid_to_pixel(x: int, y: int) -> Vector2:
-	return Vector2(x * (TILE_SIZE + TILE_SPACING), y * (TILE_SIZE + TILE_SPACING))
+	# Calculate center offset to match tile positioning
+	var total_grid_width = GRID_WIDTH * (TILE_SIZE + TILE_SPACING) - TILE_SPACING
+	var total_grid_height = GRID_HEIGHT * (TILE_SIZE + TILE_SPACING) - TILE_SPACING
+	var center_offset = Vector2(-total_grid_width / 2.0, -total_grid_height / 2.0)
+
+	return Vector2(x * (TILE_SIZE + TILE_SPACING), y * (TILE_SIZE + TILE_SPACING)) + center_offset
 
 ## Get center of tile in pixel coordinates
 func get_tile_center(x: int, y: int) -> Vector2:
-	return Vector2(x * (TILE_SIZE + TILE_SPACING) + TILE_SIZE / 2.0, y * (TILE_SIZE + TILE_SPACING) + TILE_SIZE / 2.0)
+	# Calculate center offset to match tile positioning
+	var total_grid_width = GRID_WIDTH * (TILE_SIZE + TILE_SPACING) - TILE_SPACING
+	var total_grid_height = GRID_HEIGHT * (TILE_SIZE + TILE_SPACING) - TILE_SPACING
+	var center_offset = Vector2(-total_grid_width / 2.0, -total_grid_height / 2.0)
+
+	return Vector2(x * (TILE_SIZE + TILE_SPACING) + TILE_SIZE / 2.0, y * (TILE_SIZE + TILE_SPACING) + TILE_SIZE / 2.0) + center_offset
 
 ## Draw power lines from reactors to powered rooms
 func draw_power_lines(ship_data: ShipData):

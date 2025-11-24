@@ -119,6 +119,9 @@ func set_occupying_room(room: Room, anchor: bool = false) -> void:
 		# Only anchor tile owns the Room visual as a child (for label/icon)
 		add_child(room)
 
+		# Resize room to match tile size
+		room.resize_to_tile()
+
 		# Center room in tile (don't scale, just show label on anchor)
 		room.position = Vector2(2, 2)
 		room.z_index = 1  # Draw on top of background
