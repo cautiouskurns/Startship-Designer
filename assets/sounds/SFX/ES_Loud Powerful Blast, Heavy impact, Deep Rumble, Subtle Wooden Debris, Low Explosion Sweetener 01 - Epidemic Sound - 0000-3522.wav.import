@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://ctvqgeqvqierk"
+path="res://.godot/imported/ES_Loud Powerful Blast, Heavy impact, Deep Rumble, Subtle Wooden Debris, Low Explosion Sweetener 01 - Epidemic Sound - 0000-3522.wav-77569d0d827cd5ace319a2db4f68cc30.sample"
+
+[deps]
+
+source_file="res://assets/sounds/SFX/ES_Loud Powerful Blast, Heavy impact, Deep Rumble, Subtle Wooden Debris, Low Explosion Sweetener 01 - Epidemic Sound - 0000-3522.wav"
+dest_files=["res://.godot/imported/ES_Loud Powerful Blast, Heavy impact, Deep Rumble, Subtle Wooden Debris, Low Explosion Sweetener 01 - Epidemic Sound - 0000-3522.wav-77569d0d827cd5ace319a2db4f68cc30.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

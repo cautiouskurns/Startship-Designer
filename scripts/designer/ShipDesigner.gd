@@ -30,6 +30,9 @@ var current_budget: int = 0
 ## Ship status panel
 @onready var ship_status_panel: ShipStatusPanel = $ShipStatusPanel
 
+## Ship stats panel (Phase 10.9)
+@onready var ship_stats_panel: ShipStatsPanel = $ShipStatsPanel
+
 ## Synergy guide panel
 @onready var synergy_guide_panel: SynergyGuidePanel = $SynergyGuidePanel
 
@@ -127,6 +130,9 @@ func _ready():
 	# Initialize status panel
 	_update_ship_status()
 
+	# Initialize stats panel (Phase 10.9)
+	_update_ship_stats()
+
 ## Calculate current budget from all placed rooms (Phase 7.1 - count room instances, not tiles)
 func calculate_current_budget() -> int:
 	var total = 0
@@ -181,6 +187,17 @@ func _update_ship_status():
 	# Update Hull bonus status (Phase 10.3)
 	var hull_data = GameState.get_current_hull_data()
 	ship_status_panel.update_hull_bonus(hull_data)
+
+## Update ship stats panel (Phase 10.9)
+func _update_ship_stats():
+	# Create temporary ShipData to calculate stats
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+
+	# Get hull bonuses
+	var hull_data = GameState.get_current_hull_data()
+
+	# Update panel
+	ship_stats_panel.update_stats(temp_ship, hull_data)
 
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:
@@ -301,6 +318,9 @@ func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.Roo
 
 ## Flash all tiles in shape red for invalid placement (Phase 7.1)
 func flash_shape_tiles_red(anchor_x: int, anchor_y: int, shape: Array):
+	# Play failure sound for invalid placement
+	AudioManager.play_failure()
+
 	for offset in shape:
 		var tile_x = anchor_x + offset[0]
 		var tile_y = anchor_y + offset[1]
@@ -511,6 +531,7 @@ func _on_tile_clicked(x: int, y: int):
 			update_palette_counts()
 			update_palette_availability()
 			_update_ship_status()
+			_update_ship_stats()
 			update_synergies()
 			return
 		else:
@@ -560,7 +581,11 @@ func _on_tile_clicked(x: int, y: int):
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	_update_ship_stats()
 	update_synergies()
+
+	# Play room lock sound for successful room placement
+	AudioManager.play_room_lock()
 
 ## Handle tile right-click - remove room (Phase 7.1 - removes entire multi-tile room)
 func _on_tile_right_clicked(x: int, y: int):
@@ -577,6 +602,7 @@ func _on_tile_right_clicked(x: int, y: int):
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	_update_ship_stats()
 	update_synergies()
 
 ## Handle room type selection from palette (Phase 7.3 - reset rotation)
@@ -694,6 +720,9 @@ func update_palette_availability():
 
 ## Handle launch button press
 func _on_launch_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Emit signal
 	emit_signal("launch_pressed")
 
@@ -728,6 +757,9 @@ func _on_button_hover_end(button: Button):
 
 ## Handle auto-fill button press - cycles through templates
 func _on_auto_fill_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Clear current grid
 	_clear_all_rooms()
 
@@ -751,10 +783,17 @@ func _on_auto_fill_pressed():
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	_update_ship_stats()
 	update_synergies()
+
+	# Play success sound
+	AudioManager.play_success()
 
 ## Handle clear grid button press
 func _on_clear_grid_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Clear all rooms from grid
 	_clear_all_rooms()
 
@@ -764,7 +803,11 @@ func _on_clear_grid_pressed():
 	update_palette_counts()
 	update_palette_availability()
 	_update_ship_status()
+	_update_ship_stats()
 	update_synergies()
+
+	# Play success sound
+	AudioManager.play_success()
 
 ## Clear all rooms from the grid (Phase 7.1 - free room instances)
 func _clear_all_rooms():
@@ -1108,9 +1151,13 @@ func _apply_tank_template(mission: int):
 
 ## Handle save button press (Phase 10.8)
 func _on_save_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Check if ship has at least a bridge (can save incomplete designs, but need something)
 	if placed_rooms.is_empty():
 		push_warning("Cannot save empty design")
+		AudioManager.play_failure()
 		return
 
 	# Show template name dialog
@@ -1118,6 +1165,9 @@ func _on_save_pressed():
 
 ## Handle load button press (Phase 10.8)
 func _on_load_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Show template list panel
 	template_list_panel.show_panel()
 
@@ -1131,8 +1181,10 @@ func _on_template_name_entered(template_name: String):
 
 	if success:
 		print("Template '%s' saved successfully" % template_name)
+		AudioManager.play_success()
 	else:
 		push_error("Failed to save template '%s'" % template_name)
+		AudioManager.play_failure()
 
 ## Handle template selected from list (Phase 10.8)
 func _on_template_selected(template: ShipTemplate):
@@ -1141,5 +1193,9 @@ func _on_template_selected(template: ShipTemplate):
 
 	if success:
 		print("Template '%s' loaded successfully" % template.template_name)
+		# Update stats panel (Phase 10.9)
+		_update_ship_stats()
+		AudioManager.play_success()
 	else:
 		push_error("Failed to load template '%s'" % template.template_name)
+		AudioManager.play_failure()

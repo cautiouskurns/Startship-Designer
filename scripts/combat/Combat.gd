@@ -12,12 +12,19 @@ extends Control
 @onready var player_health_label: Label = $PlayerHealthBar/PlayerHealthLabel
 @onready var enemy_health_label: Label = $EnemyHealthBar/EnemyHealthLabel
 
+## Ship stats panels (Phase 10.9)
+@onready var player_stats_panel: ShipStatsPanel = $PlayerStatsPanel
+@onready var enemy_stats_panel: ShipStatsPanel = $EnemyStatsPanel
+
 ## Turn indicator
 @onready var turn_indicator: Label = $TurnIndicator
 @onready var turn_glow: ColorRect = $TurnIndicator/TurnGlow
 
 ## Redesign button
 @onready var redesign_button: Button = $RedesignButton
+
+## Pause button
+@onready var pause_button: Button = $PauseButton
 
 ## Fast Forward button
 @onready var ff_button: Button = $FFButton
@@ -45,6 +52,7 @@ var is_player_turn: bool = true
 var combat_active: bool = false
 var turn_count: int = 0
 var current_mission: int = 0
+var is_paused: bool = false
 
 ## Speed control (2.0 = 0.5x speed by default)
 var speed_multiplier: float = 2.0  # 4.0 = 0.25x, 2.0 = 0.5x, 1.0 = 1x, 0.5 = 2x
@@ -53,9 +61,11 @@ func _ready():
 	# Connect buttons
 	redesign_button.pressed.connect(_on_redesign_pressed)
 	victory_return_button.pressed.connect(_on_victory_return_pressed)
+	pause_button.pressed.connect(_on_pause_pressed)
 	ff_button.pressed.connect(_on_ff_pressed)
 
-	# Set initial speed button text
+	# Set initial button text
+	pause_button.text = "PAUSE"
 	ff_button.text = "Speed: 0.5x"
 
 	# Connect hover scale effects
@@ -63,6 +73,8 @@ func _ready():
 	redesign_button.mouse_exited.connect(_on_button_hover_end.bind(redesign_button))
 	victory_return_button.mouse_entered.connect(_on_button_hover_start.bind(victory_return_button))
 	victory_return_button.mouse_exited.connect(_on_button_hover_end.bind(victory_return_button))
+	pause_button.mouse_entered.connect(_on_button_hover_start.bind(pause_button))
+	pause_button.mouse_exited.connect(_on_button_hover_end.bind(pause_button))
 	ff_button.mouse_entered.connect(_on_button_hover_start.bind(ff_button))
 	ff_button.mouse_exited.connect(_on_button_hover_end.bind(ff_button))
 
@@ -102,9 +114,17 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	player_ship_display.set_ship_data(player_data)
 	enemy_ship_display.set_ship_data(enemy_data)
 
+	# Update power visuals (Phase 10.9 - show powered/unpowered rooms)
+	player_ship_display.update_power_visuals(player_data)
+	enemy_ship_display.update_power_visuals(enemy_data)
+
 	# Initialize health bars
 	_update_player_health()
 	_update_enemy_health()
+
+	# Initialize stats panels (Phase 10.9)
+	_update_player_stats()
+	_update_enemy_stats()
 
 	# Determine initiative (who goes first)
 	var initiative_data = _determine_initiative_detailed()
@@ -186,9 +206,24 @@ func _update_health_bar_color(bar: ProgressBar):
 		style.bg_color = Color(0.886275, 0.290196, 0.290196, 1)
 		bar.add_theme_stylebox_override("fill", style)
 
+## Update player stats panel (Phase 10.9)
+func _update_player_stats():
+	if player_stats_panel and player_data:
+		var hull_data = GameState.get_current_hull_data()
+		player_stats_panel.update_stats(player_data, hull_data)
+
+## Update enemy stats panel (Phase 10.9)
+func _update_enemy_stats():
+	if enemy_stats_panel and enemy_data:
+		# Enemies don't have hull bonuses
+		enemy_stats_panel.update_stats(enemy_data, {})
+
 ## Main combat loop
 func run_combat_loop():
 	combat_active = true
+
+	# Play event start sound
+	AudioManager.play_event_start()
 
 	# Log combat start
 	if combat_log:
@@ -218,6 +253,10 @@ func run_combat_loop():
 
 	# Combat loop
 	while combat_active:
+		# Wait while paused
+		while is_paused:
+			await get_tree().create_timer(0.1).timeout
+
 		await _execute_turn()
 
 		# Check win condition
@@ -405,6 +444,9 @@ func _fire_weapons_with_effects(attacker: ShipData, _defender: ShipData, attacke
 	# Determine weapon type based on mission/ship (player uses lasers, enemy uses torpedos for variety)
 	var use_lasers = (attacker == player_data)
 
+	# Play laser fire sound
+	AudioManager.play_laser_fire()
+
 	# Fire all weapons simultaneously
 	for weapon_pos in weapon_world_positions:
 		# Spawn muzzle flash at weapon position
@@ -551,6 +593,9 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			if combat_log:
 				combat_log.add_room_destroyed(RoomData.get_label(room_type), defender_name)
 
+			# Play explosion sound
+			AudioManager.play_explosion()
+
 			# Destroy entire room instance (data)
 			defender.destroy_room_instance(room_id)
 
@@ -593,6 +638,9 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			if combat_log:
 				combat_log.add_room_destroyed(RoomData.get_label(room_type), defender_name)
 
+			# Play explosion sound
+			AudioManager.play_explosion()
+
 			defender.destroy_room_at(pos.x, pos.y)
 			await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
 			await get_tree().create_timer(0.1 * speed_multiplier).timeout
@@ -630,8 +678,14 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 	if reactor_destroyed:
 		if combat_log:
 			combat_log.add_reactor_destroyed(defender_name)
+		# Play reactor powerdown sound
+		AudioManager.play_reactor_powerdown()
 		defender.recalculate_power()
 		defender_display.update_power_visuals(defender)
+
+	# Update stats panels after room destruction (Phase 10.9)
+	_update_player_stats()
+	_update_enemy_stats()
 
 ## Flash ship with color
 func _flash_ship(display: ShipDisplay, color: Color):
@@ -661,6 +715,9 @@ func _show_combat_end(winner: String):
 
 	# Flash winner green, loser red
 	if winner == "player":
+		# Play victory sound
+		AudioManager.play_victory()
+
 		_flash_ship(player_ship_display, Color(0.29, 0.89, 0.29))  # Green
 		_flash_ship(enemy_ship_display, Color(0.89, 0.29, 0.29))   # Red
 		result_label.text = "VICTORY"
@@ -679,6 +736,9 @@ func _show_combat_end(winner: String):
 			# Mission 3 complete - show final victory screen
 			victory_overlay.visible = true
 	else:
+		# Play death sound
+		AudioManager.play_death()
+
 		_flash_ship(player_ship_display, Color(0.89, 0.29, 0.29))  # Red
 		_flash_ship(enemy_ship_display, Color(0.29, 0.89, 0.29))   # Green
 		result_label.text = "DEFEAT"
@@ -704,11 +764,17 @@ func _check_win_condition() -> String:
 
 ## Handle redesign button press
 func _on_redesign_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Return to ShipDesigner scene
 	get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
 
 ## Handle victory return button press
 func _on_victory_return_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Return to Mission Select
 	get_tree().change_scene_to_file("res://scenes/mission/MissionSelect.tscn")
 
@@ -724,8 +790,21 @@ func _on_button_hover_end(button: Button):
 	var tween = create_tween()
 	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)
 
+## Handle Pause button press - toggle pause state
+func _on_pause_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	is_paused = !is_paused
+	if is_paused:
+		pause_button.text = "RESUME"
+	else:
+		pause_button.text = "PAUSE"
+
 ## Handle Fast Forward button press - cycle through speeds
 func _on_ff_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
 	# Cycle: 0.5x → 1x → 2x → 0.25x → 0.5x
 	if speed_multiplier == 2.0:  # 0.5x → 1x
 		speed_multiplier = 1.0

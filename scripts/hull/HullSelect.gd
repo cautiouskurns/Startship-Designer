@@ -23,6 +23,9 @@ func _ready():
 
 ## Handle hull selection from any card
 func _on_hull_selected(hull_type: GameState.HullType):
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# Save selected hull to GameState
 	GameState.set_hull(hull_type)
 

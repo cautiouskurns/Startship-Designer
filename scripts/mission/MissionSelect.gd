@@ -77,14 +77,17 @@ func _show_brief(mission_index: int):
 
 ## Mission 1 pressed
 func _on_mission1_pressed():
+	AudioManager.play_button_click()
 	_load_mission(0)
 
 ## Mission 2 pressed
 func _on_mission2_pressed():
+	AudioManager.play_button_click()
 	_load_mission(1)
 
 ## Mission 3 pressed
 func _on_mission3_pressed():
+	AudioManager.play_button_click()
 	_load_mission(2)
 
 ## Mission 1 hovered
@@ -109,11 +112,17 @@ func _load_mission(mission_index: int):
 
 ## Back button pressed
 func _on_back_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	# For now, just exit
 	get_tree().quit()
 
 ## Enemy setup button pressed (Phase 10.8)
 func _on_enemy_setup_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
 	enemy_setup_panel.show_panel()
 
 ## Button hover start - scale up

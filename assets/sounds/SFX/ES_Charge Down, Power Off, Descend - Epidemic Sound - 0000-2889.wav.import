@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cv3g02lbywgvr"
+path="res://.godot/imported/ES_Charge Down, Power Off, Descend - Epidemic Sound - 0000-2889.wav-39edf814331d2c9b9e36ff8b4478f08e.sample"
+
+[deps]
+
+source_file="res://assets/sounds/SFX/ES_Charge Down, Power Off, Descend - Epidemic Sound - 0000-2889.wav"
+dest_files=["res://.godot/imported/ES_Charge Down, Power Off, Descend - Epidemic Sound - 0000-2889.wav-39edf814331d2c9b9e36ff8b4478f08e.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

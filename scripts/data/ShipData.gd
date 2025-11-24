@@ -25,14 +25,24 @@ func _init(room_grid: Array = [], hp: int = 100):
 	max_hp = hp
 	current_hp = hp
 
-## Count number of specific room type in grid
+## Count number of specific room type in grid (Phase 10.9 - count room instances, not tiles)
 func count_room_type(room_type: RoomData.RoomType) -> int:
-	var count = 0
-	for row in grid:
-		for cell in row:
-			if cell == room_type:
+	# Use room_instances if available (correct for multi-tile rooms)
+	if not room_instances.is_empty():
+		var count = 0
+		for room_id in room_instances:
+			var room_data = room_instances[room_id]
+			if room_data["type"] == room_type:
 				count += 1
-	return count
+		return count
+	else:
+		# Fallback for old single-tile system
+		var count = 0
+		for row in grid:
+			for cell in row:
+				if cell == room_type:
+					count += 1
+		return count
 
 ## Get all active (non-empty) room positions as array of Vector2i
 func get_active_room_positions() -> Array:
@@ -157,14 +167,31 @@ func is_room_powered(x: int, y: int) -> bool:
 
 	return false
 
-## Count number of powered rooms of specific type
+## Count number of powered rooms of specific type (Phase 10.9 - count room instances, not tiles)
 func count_powered_room_type(room_type: RoomData.RoomType) -> int:
-	var count = 0
-	for y in range(grid.size()):
-		for x in range(grid[y].size()):
-			if grid[y][x] == room_type and is_room_powered(x, y):
-				count += 1
-	return count
+	# Use room_instances if available (correct for multi-tile rooms)
+	if not room_instances.is_empty():
+		var count = 0
+		for room_id in room_instances:
+			var room_data = room_instances[room_id]
+			if room_data["type"] == room_type:
+				# Check if any tile of this room instance is powered
+				var is_powered = false
+				for tile_pos in room_data["tiles"]:
+					if is_room_powered(tile_pos.x, tile_pos.y):
+						is_powered = true
+						break
+				if is_powered:
+					count += 1
+		return count
+	else:
+		# Fallback for old single-tile system
+		var count = 0
+		for y in range(grid.size()):
+			for x in range(grid[y].size()):
+				if grid[y][x] == room_type and is_room_powered(x, y):
+					count += 1
+		return count
 
 ## Recalculate power grid (called when reactor destroyed in combat)
 func recalculate_power():
