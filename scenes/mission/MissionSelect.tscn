@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://mission_select_001"]
+[gd_scene load_steps=3 format=3 uid="uid://mission_select_001"]
 
 [ext_resource type="Script" path="res://scripts/mission/MissionSelect.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://dh8qm3x5r8pqh" path="res://scenes/mission/EnemySetupPanel.tscn" id="2_enemy_setup"]
 
 [node name="MissionSelect" type="Control"]
 layout_mode = 3
@@ -106,3 +107,14 @@ offset_right = 120.0
 offset_bottom = 720.0
 theme_override_font_sizes/font_size = 18
 text = "EXIT"
+
+[node name="EnemySetupButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1700.0
+offset_top = 20.0
+offset_right = 1900.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 18
+text = "ENEMY SETUP"
+
+[node name="EnemySetupPanel" parent="." instance=ExtResource("2_enemy_setup")]

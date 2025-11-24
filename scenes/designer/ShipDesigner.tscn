@@ -1,10 +1,12 @@
-[gd_scene load_steps=12 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=14 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
 [ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/SynergyGuidePanel.tscn" id="4"]
+[ext_resource type="PackedScene" uid="uid://b3vn8y4qxc7h2" path="res://scenes/designer/components/TemplateNameDialog.tscn" id="5_template_name"]
+[ext_resource type="PackedScene" uid="uid://cc7qm3y5r8vph" path="res://scenes/designer/components/TemplateListPanel.tscn" id="6_template_list"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_budget"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -145,6 +147,24 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_clear_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_clear_hover")
 text = "CLEAR GRID"
 
+[node name="SaveButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1051.0
+offset_top = 1007.0
+offset_right = 1176.0
+offset_bottom = 1057.0
+theme_override_font_sizes/font_size = 18
+text = "SAVE"
+
+[node name="LoadButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1193.0
+offset_top = 1007.0
+offset_right = 1318.0
+offset_bottom = 1057.0
+theme_override_font_sizes/font_size = 18
+text = "LOAD"
+
 [node name="AutoFillButton" type="Button" parent="."]
 layout_mode = 0
 offset_left = 1379.0
@@ -199,3 +219,7 @@ offset_bottom = 30.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
 text = "+3"
+
+[node name="TemplateNameDialog" parent="." instance=ExtResource("5_template_name")]
+
+[node name="TemplateListPanel" parent="." instance=ExtResource("6_template_list")]

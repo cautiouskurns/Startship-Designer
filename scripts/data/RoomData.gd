@@ -17,8 +17,8 @@ static var costs = {
 	RoomType.BRIDGE: 5,  # Changed from 2 (occupies 4 tiles)
 	RoomType.WEAPON: 2,  # Changed from 3 (occupies 2 tiles)
 	RoomType.SHIELD: 3,  # Unchanged (occupies 2 tiles)
-	RoomType.ENGINE: 2,  # Unchanged (occupies 2 tiles)
-	RoomType.REACTOR: 3,  # Changed from 2 (occupies 4 tiles in T-shape)
+	RoomType.ENGINE: 3,  # Phase 10.7: Changed from 2 (now occupies 4 tiles in 2×2)
+	RoomType.REACTOR: 4,  # Phase 10.7: Changed to 4 (now occupies 6 tiles in 3×2 rectangle)
 	RoomType.ARMOR: 1   # Unchanged (occupies 1 tile)
 }
 
@@ -28,8 +28,8 @@ static var shapes = {
 	RoomType.BRIDGE: [[0, 0], [1, 0], [0, 1], [1, 1]],  # 2×2 square
 	RoomType.WEAPON: [[0, 0], [1, 0]],  # 1×2 horizontal bar
 	RoomType.SHIELD: [[0, 0], [1, 0]],  # 1×2 horizontal bar
-	RoomType.ENGINE: [[0, 0], [1, 0]],  # 1×2 horizontal bar
-	RoomType.REACTOR: [[0, 1], [1, 0], [1, 1], [1, 2]],  # T-shape (center top, 3 below)
+	RoomType.ENGINE: [[0, 0], [1, 0], [0, 1], [1, 1]],  # 2×2 square (Phase 10.7)
+	RoomType.REACTOR: [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]],  # 3×2 rectangle (Phase 10.7)
 	RoomType.ARMOR: [[0, 0]]   # 1×1 single tile
 }
 
@@ -126,7 +126,7 @@ static func can_place_in_column(room_type: RoomType, column: int, grid_width: in
 				# Frigate (10 wide): Right half columns [4, 5, 6, 7, 8, 9]
 				# Cruiser (8 wide): Right half columns [3, 4, 5, 6, 7]
 				# Battleship (7 wide): Right half columns [2, 3, 4, 5, 6]
-				var half_point = grid_width / 2
+				var half_point = int(grid_width / 2.0)
 				return column >= half_point - 1
 			RoomType.ENGINE:
 				# Always leftmost 2 columns [0, 1] (back of ship)

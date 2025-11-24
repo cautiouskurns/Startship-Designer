@@ -25,6 +25,9 @@ extends Control
 ## Combat log
 @onready var combat_log: CombatLog = $CombatLog
 
+## Combat visual effects manager (Phase 10.6)
+@onready var combat_fx: CombatFX = $CombatFX
+
 ## Result overlay nodes
 @onready var result_overlay: ColorRect = $ResultOverlay
 @onready var result_label: Label = $ResultOverlay/ResultLabel
@@ -78,16 +81,22 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 		player_data.max_hp += bonus_value
 		player_data.current_hp += bonus_value
 
-	# Load enemy based on mission
-	match mission_index:
-		0:
-			enemy_data = ShipData.create_mission1_scout()
-		1:
-			enemy_data = ShipData.create_mission2_raider()
-		2:
-			enemy_data = ShipData.create_mission3_dreadnought()
-		_:
-			enemy_data = ShipData.create_mission1_scout()  # Default fallback
+	# Load enemy based on mission (Phase 10.8 - check for template assignment first)
+	var enemy_template = TemplateManager.get_enemy_template(mission_index)
+	if enemy_template:
+		# Use template for enemy ship
+		enemy_data = _create_enemy_from_template(enemy_template)
+	else:
+		# Fallback to auto-generated enemy
+		match mission_index:
+			0:
+				enemy_data = ShipData.create_mission1_scout()
+			1:
+				enemy_data = ShipData.create_mission2_raider()
+			2:
+				enemy_data = ShipData.create_mission3_dreadnought()
+			_:
+				enemy_data = ShipData.create_mission1_scout()  # Default fallback
 
 	# Set up ship displays
 	player_ship_display.set_ship_data(player_data)
@@ -259,17 +268,14 @@ func _execute_turn():
 	# Wait to see turn indicator
 	await get_tree().create_timer(0.5 * speed_multiplier).timeout
 
-	# Flash attacking ship
-	_flash_ship(attacker_display, Color(1, 1, 1))  # White flash
-
-	# Wait to see attacker flash
-	await get_tree().create_timer(0.2 * speed_multiplier).timeout
-
-	# Calculate damage
+	# Calculate damage first (needed for visual effects)
 	var weapons = attacker.count_powered_room_type(RoomData.RoomType.WEAPON)
 	var damage = _calculate_damage(attacker)
 	var shield_absorption = _calculate_shield_absorption(defender, damage)
 	var net_damage = max(0, damage - shield_absorption)
+
+	# Phase 10.6: Fire weapons with visual effects (muzzle flashes, projectiles, impacts)
+	await _fire_weapons_with_effects(attacker, defender, attacker_display, defender_display, damage, shield_absorption)
 
 	# Log attack
 	if combat_log:
@@ -377,6 +383,64 @@ func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 	var total_absorption = base_absorption + synergy_absorption
 
 	return min(damage, total_absorption)
+
+## Fire weapons with visual effects (Phase 10.6 - lasers, torpedos, shield impacts)
+## Returns after all weapon effects have completed
+func _fire_weapons_with_effects(attacker: ShipData, _defender: ShipData, attacker_display: ShipDisplay, defender_display: ShipDisplay, damage: int, shield_absorption: int):
+	# Get weapon grid positions from attacker
+	var weapon_positions = attacker.get_weapon_grid_positions()
+
+	if weapon_positions.is_empty():
+		return  # No weapons to fire
+
+	# Convert weapon grid positions to world positions
+	var weapon_world_positions = []
+	for grid_pos in weapon_positions:
+		var world_pos = attacker_display.grid_to_world_position(grid_pos.x, grid_pos.y)
+		weapon_world_positions.append(world_pos)
+
+	# Get target position on defender (center of ship)
+	var defender_center = defender_display.get_ship_center_world_position()
+
+	# Determine weapon type based on mission/ship (player uses lasers, enemy uses torpedos for variety)
+	var use_lasers = (attacker == player_data)
+
+	# Fire all weapons simultaneously
+	for weapon_pos in weapon_world_positions:
+		# Spawn muzzle flash at weapon position
+		if combat_fx:
+			combat_fx.spawn_muzzle_flash(weapon_pos, 0.1)
+
+		# Small delay between muzzle flash and projectile
+		await get_tree().create_timer(0.05 * speed_multiplier).timeout
+
+		# Fire projectile
+		if combat_fx:
+			if use_lasers:
+				combat_fx.spawn_laser_beam(weapon_pos, defender_center, 0.3)
+			else:
+				combat_fx.spawn_torpedo(weapon_pos, defender_center, 0.5)
+
+	# Wait for projectiles to reach target
+	var projectile_travel_time = 0.3 if use_lasers else 0.5
+	await get_tree().create_timer(projectile_travel_time * speed_multiplier).timeout
+
+	# Spawn impacts based on whether shields absorbed damage
+	if combat_fx:
+		if shield_absorption > 0:
+			# Shields absorbed some/all damage - show shield impact
+			combat_fx.spawn_shield_impact(defender_center, 60.0, 0.4)
+
+		if damage - shield_absorption > 0:
+			# Some damage got through - show hull impact
+			combat_fx.spawn_hull_impact(defender_center, 30, 0.5)
+
+			# Screen shake for significant hits
+			if damage - shield_absorption > 20:
+				combat_fx.spawn_screen_shake(5.0, 0.2)
+
+	# Wait for impacts to complete
+	await get_tree().create_timer(0.3 * speed_multiplier).timeout
 
 ## Spawn floating damage number above target ship
 func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption: int, is_player_target: bool):
@@ -675,3 +739,59 @@ func _on_ff_pressed():
 	else:  # 0.25x → 0.5x
 		speed_multiplier = 2.0
 		ff_button.text = "Speed: 0.5x"
+
+## Get current speed multiplier (Phase 10.6 - for CombatFX to access)
+func _get_speed_multiplier_value() -> float:
+	return speed_multiplier
+
+## Create enemy ship from template (Phase 10.8 - template system)
+func _create_enemy_from_template(template: ShipTemplate) -> ShipData:
+	# Create empty grid based on template dimensions
+	var grid = []
+	for _y in range(template.grid_height):
+		var row = []
+		for _x in range(template.grid_width):
+			row.append(RoomData.RoomType.EMPTY)
+		grid.append(row)
+
+	# Fill grid with rooms from template
+	var room_instances = {}
+	var next_room_id = 1
+
+	for room_placement in template.room_placements:
+		var room_type = room_placement["type"]
+		var tiles = room_placement["tiles"]
+
+		# Add to room_instances (for multi-tile room tracking)
+		room_instances[next_room_id] = {
+			"type": room_type,
+			"tiles": tiles
+		}
+
+		# Fill grid tiles
+		for tile_pos in tiles:
+			if tile_pos.y >= 0 and tile_pos.y < grid.size():
+				if tile_pos.x >= 0 and tile_pos.x < grid[tile_pos.y].size():
+					grid[tile_pos.y][tile_pos.x] = room_type
+
+		next_room_id += 1
+
+	# Create ShipData from grid
+	var ship_data = ShipData.new()
+	ship_data.grid = grid
+	ship_data.room_instances = room_instances
+
+	# Calculate HP from armor count
+	var armor_count = 0
+	for y in range(grid.size()):
+		for x in range(grid[y].size()):
+			if grid[y][x] == RoomData.RoomType.ARMOR:
+				armor_count += 1
+
+	ship_data.max_hp = 20 + (armor_count * 10)
+	ship_data.current_hp = ship_data.max_hp
+
+	# Calculate power grid
+	ship_data.recalculate_power()
+
+	return ship_data

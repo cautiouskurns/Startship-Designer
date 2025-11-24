@@ -132,3 +132,8 @@ func get_current_hull_data() -> Dictionary:
 ## Set current hull type (Phase 10.1)
 func set_hull(hull_type: HullType):
 	current_hull = hull_type
+
+## Get hull name string (Phase 10.8 - for template system)
+func get_hull_name(hull_type: HullType) -> String:
+	var hull_data = get_hull_data(hull_type)
+	return hull_data.get("name", "UNKNOWN")

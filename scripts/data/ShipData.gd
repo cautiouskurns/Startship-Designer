@@ -281,64 +281,84 @@ static func create_enemy_ship_with_shaped_rooms(room_placements: Array, hp: int,
 
 	return ship
 
-## Create Mission 1 Scout enemy ship (Phase 10.4 - shaped rooms facing LEFT toward player)
+## Create Mission 1 Scout enemy ship (Phase 10.7 - updated for 3×2 reactor)
 ## Enemy faces LEFT (←): weapons on left, engines on right
+## Basic threat: 1 weapon, 1 shield, minimal armor - HP: 60
 static func create_mission1_scout() -> ShipData:
 	var room_placements = [
-		# Weapon (1×2) at front left - facing player
-		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 0},
-		# Reactor (T-shape) for power
+		# Reactor (3×2) at (1,1): tiles at (1,1), (2,1), (3,1), (1,2), (2,2), (3,2)
 		{"type": RoomData.RoomType.REACTOR, "x": 1, "y": 1},
-		# Bridge (2×2) at center
-		{"type": RoomData.RoomType.BRIDGE, "x": 3, "y": 2},
-		# Shield (1×2) powered by reactor
-		{"type": RoomData.RoomType.SHIELD, "x": 0, "y": 3},
-		# Engine (1×2) at back right
-		{"type": RoomData.RoomType.ENGINE, "x": 6, "y": 4}
-	]
-
-	return create_enemy_ship_with_shaped_rooms(room_placements, 40)
-
-## Create Mission 2 Raider enemy ship (Phase 10.4 - shaped rooms facing LEFT toward player)
-## Enemy faces LEFT (←): weapons on left, engines on right
-static func create_mission2_raider() -> ShipData:
-	var room_placements = [
-		# Weapons (two 1×2) at front left - facing player
-		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 0},
-		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 4},
-		# Reactor (T-shape) for power
-		{"type": RoomData.RoomType.REACTOR, "x": 1, "y": 1},
-		# Shields (two 1×2) for defense
-		{"type": RoomData.RoomType.SHIELD, "x": 2, "y": 0},
-		{"type": RoomData.RoomType.SHIELD, "x": 5, "y": 2},
-		# Bridge (2×2) at center
-		{"type": RoomData.RoomType.BRIDGE, "x": 3, "y": 2}
+		# Weapon (1×2) at (0,1): tiles at (0,1), (1,1) - (1,1) IS reactor
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 1},
+		# Shield (1×2) at (3,0): tiles at (3,0), (4,0) - adjacent to (3,1) reactor
+		{"type": RoomData.RoomType.SHIELD, "x": 3, "y": 0},
+		# Bridge (2×2) at center-right
+		{"type": RoomData.RoomType.BRIDGE, "x": 4, "y": 2},
+		# Engine (2×2) at back right
+		{"type": RoomData.RoomType.ENGINE, "x": 6, "y": 2},
+		# Armor for some HP
+		{"type": RoomData.RoomType.ARMOR, "x": 0, "y": 4}
 	]
 
 	return create_enemy_ship_with_shaped_rooms(room_placements, 60)
 
-## Create Mission 3 Dreadnought enemy ship (Phase 10.4 - shaped rooms facing LEFT toward player)
+## Create Mission 2 Raider enemy ship (Phase 10.7 - updated for 3×2 reactor)
 ## Enemy faces LEFT (←): weapons on left, engines on right
-static func create_mission3_dreadnought() -> ShipData:
+## Moderate threat: 3 weapons with synergies, 2 shields, armor - HP: 80
+static func create_mission2_raider() -> ShipData:
 	var room_placements = [
-		# Weapons (three 1×2) at front left - heavy firepower facing player
-		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 0},
-		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 3},
-		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 5},
-		# Reactors (two T-shapes) for full power coverage
-		{"type": RoomData.RoomType.REACTOR, "x": 2, "y": 0},
-		{"type": RoomData.RoomType.REACTOR, "x": 3, "y": 3},
-		# Shields (three 1×2) for heavy defense
-		{"type": RoomData.RoomType.SHIELD, "x": 1, "y": 1},
-		{"type": RoomData.RoomType.SHIELD, "x": 4, "y": 2},
-		{"type": RoomData.RoomType.SHIELD, "x": 5, "y": 4},
-		# Bridge (2×2) at center
-		{"type": RoomData.RoomType.BRIDGE, "x": 5, "y": 1},
-		# Engine (1×2) at back right
-		{"type": RoomData.RoomType.ENGINE, "x": 6, "y": 4}
+		# Reactor (3×2) at (1,1): tiles at (1,1), (2,1), (3,1), (1,2), (2,2), (3,2)
+		{"type": RoomData.RoomType.REACTOR, "x": 1, "y": 1},
+		# Weapons (three 1×2) adjacent to reactor for power and fire rate synergies
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 1},  # tiles (0,1), (1,1) - (1,1) IS reactor
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 2},  # tiles (0,2), (1,2) - (1,2) IS reactor, adjacent to weapon above
+		{"type": RoomData.RoomType.WEAPON, "x": 1, "y": 0},  # tiles (1,0), (2,0) - adjacent to (1,1) and (2,1) reactor
+		# Shields (two 1×2) adjacent to reactor for capacity synergy
+		{"type": RoomData.RoomType.SHIELD, "x": 3, "y": 0},  # tiles (3,0), (4,0) - adjacent to (3,1) reactor
+		{"type": RoomData.RoomType.SHIELD, "x": 2, "y": 2},  # tiles (2,2), (3,2) - (2,2) and (3,2) ARE reactor
+		# Bridge (2×2) at center-right
+		{"type": RoomData.RoomType.BRIDGE, "x": 4, "y": 2},
+		# Engine (2×2) at back right
+		{"type": RoomData.RoomType.ENGINE, "x": 6, "y": 2},
+		# Armor for HP and durability synergy with weapons
+		{"type": RoomData.RoomType.ARMOR, "x": 0, "y": 0},
+		{"type": RoomData.RoomType.ARMOR, "x": 0, "y": 3},
+		{"type": RoomData.RoomType.ARMOR, "x": 1, "y": 3}
 	]
 
-	return create_enemy_ship_with_shaped_rooms(room_placements, 100)
+	return create_enemy_ship_with_shaped_rooms(room_placements, 80)
+
+## Create Mission 3 Dreadnought enemy ship (Phase 10.7 - updated for 3×2 reactor)
+## Enemy faces LEFT (←): weapons on left, engines on right
+## Maximum threat: 4 weapons with synergies, 3 shields with synergies, dual reactors, armor - HP: 120
+static func create_mission3_dreadnought() -> ShipData:
+	var room_placements = [
+		# Reactors (two 3×2) for full power coverage
+		{"type": RoomData.RoomType.REACTOR, "x": 1, "y": 0},  # tiles (1,0), (2,0), (3,0), (1,1), (2,1), (3,1)
+		{"type": RoomData.RoomType.REACTOR, "x": 1, "y": 3},  # tiles (1,3), (2,3), (3,3), (1,4), (2,4), (3,4)
+		# Weapons (four 1×2) adjacent to reactors for power and synergies
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 0},  # tiles (0,0), (1,0) - (1,0) IS reactor 1
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 1},  # tiles (0,1), (1,1) - (1,1) IS reactor 1, adjacent to weapon above
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 3},  # tiles (0,3), (1,3) - (1,3) IS reactor 2
+		{"type": RoomData.RoomType.WEAPON, "x": 0, "y": 4},  # tiles (0,4), (1,4) - (1,4) IS reactor 2, adjacent to weapon above
+		# Shields (three 1×2) adjacent to reactors for capacity synergy (NO overlaps)
+		{"type": RoomData.RoomType.SHIELD, "x": 4, "y": 0},  # tiles (4,0), (5,0) - adjacent to (3,0) reactor 1
+		{"type": RoomData.RoomType.SHIELD, "x": 1, "y": 2},  # tiles (1,2), (2,2) - adjacent to (1,1) and (2,1) reactor 1
+		{"type": RoomData.RoomType.SHIELD, "x": 4, "y": 4},  # tiles (4,4), (5,4) - adjacent to (3,4) reactor 2
+		# Bridge (2×2) at center-right
+		{"type": RoomData.RoomType.BRIDGE, "x": 5, "y": 1},  # tiles (5,1), (6,1), (5,2), (6,2)
+		# Engine (2×2) at back right (no overlap with bridge)
+		{"type": RoomData.RoomType.ENGINE, "x": 6, "y": 3},  # tiles (6,3), (7,3), (6,4), (7,4)
+		# Armor for HP and durability synergies with weapons
+		{"type": RoomData.RoomType.ARMOR, "x": 0, "y": 2},  # Between weapon rows
+		{"type": RoomData.RoomType.ARMOR, "x": 3, "y": 2},  # Between reactors
+		{"type": RoomData.RoomType.ARMOR, "x": 4, "y": 3},  # Between shields
+		{"type": RoomData.RoomType.ARMOR, "x": 0, "y": 5},  # Bottom protection
+		{"type": RoomData.RoomType.ARMOR, "x": 1, "y": 5},  # Bottom protection
+		{"type": RoomData.RoomType.ARMOR, "x": 4, "y": 5}   # Bottom right protection
+	]
+
+	return create_enemy_ship_with_shaped_rooms(room_placements, 120)
 
 ## Calculate synergy bonuses based on adjacent compatible rooms
 ## Returns a Dictionary with synergy counts and per-room bonuses
@@ -417,3 +437,15 @@ func calculate_synergy_bonuses() -> Dictionary:
 		"counts": synergy_counts,
 		"room_synergies": room_synergies
 	}
+
+## Get grid positions of all weapon rooms (Phase 10.6 - for combat visual effects)
+## Returns array of Vector2i positions (one per weapon room tile)
+func get_weapon_grid_positions() -> Array:
+	var weapon_positions = []
+
+	for y in range(grid.size()):
+		for x in range(grid[y].size()):
+			if grid[y][x] == RoomData.RoomType.WEAPON:
+				weapon_positions.append(Vector2i(x, y))
+
+	return weapon_positions

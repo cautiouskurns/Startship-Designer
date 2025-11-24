@@ -9,6 +9,8 @@ extends Control
 @onready var brief_panel: Panel = $BriefPanel
 @onready var brief_label: Label = $BriefPanel/BriefLabel
 @onready var back_button: Button = $BackButton
+@onready var enemy_setup_button: Button = $EnemySetupButton
+@onready var enemy_setup_panel = $EnemySetupPanel
 
 func _ready():
 	# Connect button signals
@@ -29,6 +31,11 @@ func _ready():
 	mission3_button.mouse_exited.connect(_on_button_hover_end.bind(mission3_button))
 	back_button.mouse_entered.connect(_on_button_hover_start.bind(back_button))
 	back_button.mouse_exited.connect(_on_button_hover_end.bind(back_button))
+
+	# Connect enemy setup button (Phase 10.8)
+	enemy_setup_button.pressed.connect(_on_enemy_setup_pressed)
+	enemy_setup_button.mouse_entered.connect(_on_button_hover_start.bind(enemy_setup_button))
+	enemy_setup_button.mouse_exited.connect(_on_button_hover_end.bind(enemy_setup_button))
 
 	# Hide brief panel initially
 	brief_panel.visible = false
@@ -104,6 +111,10 @@ func _load_mission(mission_index: int):
 func _on_back_pressed():
 	# For now, just exit
 	get_tree().quit()
+
+## Enemy setup button pressed (Phase 10.8)
+func _on_enemy_setup_pressed():
+	enemy_setup_panel.show_panel()
 
 ## Button hover start - scale up
 func _on_button_hover_start(button: Button):

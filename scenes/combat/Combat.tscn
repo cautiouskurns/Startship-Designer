@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://cx3fp2r8sjcev"]
+[gd_scene load_steps=6 format=3 uid="uid://cx3fp2r8sjcev"]
 
 [ext_resource type="Script" uid="uid://c6duepdtvkntj" path="res://scripts/combat/Combat.gd" id="1"]
 [ext_resource type="Script" uid="uid://dy1qjw1ce5hly" path="res://scripts/combat/ShipDisplay.gd" id="2"]
 [ext_resource type="Script" uid="uid://dowx3hl2sfer5" path="res://scripts/combat/CombatLog.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/combat/CombatFX.gd" id="4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_green"]
 bg_color = Color(0.290196, 0.886275, 0.290196, 1)
@@ -234,3 +235,7 @@ script = ExtResource("3")
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[node name="CombatFX" type="Node2D" parent="."]
+z_index = 50
+script = ExtResource("4")

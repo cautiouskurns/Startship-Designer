@@ -21,6 +21,8 @@ var current_budget: int = 0
 @onready var launch_button: Button = $LaunchButton
 @onready var auto_fill_button: Button = $AutoFillButton
 @onready var clear_grid_button: Button = $ClearGridButton
+@onready var save_button: Button = $SaveButton
+@onready var load_button: Button = $LoadButton
 
 ## Room palette panel
 @onready var room_palette: RoomPalettePanel = $RoomPalettePanel
@@ -33,6 +35,10 @@ var current_budget: int = 0
 
 ## Cost indicator label
 @onready var cost_indicator: Label = $CostIndicator
+
+## Template UI (Phase 10.8)
+@onready var template_name_dialog = $TemplateNameDialog
+@onready var template_list_panel = $TemplateListPanel
 
 ## Current template index for cycling
 var current_template_index: int = 0
@@ -98,9 +104,21 @@ func _ready():
 	clear_grid_button.mouse_entered.connect(_on_button_hover_start.bind(clear_grid_button))
 	clear_grid_button.mouse_exited.connect(_on_button_hover_end.bind(clear_grid_button))
 
+	# Connect save/load button signals (Phase 10.8)
+	save_button.pressed.connect(_on_save_pressed)
+	save_button.mouse_entered.connect(_on_button_hover_start.bind(save_button))
+	save_button.mouse_exited.connect(_on_button_hover_end.bind(save_button))
+	load_button.pressed.connect(_on_load_pressed)
+	load_button.mouse_entered.connect(_on_button_hover_start.bind(load_button))
+	load_button.mouse_exited.connect(_on_button_hover_end.bind(load_button))
+
 	# Connect room palette signals
 	room_palette.room_type_selected.connect(_on_room_type_selected)
 	room_palette.rotation_requested.connect(rotate_selected_room)  # Phase 7.3
+
+	# Connect template UI signals (Phase 10.8)
+	template_name_dialog.template_name_entered.connect(_on_template_name_entered)
+	template_list_panel.template_selected.connect(_on_template_selected)
 
 	# Initialize palette display
 	update_palette_counts()
@@ -801,107 +819,327 @@ func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 	# Add to placed rooms tracking array
 	placed_rooms.append(room)
 
-## Balanced template - good for all missions (Phase 10.2 - column-based constraints)
+## Try to place a room for template generation (Phase 10.5 - hull-aware templates)
+## Returns true if successfully placed, false otherwise
+func _try_place_room_for_template(x: int, y: int, room_type: RoomData.RoomType) -> bool:
+	# Validate placement
+	if not can_place_shaped_room(x, y, room_type):
+		return false
+
+	# Place the room
+	_place_room_at(x, y, room_type)
+
+	# CRITICAL: Update budget after placement so next check sees correct value
+	current_budget = calculate_current_budget()
+
+	return true
+
+## Get positions adjacent to powered rooms (Phase 10.5 - for power-aware placement)
+## Returns array of Vector2i positions that would be powered
+func _get_powered_positions() -> Array:
+	var powered_positions = []
+
+	# Create temp ship to check power
+	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+
+	# Check all grid positions
+	for y in range(ship_grid.GRID_HEIGHT):
+		for x in range(ship_grid.GRID_WIDTH):
+			# Skip if not in bounds (shaped hull)
+			if not ship_grid.is_in_bounds(x, y):
+				continue
+
+			# Skip if occupied
+			var tile = ship_grid.get_tile_at(x, y)
+			if tile.is_occupied():
+				continue
+
+			# Check if position would be powered by checking adjacency to reactors
+			var adjacent_positions = [
+				Vector2i(x - 1, y),  # Left
+				Vector2i(x + 1, y),  # Right
+				Vector2i(x, y - 1),  # Up
+				Vector2i(x, y + 1)   # Down
+			]
+
+			for adj_pos in adjacent_positions:
+				if adj_pos.y >= 0 and adj_pos.y < temp_ship.grid.size():
+					if adj_pos.x >= 0 and adj_pos.x < temp_ship.grid[adj_pos.y].size():
+						var adj_room = temp_ship.grid[adj_pos.y][adj_pos.x]
+						# Powered if adjacent to reactor
+						if adj_room == RoomData.RoomType.REACTOR:
+							powered_positions.append(Vector2i(x, y))
+							break
+
+	return powered_positions
+
+## Fill remaining budget with armor tiles (Phase 10.5 - hull-aware templates)
+## Tries to place armor in strategic locations
+func _fill_armor_to_budget():
+	var armor_cost = RoomData.get_cost(RoomData.RoomType.ARMOR)
+
+	# Try to fill budget with armor (1 BP each)
+	while current_budget + armor_cost <= max_budget:
+		var placed = false
+
+		# Try to place armor in available spaces (scan grid)
+		for y in range(ship_grid.GRID_HEIGHT):
+			for x in range(ship_grid.GRID_WIDTH):
+				if _try_place_room_for_template(x, y, RoomData.RoomType.ARMOR):
+					placed = true
+					break
+			if placed:
+				break
+
+		# If couldn't place any more armor, stop trying
+		if not placed:
+			break
+
+## Balanced template - good for all missions (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
-## Bridge 2×2, Weapons/Shields/Engines 1×2, Reactor T-shape, Armor 1×1
-## Budget: Mission 0=15, Mission 1=23, Mission 2=29
+## Adapts to Frigate (10×4), Cruiser (8×6), Battleship (7×7)
+## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered
 func _apply_balanced_template(mission: int):
-	# Core: Bridge (2×2 in center) + Reactor (T-shape for power distribution)
-	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
-	_place_room_at(1, 1, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,2),(2,1),(2,2),(2,3)
+	var w = ship_grid.GRID_WIDTH
+	var h = ship_grid.GRID_HEIGHT
+	var center_x = int(w / 2.0) - 1
+	var center_y = int(h / 2.0) - 1
 
-	# Weapons (1×2 horizontal, RIGHT side cols 6-7 = front of ship)
-	_place_room_at(6, 0, RoomData.RoomType.WEAPON)     # 2 BP - (6,0),(7,0) FRONT
-	_place_room_at(6, 2, RoomData.RoomType.WEAPON)     # 2 BP - (6,2),(7,2) FRONT
+	# 1. Place Bridge (2×2) at center - 5 BP (always powered)
+	_try_place_room_for_template(center_x, center_y, RoomData.RoomType.BRIDGE)
 
-	# Shield (1×2 horizontal, middle of ship)
-	_place_room_at(2, 4, RoomData.RoomType.SHIELD)     # 3 BP - (2,4),(3,4)
-	# Total: 15 BP
+	# 2. Place first Reactor for power - 3 BP (always powered)
+	# Try left-center area for good power coverage
+	var reactor_placed = false
+	for try_x in [1, 2, 0]:
+		for try_y in [center_y, center_y + 1, center_y - 1]:
+			if _try_place_room_for_template(try_x, try_y, RoomData.RoomType.REACTOR):
+				reactor_placed = true
+				break
+		if reactor_placed:
+			break
 
+	# 3. Get powered positions (adjacent to reactors)
+	var powered_pos = _get_powered_positions()
+
+	# 4. Place 2 Weapons in powered positions in right half (front) - 4 BP total
+	var weapons_placed = 0
+	for pos in powered_pos:
+		if weapons_placed >= 2:
+			break
+		# Check if in right half and valid column
+		if pos.x >= int(w / 2.0) - 1 and RoomData.can_place_in_column(RoomData.RoomType.WEAPON, pos.x, w):
+			if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.WEAPON):
+				weapons_placed += 1
+				powered_pos = _get_powered_positions()  # Update powered positions
+
+	# 5. Place Shield in powered position - 3 BP
+	for pos in powered_pos:
+		if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.SHIELD):
+			powered_pos = _get_powered_positions()
+			break
+
+	# 6. Place 1-2 Engines in powered positions in leftmost columns (back) - 2-4 BP
+	var engines_placed = 0
+	var target_engines = 1 if mission == 0 else 2
+	for pos in powered_pos:
+		if engines_placed >= target_engines:
+			break
+		if pos.x <= 1:  # Leftmost columns
+			if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.ENGINE):
+				engines_placed += 1
+				powered_pos = _get_powered_positions()
+
+	# 7. For M1+: Add second reactor for better power coverage - 3 BP
 	if mission >= 1:
-		# Add Engines (LEFT side cols 0-1 = back of ship) + Armor + Reactor
-		_place_room_at(0, 0, RoomData.RoomType.ENGINE)   # 2 BP - (0,0),(1,0) BACK
-		_place_room_at(0, 4, RoomData.RoomType.ENGINE)   # 2 BP - (0,4),(1,4) BACK
-		_place_room_at(5, 3, RoomData.RoomType.ARMOR)    # 1 BP
-		# Add Reactor for more power
-		_place_room_at(4, 0, RoomData.RoomType.REACTOR)  # 3 BP - T: (4,1),(5,0),(5,1),(5,2)
-		# Total: 23 BP
+		for try_x in range(w - 3, 1, -1):  # Right-center area
+			reactor_placed = false
+			for try_y in range(h):
+				if _try_place_room_for_template(try_x, try_y, RoomData.RoomType.REACTOR):
+					reactor_placed = true
+					powered_pos = _get_powered_positions()  # Update after reactor
+					break
+			if reactor_placed:
+				break
 
+	# 8. For M2: Add another weapon in powered position - 2 BP
 	if mission >= 2:
-		# Add more Weapon + Armor
-		_place_room_at(6, 4, RoomData.RoomType.WEAPON)   # 2 BP - (6,4),(7,4) FRONT
-		_place_room_at(4, 4, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		# Total: 29 BP
+		for pos in powered_pos:
+			if pos.x >= int(w / 2.0) - 1 and RoomData.can_place_in_column(RoomData.RoomType.WEAPON, pos.x, w):
+				if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.WEAPON):
+					powered_pos = _get_powered_positions()
+					break
 
-## Aggressive template - max damage (Phase 10.2 - column-based constraints)
+	# 9. Fill remaining budget with armor (armor doesn't need power)
+	_fill_armor_to_budget()
+
+## Aggressive template - max damage (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
-## Focuses on weapons for high damage output
-## Budget: Mission 0=17, Mission 1=25, Mission 2=30
+## Focuses on maximum weapons with synergies
+## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered
 func _apply_aggressive_template(mission: int):
-	# Core: Bridge + Reactor for power
-	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
-	_place_room_at(1, 0, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,1),(2,0),(2,1),(2,2)
+	var w = ship_grid.GRID_WIDTH
+	var h = ship_grid.GRID_HEIGHT
+	var center_x = int(w / 2.0) - 1
+	var center_y = int(h / 2.0) - 1
 
-	# Max weapons (1×2 horizontal, RIGHT side cols 6-7 = front)
-	_place_room_at(6, 0, RoomData.RoomType.WEAPON)     # 2 BP - (6,0),(7,0) FRONT
-	_place_room_at(6, 2, RoomData.RoomType.WEAPON)     # 2 BP - (6,2),(7,2) FRONT
-	_place_room_at(6, 4, RoomData.RoomType.WEAPON)     # 2 BP - (6,4),(7,4) FRONT
+	# 1. Place Bridge at center - 5 BP (always powered)
+	_try_place_room_for_template(center_x, center_y, RoomData.RoomType.BRIDGE)
 
-	# Minimal shield
-	_place_room_at(4, 4, RoomData.RoomType.SHIELD)     # 3 BP - (4,4),(5,4)
-	# Total: 17 BP
+	# 2. Place reactor for power - 3 BP (always powered)
+	var reactor_placed = false
+	for try_x in [1, 2, 0]:
+		for try_y in [center_y, center_y + 1, center_y - 1]:
+			if _try_place_room_for_template(try_x, try_y, RoomData.RoomType.REACTOR):
+				reactor_placed = true
+				break
+		if reactor_placed:
+			break
 
+	# 3. Get powered positions
+	var powered_pos = _get_powered_positions()
+
+	# 4. Place MAX weapons in powered positions in right half (front)
+	# M0: 3 weapons, M1: 3 weapons, M2: 4 weapons
+	var target_weapons = 3 if mission < 2 else 4
+	var weapons_placed = 0
+	for pos in powered_pos:
+		if weapons_placed >= target_weapons:
+			break
+		if pos.x >= int(w / 2.0) - 1 and RoomData.can_place_in_column(RoomData.RoomType.WEAPON, pos.x, w):
+			if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.WEAPON):
+				weapons_placed += 1
+				powered_pos = _get_powered_positions()
+
+	# 5. Minimal shield (just 1) in powered position - 3 BP
+	for pos in powered_pos:
+		if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.SHIELD):
+			powered_pos = _get_powered_positions()
+			break
+
+	# 6. Place 1-2 engines in powered positions - 2-4 BP
+	var engines_placed = 0
+	var target_engines = 1 if mission == 0 else 2
+	for pos in powered_pos:
+		if engines_placed >= target_engines:
+			break
+		if pos.x <= 1:  # Leftmost columns
+			if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.ENGINE):
+				engines_placed += 1
+				powered_pos = _get_powered_positions()
+
+	# 7. For M1+: Add second reactor - 3 BP
 	if mission >= 1:
-		# Add more weapons + engines (LEFT side cols 0-1 = back)
-		_place_room_at(0, 0, RoomData.RoomType.ENGINE)   # 2 BP - (0,0),(1,0) BACK
-		_place_room_at(0, 4, RoomData.RoomType.ENGINE)   # 2 BP - (0,4),(1,4) BACK
-		_place_room_at(4, 0, RoomData.RoomType.REACTOR)  # 3 BP - T: (4,1),(5,0),(5,1),(5,2)
-		_place_room_at(2, 4, RoomData.RoomType.ARMOR)    # 1 BP
-		# Total: 25 BP
+		for try_x in range(w - 3, 1, -1):
+			reactor_placed = false
+			for try_y in range(h):
+				if _try_place_room_for_template(try_x, try_y, RoomData.RoomType.REACTOR):
+					reactor_placed = true
+					powered_pos = _get_powered_positions()
+					break
+			if reactor_placed:
+				break
 
-	if mission >= 2:
-		# Add more armor
-		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(3, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(4, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(3, 0, RoomData.RoomType.ARMOR)    # 1 BP
-		# Total: 30 BP
+	# 8. Fill remaining budget with armor (armor doesn't need power, creates durability synergy)
+	_fill_armor_to_budget()
 
-## Tank template - high defense (Phase 10.2 - column-based constraints)
+## Tank template - high defense (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
-## Focuses on shields and armor for survivability
-## Budget: Mission 0=17, Mission 1=26, Mission 2=30
+## Focuses on max shields + armor for survivability
+## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered
 func _apply_tank_template(mission: int):
-	# Core: Bridge + Reactor
-	_place_room_at(3, 2, RoomData.RoomType.BRIDGE)     # 5 BP - (3,2),(4,2),(3,3),(4,3)
-	_place_room_at(1, 1, RoomData.RoomType.REACTOR)    # 3 BP - T: (1,2),(2,1),(2,2),(2,3)
+	var w = ship_grid.GRID_WIDTH
+	var h = ship_grid.GRID_HEIGHT
+	var center_x = int(w / 2.0) - 1
+	var center_y = int(h / 2.0) - 1
 
-	# Minimal weapon (RIGHT side cols 6-7 = front)
-	_place_room_at(6, 0, RoomData.RoomType.WEAPON)     # 2 BP - (6,0),(7,0) FRONT
+	# 1. Place Bridge at center - 5 BP (always powered)
+	_try_place_room_for_template(center_x, center_y, RoomData.RoomType.BRIDGE)
 
-	# Max shields (1×2 horizontal)
-	_place_room_at(4, 0, RoomData.RoomType.SHIELD)     # 3 BP - (4,0),(5,0)
-	_place_room_at(4, 4, RoomData.RoomType.SHIELD)     # 3 BP - (4,4),(5,4)
+	# 2. Place 2 reactors for powering many shields - 6 BP total (always powered)
+	var reactors_placed = 0
+	for try_x in [1, 2, w - 3, 0]:
+		for try_y in [center_y, center_y + 1, center_y - 1]:
+			if reactors_placed >= 2:
+				break
+			if _try_place_room_for_template(try_x, try_y, RoomData.RoomType.REACTOR):
+				reactors_placed += 1
+		if reactors_placed >= 2:
+			break
 
-	# Armor
-	_place_room_at(6, 2, RoomData.RoomType.ARMOR)      # 1 BP
-	# Total: 17 BP
+	# 3. Get powered positions
+	var powered_pos = _get_powered_positions()
 
-	if mission >= 1:
-		# Add more shields + engines (LEFT side cols 0-1 = back) + armor
-		_place_room_at(2, 4, RoomData.RoomType.SHIELD)   # 3 BP - (2,4),(3,4)
-		_place_room_at(6, 4, RoomData.RoomType.SHIELD)   # 3 BP - (6,4),(7,4)
-		_place_room_at(0, 0, RoomData.RoomType.ENGINE)   # 2 BP - (0,0),(1,0) BACK
-		_place_room_at(7, 2, RoomData.RoomType.ARMOR)    # 1 BP
-		# Total: 26 BP
+	# 4. Place MAX shields in powered positions near reactors for synergy
+	# M0: 2 shields, M1: 3 shields, M2: 4 shields
+	var target_shields = 2 if mission == 0 else (3 if mission == 1 else 4)
+	var shields_placed = 0
+	for pos in powered_pos:
+		if shields_placed >= target_shields:
+			break
+		if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.SHIELD):
+			shields_placed += 1
+			powered_pos = _get_powered_positions()
 
-	if mission >= 2:
-		# Add more armor
-		_place_room_at(2, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(5, 5, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(0, 3, RoomData.RoomType.ARMOR)    # 1 BP
-		_place_room_at(0, 4, RoomData.RoomType.ARMOR)    # 1 BP
-		# Total: 30 BP
+	# 5. Minimal weapons (1-2) in powered positions in right half - 2-4 BP
+	var target_weapons = 1 if mission == 0 else 2
+	var weapons_placed = 0
+	for pos in powered_pos:
+		if weapons_placed >= target_weapons:
+			break
+		if pos.x >= int(w / 2.0) - 1 and RoomData.can_place_in_column(RoomData.RoomType.WEAPON, pos.x, w):
+			if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.WEAPON):
+				weapons_placed += 1
+				powered_pos = _get_powered_positions()
+
+	# 6. Place 1-2 engines in powered positions - 2-4 BP
+	var engines_placed = 0
+	var target_engines = 1 if mission == 0 else 2
+	for pos in powered_pos:
+		if engines_placed >= target_engines:
+			break
+		if pos.x <= 1:  # Leftmost columns
+			if _try_place_room_for_template(pos.x, pos.y, RoomData.RoomType.ENGINE):
+				engines_placed += 1
+				powered_pos = _get_powered_positions()
+
+	# 7. Fill remaining budget with LOTS of armor for max HP (armor doesn't need power)
+	_fill_armor_to_budget()
+
+## Handle save button press (Phase 10.8)
+func _on_save_pressed():
+	# Check if ship has at least a bridge (can save incomplete designs, but need something)
+	if placed_rooms.is_empty():
+		push_warning("Cannot save empty design")
+		return
+
+	# Show template name dialog
+	template_name_dialog.show_dialog()
+
+## Handle load button press (Phase 10.8)
+func _on_load_pressed():
+	# Show template list panel
+	template_list_panel.show_panel()
+
+## Handle template name entered (Phase 10.8)
+func _on_template_name_entered(template_name: String):
+	# Create template from current design
+	var template = ShipTemplate.from_ship_designer(self, template_name)
+
+	# Save to manager
+	var success = TemplateManager.save_player_template(template)
+
+	if success:
+		print("Template '%s' saved successfully" % template_name)
+	else:
+		push_error("Failed to save template '%s'" % template_name)
+
+## Handle template selected from list (Phase 10.8)
+func _on_template_selected(template: ShipTemplate):
+	# Apply template to designer
+	var success = template.apply_to_designer(self)
+
+	if success:
+		print("Template '%s' loaded successfully" % template.template_name)
+	else:
+		push_error("Failed to load template '%s'" % template.template_name)

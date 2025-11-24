@@ -324,3 +324,21 @@ func _calculate_bounding_box(tiles: Array) -> Dictionary:
 		"width": max_x - min_x + 1,
 		"height": max_y - min_y + 1
 	}
+
+## Convert grid position to world position (Phase 10.6 - for combat visual effects)
+## Returns world position in global coordinates
+func grid_to_world_position(grid_x: int, grid_y: int) -> Vector2:
+	# Local position relative to ShipDisplay node
+	var local_pos = Vector2(grid_x * TILE_SIZE + TILE_SIZE / 2, grid_y * TILE_SIZE + TILE_SIZE / 2)
+
+	# Convert to global position accounting for ShipDisplay's transform
+	return to_global(local_pos)
+
+## Get center of ship in world position (Phase 10.6 - for combat visual effects)
+## Returns center point of ship in global coordinates
+func get_ship_center_world_position() -> Vector2:
+	# Calculate center of ship grid
+	var center_x = int(GRID_WIDTH / 2.0)
+	var center_y = int(GRID_HEIGHT / 2.0)
+
+	return grid_to_world_position(center_x, center_y)
