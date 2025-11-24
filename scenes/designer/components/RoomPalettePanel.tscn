@@ -52,3 +52,7 @@ room_type = 5
 [node name="ArmorButton" parent="VBoxContainer" instance=ExtResource("2")]
 layout_mode = 2
 room_type = 6
+
+[node name="ConduitButton" parent="VBoxContainer" instance=ExtResource("2")]
+layout_mode = 2
+room_type = 7

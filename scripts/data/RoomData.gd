@@ -8,7 +8,8 @@ enum RoomType {
 	SHIELD,
 	ENGINE,
 	REACTOR,
-	ARMOR
+	ARMOR,
+	CONDUIT
 }
 
 ## Helper function to generate rectangular room shape from width and height
@@ -27,7 +28,8 @@ static var costs = {
 	RoomType.SHIELD: 3,  # Unchanged (occupies 2 tiles)
 	RoomType.ENGINE: 3,  # Phase 10.7: Changed from 2 (now occupies 4 tiles in 2×2)
 	RoomType.REACTOR: 4,  # Phase 10.7: Changed to 4 (now occupies 6 tiles in 3×2 rectangle)
-	RoomType.ARMOR: 1   # Unchanged (occupies 1 tile)
+	RoomType.ARMOR: 1,   # Unchanged (occupies 1 tile)
+	RoomType.CONDUIT: 1  # Feature 2.1: EPS conduit (occupies 1 tile)
 }
 
 ## Room shapes - just specify width×height, helper function generates coordinates
@@ -38,7 +40,8 @@ static var shapes = {
 	RoomType.SHIELD: make_rect_shape(2, 1),  # 2×1 horizontal bar
 	RoomType.ENGINE: make_rect_shape(2, 2),  # 2×2 square
 	RoomType.REACTOR: make_rect_shape(3, 2), # 3×2 rectangle
-	RoomType.ARMOR: make_rect_shape(1, 1)    # 1×1 single tile
+	RoomType.ARMOR: make_rect_shape(1, 1),   # 1×1 single tile
+	RoomType.CONDUIT: make_rect_shape(1, 1)  # 1×1 single tile
 }
 
 ## Room colors (hex values from design doc)
@@ -49,7 +52,8 @@ static var colors = {
 	RoomType.SHIELD: Color(0.290, 0.886, 0.886),    # #4AE2E2 cyan
 	RoomType.ENGINE: Color(0.886, 0.627, 0.290),    # #E2A04A orange
 	RoomType.REACTOR: Color(0.886, 0.831, 0.290),   # #E2D44A yellow
-	RoomType.ARMOR: Color(0.424, 0.424, 0.424)      # #6C6C6C gray
+	RoomType.ARMOR: Color(0.424, 0.424, 0.424),     # #6C6C6C gray
+	RoomType.CONDUIT: Color(1.0, 0.667, 0.0)        # #FFAA00 yellow-orange
 }
 
 ## Room display labels
@@ -60,7 +64,8 @@ static var labels = {
 	RoomType.SHIELD: "SHIELD",
 	RoomType.ENGINE: "ENGINE",
 	RoomType.REACTOR: "REACTOR",
-	RoomType.ARMOR: "ARMOR"
+	RoomType.ARMOR: "ARMOR",
+	RoomType.CONDUIT: "CONDUIT"
 }
 
 ## Placement constraints (column indices, -1 means any column)
@@ -75,7 +80,8 @@ static var placement_columns = {
 	RoomType.SHIELD: [],       # Any column
 	RoomType.ENGINE: [0, 1],   # Leftmost 2 columns (back of ship)
 	RoomType.REACTOR: [],      # Any column
-	RoomType.ARMOR: []         # Any column
+	RoomType.ARMOR: [],        # Any column
+	RoomType.CONDUIT: []       # Any column
 }
 
 ## Get cost for a room type

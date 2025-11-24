@@ -13,6 +13,7 @@ signal rotation_requested  # Phase 7.3 - emitted when rotation button is pressed
 @onready var engine_button: RoomTypeButton = $VBoxContainer/EngineButton
 @onready var reactor_button: RoomTypeButton = $VBoxContainer/ReactorButton
 @onready var armor_button: RoomTypeButton = $VBoxContainer/ArmorButton
+@onready var conduit_button: RoomTypeButton = $VBoxContainer/ConduitButton
 
 ## Track currently selected button
 var selected_button: RoomTypeButton = null
@@ -21,7 +22,7 @@ var selected_button: RoomTypeButton = null
 var all_buttons: Array[RoomTypeButton] = []
 
 func _ready():
-	all_buttons = [bridge_button, weapon_button, shield_button, engine_button, reactor_button, armor_button]
+	all_buttons = [bridge_button, weapon_button, shield_button, engine_button, reactor_button, armor_button, conduit_button]
 
 	# Connect signals from all buttons
 	for button in all_buttons:
