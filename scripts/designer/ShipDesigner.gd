@@ -10,6 +10,10 @@ var current_budget: int = 0
 ## Ship grid (handles all grid/tile management)
 @onready var ship_grid: ShipGrid = $ShipGrid
 
+## Feature 1.1: Data grids for physical and electrical layers
+var main_grid: MainGrid = null  # Physical component placement
+var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
+
 ## Synergy container (now inside ShipGrid for correct positioning)
 @onready var synergy_container: Node2D = $ShipGrid/SynergyContainer
 
@@ -97,6 +101,11 @@ func _ready():
 	var grid_size: Vector2i = hull_data["grid_size"]
 	var grid_shape: Array = hull_data.get("grid_shape", [])  # Optional hull shape
 	ship_grid.initialize(grid_size.x, grid_size.y, grid_shape)
+
+	# Feature 1.1: Initialize data grids
+	main_grid = ship_grid.main_grid  # Reference ShipGrid's MainGrid
+	secondary_grid = SecondaryGrid.new()
+	secondary_grid.initialize(grid_size.x, grid_size.y)
 
 	_update_budget_display()
 
@@ -216,8 +225,8 @@ func _update_ship_status():
 
 ## Update ship stats panel (Phase 10.9)
 func _update_ship_stats():
-	# Create temporary ShipData to calculate stats
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+	# Create temporary ShipData to calculate stats (Feature 1.1 - use main_grid)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
 
 	# Get hull bonuses
 	var hull_data = GameState.get_current_hull_data()
@@ -272,11 +281,11 @@ func count_bridges() -> int:
 
 ## Count number of unpowered rooms (excluding EMPTY and ARMOR)
 func count_unpowered_rooms() -> int:
-	# Create temporary ShipData to calculate power grid (Phase 10.2 - pass grid dimensions)
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+	# Create temporary ShipData to calculate power grid (Feature 1.1 - use main_grid)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
 
 	var unpowered_count = 0
-	for tile in ship_grid.get_all_tiles():
+	for tile in main_grid.get_all_tiles():
 		var room_type = tile.get_room_type()
 
 		# Skip empty tiles and armor (armor doesn't need power)
@@ -291,8 +300,8 @@ func count_unpowered_rooms() -> int:
 
 ## Count number of active synergies
 func count_synergies() -> int:
-	# Create temporary ShipData to calculate synergies (Phase 10.2 - pass grid dimensions)
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+	# Create temporary ShipData to calculate synergies (Feature 1.1 - use main_grid)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	var synergy_counts = synergy_bonuses["counts"]
 
@@ -316,22 +325,22 @@ func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.Roo
 	if room_type == RoomData.RoomType.BRIDGE and count_bridges() >= 1:
 		return false
 
-	# Validate each tile in the shape
+	# Validate each tile in the shape (Feature 1.1 - use main_grid)
 	for offset in shape:
 		var tile_x = anchor_x + offset[0]
 		var tile_y = anchor_y + offset[1]
 
 		# Check bounds
-		if not ship_grid.is_in_bounds(tile_x, tile_y):
+		if not main_grid.is_in_bounds(tile_x, tile_y):
 			return false
 
 		# Check if tile is occupied
-		var tile = ship_grid.get_tile_at(tile_x, tile_y)
+		var tile = main_grid.get_tile_at(tile_x, tile_y)
 		if tile.is_occupied():
 			return false
 
-		# Check column constraints for this specific tile (Phase 10.2 - pass grid width)
-		if not RoomData.can_place_in_column(room_type, tile_x, ship_grid.GRID_WIDTH):
+		# Check column constraints for this specific tile
+		if not RoomData.can_place_in_column(room_type, tile_x, main_grid.grid_width):
 			return false
 
 	# Check budget
@@ -342,7 +351,7 @@ func can_place_shaped_room(anchor_x: int, anchor_y: int, room_type: RoomData.Roo
 	return true
 
 
-## Flash all tiles in shape red for invalid placement (Phase 7.1)
+## Flash all tiles in shape red for invalid placement (Phase 7.1, Feature 1.1 - use main_grid)
 func flash_shape_tiles_red(anchor_x: int, anchor_y: int, shape: Array):
 	# Play failure sound for invalid placement
 	AudioManager.play_failure()
@@ -352,8 +361,8 @@ func flash_shape_tiles_red(anchor_x: int, anchor_y: int, shape: Array):
 		var tile_y = anchor_y + offset[1]
 
 		# Only flash if tile is in bounds
-		if ship_grid.is_in_bounds(tile_x, tile_y):
-			var tile = ship_grid.get_tile_at(tile_x, tile_y)
+		if main_grid.is_in_bounds(tile_x, tile_y):
+			var tile = main_grid.get_tile_at(tile_x, tile_y)
 			if tile:
 				tile._play_flash_red()
 
@@ -389,8 +398,8 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 	if room_type == RoomData.RoomType.BRIDGE and current_type != RoomData.RoomType.BRIDGE and count_bridges() >= 1:
 		return false
 
-	# Check column constraints (Phase 10.2 - pass grid width)
-	if not RoomData.can_place_in_column(room_type, x, ship_grid.GRID_WIDTH):
+	# Check column constraints (Feature 1.1 - use main_grid)
+	if not RoomData.can_place_in_column(room_type, x, main_grid.grid_width):
 		return false
 
 	# Check budget
@@ -402,18 +411,18 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 
 	return true
 
-## Export current ship design as ShipData for combat
+## Export current ship design as ShipData for combat (Feature 1.1 - use main_grid)
 func export_ship_data() -> ShipData:
-	# HP is calculated based on armor count in ShipData (Phase 10.2 - pass grid dimensions)
-	return ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+	# HP is calculated based on armor count in ShipData
+	return ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
 
-## Update power states for all tiles based on reactor positions
+## Update power states for all tiles based on reactor positions (Feature 1.1 - use main_grid for data)
 func update_all_power_states():
-	# Create temporary ShipData to calculate power grid (Phase 10.2 - pass grid dimensions)
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+	# Create temporary ShipData to calculate power grid
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
 
 	# Update visual power state for each tile
-	for tile in ship_grid.get_all_tiles():
+	for tile in main_grid.get_all_tiles():
 		# Skip empty tiles
 		if tile.get_room_type() == RoomData.RoomType.EMPTY:
 			continue
@@ -424,10 +433,10 @@ func update_all_power_states():
 		# Update visual state
 		tile.set_powered_state(is_powered)
 
-	# Update power lines visual (delegated to ShipGrid)
+	# Update power lines visual (keep ship_grid for visual operations)
 	ship_grid.draw_power_lines(temp_ship)
 
-## Update synergy indicators based on room adjacencies
+## Update synergy indicators based on room adjacencies (Feature 1.1 - use main_grid)
 func update_synergies():
 	# Clear existing synergy indicators
 	for child in synergy_container.get_children():
@@ -437,9 +446,9 @@ func update_synergies():
 	var created_synergies = {}
 
 	# Check each tile for potential synergies
-	for y in range(ship_grid.GRID_HEIGHT):
-		for x in range(ship_grid.GRID_WIDTH):
-			var tile = ship_grid.get_tile_at(x, y)
+	for y in range(main_grid.grid_height):
+		for x in range(main_grid.grid_width):
+			var tile = main_grid.get_tile_at(x, y)
 			if not tile:
 				continue
 
@@ -455,10 +464,10 @@ func update_synergies():
 
 			for adj_pos in adjacent_checks:
 				# Check bounds
-				if not ship_grid.is_in_bounds(adj_pos.x, adj_pos.y):
+				if not main_grid.is_in_bounds(adj_pos.x, adj_pos.y):
 					continue
 
-				var adj_tile = ship_grid.get_tile_at(adj_pos.x, adj_pos.y)
+				var adj_tile = main_grid.get_tile_at(adj_pos.x, adj_pos.y)
 				if not adj_tile:
 					continue
 
@@ -490,8 +499,8 @@ func update_synergies():
 				# Mark as created
 				created_synergies[synergy_key] = true
 
-	# Update synergy guide panel with counts (Phase 10.2 - pass grid dimensions)
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+	# Update synergy guide panel with counts
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
 
@@ -589,7 +598,7 @@ func _apply_zoom_and_pan():
 ## Handle tile left-click - place selected room type from palette (Phase 7.1/7.3 - shaped rooms with rotation)
 ## Feature 2.1: Conduits use drag-to-place instead of single-click
 func _on_tile_clicked(x: int, y: int):
-	var tile = ship_grid.get_tile_at(x, y)
+	var tile = main_grid.get_tile_at(x, y)
 	if not tile:
 		return
 
@@ -647,12 +656,12 @@ func _on_tile_clicked(x: int, y: int):
 	room.room_id = next_room_id
 	next_room_id += 1
 
-	# Place room on all tiles in shape
+	# Place room on all tiles in shape (Feature 1.1 - use main_grid)
 	var is_first = true
 	for offset in shape:
 		var tile_x = x + offset[0]
 		var tile_y = y + offset[1]
-		var target_tile = ship_grid.get_tile_at(tile_x, tile_y)
+		var target_tile = main_grid.get_tile_at(tile_x, tile_y)
 
 		if target_tile:
 			# Set occupying room (first tile is anchor, owns visual)
@@ -678,7 +687,7 @@ func _on_tile_clicked(x: int, y: int):
 
 ## Handle tile right-click - remove room (Phase 7.1 - removes entire multi-tile room)
 func _on_tile_right_clicked(x: int, y: int):
-	var tile = ship_grid.get_tile_at(x, y)
+	var tile = main_grid.get_tile_at(x, y)
 	if not tile:
 		return
 
@@ -724,18 +733,18 @@ func _on_tile_hovered(tile: GridTile):
 	# Get shape for selected room type with current rotation (Phase 7.3)
 	var shape = get_rotated_shape(selected_room_type)
 
-	# Show preview on all tiles in the shape with per-tile state feedback
+	# Show preview on all tiles in the shape with per-tile state feedback (Feature 1.1 - use main_grid)
 	for offset in shape:
 		var tile_x = tile.grid_x + offset[0]
 		var tile_y = tile.grid_y + offset[1]
 
 		# Check bounds
-		if ship_grid.is_in_bounds(tile_x, tile_y):
-			var preview_tile = ship_grid.get_tile_at(tile_x, tile_y)
+		if main_grid.is_in_bounds(tile_x, tile_y):
+			var preview_tile = main_grid.get_tile_at(tile_x, tile_y)
 			if preview_tile:
 				# Check THIS specific tile's state for mixed preview feedback
 				var tile_empty = not preview_tile.is_occupied()
-				var column_valid = RoomData.can_place_in_column(selected_room_type, tile_x, ship_grid.GRID_WIDTH)
+				var column_valid = RoomData.can_place_in_column(selected_room_type, tile_x, main_grid.grid_width)
 
 				# Show cyan if tile is available, red if blocked
 				if tile_empty and column_valid:
@@ -745,7 +754,7 @@ func _on_tile_hovered(tile: GridTile):
 
 ## Handle tile unhover - clear preview (Phase 7.2/7.3 - clear multi-tile preview with rotation)
 func _on_tile_unhovered(tile: GridTile):
-	# Clear preview from previously hovered tile and its shape
+	# Clear preview from previously hovered tile and its shape (Feature 1.1 - use main_grid)
 	if hovered_tile and selected_room_type != RoomData.RoomType.EMPTY:
 		var shape = get_rotated_shape(selected_room_type)
 
@@ -755,8 +764,8 @@ func _on_tile_unhovered(tile: GridTile):
 			var tile_y = hovered_tile.grid_y + offset[1]
 
 			# Check bounds
-			if ship_grid.is_in_bounds(tile_x, tile_y):
-				var preview_tile = ship_grid.get_tile_at(tile_x, tile_y)
+			if main_grid.is_in_bounds(tile_x, tile_y):
+				var preview_tile = main_grid.get_tile_at(tile_x, tile_y)
 				if preview_tile:
 					preview_tile.clear_preview()
 
@@ -788,16 +797,16 @@ func _calculate_drag_line(start_x: int, start_y: int, end_x: int, end_y: int) ->
 
 ## Feature 2.1: Update drag preview - show valid/invalid state for all tiles in line
 func _update_drag_preview():
-	# Clear all tile previews first
-	for tile in ship_grid.get_all_tiles():
+	# Clear all tile previews first (Feature 1.1 - use main_grid)
+	for tile in main_grid.get_all_tiles():
 		tile.clear_preview()
 
 	# Show preview on each tile in drag line
 	for pos in drag_current_line:
-		if not ship_grid.is_in_bounds(pos.x, pos.y):
+		if not main_grid.is_in_bounds(pos.x, pos.y):
 			continue
 
-		var tile = ship_grid.get_tile_at(pos.x, pos.y)
+		var tile = main_grid.get_tile_at(pos.x, pos.y)
 		if not tile:
 			continue
 
@@ -813,11 +822,11 @@ func _update_drag_preview():
 
 ## Feature 2.1: Place a single conduit at given position
 func _place_single_conduit(x: int, y: int) -> bool:
-	# Check if we can place a conduit here
-	if not ship_grid.is_in_bounds(x, y):
+	# Check if we can place a conduit here (Feature 1.1 - use main_grid)
+	if not main_grid.is_in_bounds(x, y):
 		return false
 
-	var tile = ship_grid.get_tile_at(x, y)
+	var tile = main_grid.get_tile_at(x, y)
 	if not tile or tile.is_occupied():
 		return false
 
@@ -850,14 +859,14 @@ func _complete_drag_placement():
 		_clear_drag_state()
 		return
 
-	# Validate entire line before placing any
+	# Validate entire line before placing any (Feature 1.1 - use main_grid)
 	var can_place_all = true
 	for pos in drag_current_line:
-		if not ship_grid.is_in_bounds(pos.x, pos.y):
+		if not main_grid.is_in_bounds(pos.x, pos.y):
 			can_place_all = false
 			break
 
-		var tile = ship_grid.get_tile_at(pos.x, pos.y)
+		var tile = main_grid.get_tile_at(pos.x, pos.y)
 		if not tile or tile.is_occupied():
 			can_place_all = false
 			break
@@ -885,10 +894,10 @@ func _complete_drag_placement():
 		# Play success sound
 		AudioManager.play_room_lock()
 	else:
-		# Flash red on invalid placement
+		# Flash red on invalid placement (Feature 1.1 - use main_grid)
 		for pos in drag_current_line:
-			if ship_grid.is_in_bounds(pos.x, pos.y):
-				var tile = ship_grid.get_tile_at(pos.x, pos.y)
+			if main_grid.is_in_bounds(pos.x, pos.y):
+				var tile = main_grid.get_tile_at(pos.x, pos.y)
 				if tile:
 					tile._play_flash_red()
 
@@ -904,8 +913,8 @@ func _clear_drag_state():
 	drag_start_tile = null
 	drag_current_line.clear()
 
-	# Clear all tile previews
-	for tile in ship_grid.get_all_tiles():
+	# Clear all tile previews (Feature 1.1 - use main_grid)
+	for tile in main_grid.get_all_tiles():
 		tile.clear_preview()
 
 ## Update room counts on palette panel (Phase 7.1 - count room instances, not tiles)
@@ -944,15 +953,15 @@ func update_palette_availability():
 		if current_budget + cost > max_budget:
 			can_afford = false
 
-		# Check if we can place it somewhere (at least one valid row)
+		# Check if we can place it somewhere (at least one valid row) (Feature 1.1 - use main_grid)
 		if can_afford:
 			# Check Bridge limit
 			if room_type == RoomData.RoomType.BRIDGE and count_bridges() >= 1:
 				can_place_somewhere = false
 			else:
-				# Check if there's at least one valid column for this room type (Phase 10.2)
-				for x in range(ship_grid.GRID_WIDTH):
-					if RoomData.can_place_in_column(room_type, x, ship_grid.GRID_WIDTH):
+				# Check if there's at least one valid column for this room type
+				for x in range(main_grid.grid_width):
+					if RoomData.can_place_in_column(room_type, x, main_grid.grid_width):
 						can_place_somewhere = true
 						break
 
@@ -1092,12 +1101,12 @@ func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 	room.room_id = next_room_id
 	next_room_id += 1
 
-	# Place room on all tiles in shape
+	# Place room on all tiles in shape (Feature 1.1 - use main_grid)
 	var is_first = true
 	for offset in shape:
 		var tile_x = x + offset[0]
 		var tile_y = y + offset[1]
-		var target_tile = ship_grid.get_tile_at(tile_x, tile_y)
+		var target_tile = main_grid.get_tile_at(tile_x, tile_y)
 
 		if target_tile:
 			target_tile.set_occupying_room(room, is_first)
@@ -1123,22 +1132,22 @@ func _try_place_room_for_template(x: int, y: int, room_type: RoomData.RoomType) 
 	return true
 
 ## Get positions adjacent to powered rooms (Phase 10.5 - for power-aware placement)
-## Returns array of Vector2i positions that would be powered
+## Returns array of Vector2i positions that would be powered (Feature 1.1 - use main_grid)
 func _get_powered_positions() -> Array:
 	var powered_positions = []
 
 	# Create temp ship to check power
-	var temp_ship = ShipData.from_designer_grid(ship_grid.get_all_tiles(), placed_rooms, ship_grid.GRID_WIDTH, ship_grid.GRID_HEIGHT)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
 
 	# Check all grid positions
-	for y in range(ship_grid.GRID_HEIGHT):
-		for x in range(ship_grid.GRID_WIDTH):
+	for y in range(main_grid.grid_height):
+		for x in range(main_grid.grid_width):
 			# Skip if not in bounds (shaped hull)
-			if not ship_grid.is_in_bounds(x, y):
+			if not main_grid.is_in_bounds(x, y):
 				continue
 
 			# Skip if occupied
-			var tile = ship_grid.get_tile_at(x, y)
+			var tile = main_grid.get_tile_at(x, y)
 			if tile.is_occupied():
 				continue
 
@@ -1162,7 +1171,7 @@ func _get_powered_positions() -> Array:
 	return powered_positions
 
 ## Fill remaining budget with armor tiles (Phase 10.5 - hull-aware templates)
-## Tries to place armor in strategic locations
+## Tries to place armor in strategic locations (Feature 1.1 - use main_grid)
 func _fill_armor_to_budget():
 	var armor_cost = RoomData.get_cost(RoomData.RoomType.ARMOR)
 
@@ -1171,8 +1180,8 @@ func _fill_armor_to_budget():
 		var placed = false
 
 		# Try to place armor in available spaces (scan grid)
-		for y in range(ship_grid.GRID_HEIGHT):
-			for x in range(ship_grid.GRID_WIDTH):
+		for y in range(main_grid.grid_height):
+			for x in range(main_grid.grid_width):
 				if _try_place_room_for_template(x, y, RoomData.RoomType.ARMOR):
 					placed = true
 					break
@@ -1186,10 +1195,10 @@ func _fill_armor_to_budget():
 ## Balanced template - good for all missions (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Adapts to Frigate (10×4), Cruiser (8×6), Battleship (7×7)
-## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered
+## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered (Feature 1.1 - use main_grid)
 func _apply_balanced_template(mission: int):
-	var w = ship_grid.GRID_WIDTH
-	var h = ship_grid.GRID_HEIGHT
+	var w = main_grid.grid_width
+	var h = main_grid.grid_height
 	var center_x = int(w / 2.0) - 1
 	var center_y = int(h / 2.0) - 1
 
@@ -1264,10 +1273,10 @@ func _apply_balanced_template(mission: int):
 ## Aggressive template - max damage (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Focuses on maximum weapons with synergies
-## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered
+## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered (Feature 1.1 - use main_grid)
 func _apply_aggressive_template(mission: int):
-	var w = ship_grid.GRID_WIDTH
-	var h = ship_grid.GRID_HEIGHT
+	var w = main_grid.grid_width
+	var h = main_grid.grid_height
 	var center_x = int(w / 2.0) - 1
 	var center_y = int(h / 2.0) - 1
 
@@ -1334,10 +1343,10 @@ func _apply_aggressive_template(mission: int):
 ## Tank template - high defense (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Focuses on max shields + armor for survivability
-## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered
+## Budget: M0=20, M1=25, M2=30 BP - ensures all rooms are powered (Feature 1.1 - use main_grid)
 func _apply_tank_template(mission: int):
-	var w = ship_grid.GRID_WIDTH
-	var h = ship_grid.GRID_HEIGHT
+	var w = main_grid.grid_width
+	var h = main_grid.grid_height
 	var center_x = int(w / 2.0) - 1
 	var center_y = int(h / 2.0) - 1
 

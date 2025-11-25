@@ -2,6 +2,7 @@ extends Node2D
 class_name ShipGrid
 
 ## Manages the grid of tiles for ship design (dynamic size based on hull)
+## Feature 1.1: Visual layer - delegates data queries to MainGrid
 
 ## Grid dimensions (Phase 10.1 - made dynamic for hull selection)
 # Default dimensions for FREE DESIGN mode
@@ -13,9 +14,8 @@ var GRID_HEIGHT: int = 6
 const TILE_SIZE = 15
 const TILE_SPACING = 2  # Gap between tiles in pixels
 
-## Phase 10.4: Valid tile positions for shaped hulls
-## Dictionary of "x,y" -> true for positions that exist in hull shape
-var valid_positions: Dictionary = {}
+## Feature 1.1: MainGrid handles physical tile data
+var main_grid: MainGrid = null
 
 ## Child nodes for organization
 @onready var grid_container: Node2D = $GridContainer
@@ -24,10 +24,10 @@ var valid_positions: Dictionary = {}
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
 
-## Store all grid tiles
+## Store all grid tiles (kept for backward compatibility, MainGrid also tracks these)
 var grid_tiles: Array[GridTile] = []
 
-## Phase 10.4: Dictionary for fast tile lookup in shaped hulls
+## Dictionary for fast tile lookup (kept for backward compatibility, MainGrid also has this)
 ## Key: "x,y" -> GridTile
 var tile_lookup: Dictionary = {}
 
@@ -51,29 +51,14 @@ func initialize(width: int, height: int, hull_shape: Array = []):
 	GRID_WIDTH = width
 	GRID_HEIGHT = height
 
-	# Parse hull shape if provided (Phase 10.4)
-	if not hull_shape.is_empty():
-		_parse_hull_shape(hull_shape)
-	else:
-		# No shape provided - all positions valid (full rectangle)
-		valid_positions.clear()
-		for y in range(height):
-			for x in range(width):
-				valid_positions["%d,%d" % [x, y]] = true
+	# Feature 1.1: Create MainGrid for physical tile data
+	main_grid = MainGrid.new()
+	main_grid.initialize(width, height, hull_shape)
 
 	grid_initialized = true
 	_create_grid()
 
-## Parse hull shape strings into valid position set (Phase 10.4)
-func _parse_hull_shape(hull_shape: Array):
-	valid_positions.clear()
-	for y in range(hull_shape.size()):
-		var row_str: String = hull_shape[y]
-		for x in range(row_str.length()):
-			if row_str[x] == 'X':
-				valid_positions["%d,%d" % [x, y]] = true
-
-## Create grid tiles (Phase 10.4 - only at valid positions for shaped hulls)
+## Create grid tiles (Phase 10.4 - only at valid positions for shaped hulls, Feature 1.1 - register with MainGrid)
 func _create_grid():
 	# Clear existing tiles and lookup
 	for child in grid_container.get_children():
@@ -117,9 +102,12 @@ func _create_grid():
 			# Force size update after adding to tree
 			tile.reset_size()
 
-			# Store references
+			# Store references (backward compatibility)
 			grid_tiles.append(tile)
 			tile_lookup["%d,%d" % [x, y]] = tile
+
+			# Feature 1.1: Register tile with MainGrid
+			main_grid.register_tile(tile)
 
 ## Forward tile signals
 func _on_tile_clicked(x: int, y: int):
@@ -134,23 +122,29 @@ func _on_tile_hovered(tile: GridTile):
 func _on_tile_unhovered(tile: GridTile):
 	emit_signal("tile_unhovered", tile)
 
-## Get tile at grid coordinates (Phase 10.4 - uses lookup dictionary for shaped hulls)
+## Get tile at grid coordinates (Feature 1.1 - delegates to MainGrid)
 func get_tile_at(x: int, y: int) -> GridTile:
+	if main_grid:
+		return main_grid.get_tile_at(x, y)
+	# Fallback for backward compatibility
 	var key = "%d,%d" % [x, y]
 	return tile_lookup.get(key, null)
 
-## Check if coordinates are within grid bounds (Phase 10.4 - checks hull shape)
+## Check if coordinates are within grid bounds (Feature 1.1 - delegates to MainGrid)
 func is_in_bounds(x: int, y: int) -> bool:
-	# First check rectangle bounds
+	if main_grid:
+		return main_grid.is_in_bounds(x, y)
+	# Fallback for backward compatibility
 	if x < 0 or x >= GRID_WIDTH or y < 0 or y >= GRID_HEIGHT:
 		return false
-
-	# Then check if position is valid in hull shape
 	var key = "%d,%d" % [x, y]
-	return valid_positions.has(key)
+	return tile_lookup.has(key)
 
-## Get all tiles in a shape from anchor position
+## Get all tiles in a shape from anchor position (Feature 1.1 - delegates to MainGrid)
 func get_tiles_in_shape(anchor_x: int, anchor_y: int, shape: Array) -> Array[GridTile]:
+	if main_grid:
+		return main_grid.get_tiles_in_shape(anchor_x, anchor_y, shape)
+	# Fallback for backward compatibility
 	var tiles: Array[GridTile] = []
 	for offset in shape:
 		var tile_x = anchor_x + offset[0]
