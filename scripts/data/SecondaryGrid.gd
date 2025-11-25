@@ -32,11 +32,13 @@ func initialize(width: int, height: int):
 ## source_id: Unique ID of the power source (reactor or another relay)
 ## path: Array of Vector2i positions the connection passes through
 func add_connection(relay_id: int, source_id: int, path: Array[Vector2i]):
+	print("Feature 2.3 DEBUG: add_connection called - relay_id=", relay_id, ", path size=", path.size())
 	connections[relay_id] = {
 		"source_id": source_id,
 		"path": path,
 		"is_powered": false
 	}
+	print("Feature 2.3 DEBUG: Total connections now: ", connections.size())
 
 ## Remove a connection (stub for Feature 2.3)
 func remove_connection(relay_id: int):
@@ -50,6 +52,11 @@ func get_connection(relay_id: int) -> Dictionary:
 ## Get all connections (stub for Feature 2.3)
 ## Returns array of connection dictionaries
 func get_all_connections() -> Array:
+	print("Feature 2.3 DEBUG: SecondaryGrid has ", connections.size(), " connections stored")
+	for relay_id in connections:
+		var conn = connections[relay_id]
+		print("  Relay ID ", relay_id, ": path has ", conn.get("path", []).size(), " tiles")
+
 	var result = []
 	for relay_id in connections:
 		result.append(connections[relay_id])

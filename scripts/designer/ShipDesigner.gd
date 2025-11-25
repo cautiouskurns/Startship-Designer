@@ -701,6 +701,12 @@ func _on_tile_clicked(x: int, y: int):
 	if power_overlay_enabled and selected_room_type == RoomData.RoomType.RELAY:
 		ship_grid.draw_all_relay_coverages(placed_rooms)
 
+	# Feature 2.3: Auto-route relay or recalculate all relays if reactor placed
+	if selected_room_type == RoomData.RoomType.RELAY:
+		_auto_route_single_relay(room)
+	elif selected_room_type == RoomData.RoomType.REACTOR:
+		_auto_route_all_relays()
+
 	# Play room lock sound for successful room placement
 	AudioManager.play_room_lock()
 
@@ -710,8 +716,10 @@ func _on_tile_right_clicked(x: int, y: int):
 	if not tile:
 		return
 
-	# Check if removing a relay for overlay refresh
+	# Check if removing a relay or reactor for auto-routing (Feature 2.3)
 	var was_relay = tile.is_occupied() and tile.get_room_type() == RoomData.RoomType.RELAY
+	var was_reactor = tile.is_occupied() and tile.get_room_type() == RoomData.RoomType.REACTOR
+	var removed_room = tile.occupying_room  # Store reference before removal
 
 	# Remove entire room instance (works for both single-tile and multi-tile rooms)
 	_remove_room_at_tile(tile)
@@ -728,6 +736,16 @@ func _on_tile_right_clicked(x: int, y: int):
 	# Feature 1.4: Refresh overlay if enabled and relay was removed
 	if power_overlay_enabled and was_relay:
 		ship_grid.draw_all_relay_coverages(placed_rooms)
+
+	# Feature 2.3: Update routing when relay or reactor removed
+	if was_relay and removed_room:
+		# Remove this relay's connection
+		secondary_grid.remove_connection(removed_room.room_id)
+		if power_overlay_enabled:
+			ship_grid.draw_routing_lines(secondary_grid)
+	elif was_reactor:
+		# Reactor removed - recalculate all relay routes
+		_auto_route_all_relays()
 
 ## Handle room type selection from palette (Phase 7.3 - reset rotation)
 func _on_room_type_selected(room_type: RoomData.RoomType):
@@ -830,6 +848,8 @@ func _on_power_overlay_toggled():
 			style.bg_color = Color(1.0, 0.867, 0.0)  # Yellow
 		# Show all relay coverage zones
 		ship_grid.draw_all_relay_coverages(placed_rooms)
+		# Feature 2.3: Show routing lines
+		ship_grid.draw_routing_lines(secondary_grid)
 	else:
 		power_overlay_button.text = "OVERLAY: OFF"
 		power_overlay_button.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
@@ -838,6 +858,8 @@ func _on_power_overlay_toggled():
 			style.bg_color = Color(0.3, 0.3, 0.3)  # Gray
 		# Clear all coverage zones
 		ship_grid.clear_relay_coverage()
+		# Feature 2.3: Clear routing lines
+		ship_grid.clear_routing_lines()
 
 ## Feature 2.1: Calculate drag line from start to end position (horizontal OR vertical, not diagonal)
 func _calculate_drag_line(start_x: int, start_y: int, end_x: int, end_y: int) -> Array[Vector2i]:
@@ -1154,6 +1176,88 @@ func _clear_all_rooms():
 	if power_overlay_enabled:
 		ship_grid.clear_relay_coverage()
 
+	# Feature 2.1: Clear electrical connections when grid is cleared
+	if secondary_grid:
+		secondary_grid.clear()
+
+	# Feature 2.3: Clear routing lines when grid is cleared
+	ship_grid.clear_routing_lines()
+
+## Find nearest reactor to a relay position (Feature 2.3)
+## Returns reactor anchor position or null if no reactors exist
+func _find_nearest_reactor(relay_pos: Vector2i) -> Vector2i:
+	var nearest_reactor_pos: Vector2i = Vector2i(-1, -1)
+	var min_distance: float = INF
+
+	# Find all reactors
+	for room in placed_rooms:
+		if room.room_type == RoomData.RoomType.REACTOR:
+			var anchor_tile = room.get_anchor_tile()
+			if anchor_tile:
+				var reactor_pos = Vector2i(anchor_tile.grid_x, anchor_tile.grid_y)
+				# Calculate Manhattan distance
+				var distance = abs(relay_pos.x - reactor_pos.x) + abs(relay_pos.y - reactor_pos.y)
+				if distance < min_distance:
+					min_distance = distance
+					nearest_reactor_pos = reactor_pos
+
+	# Return null if no reactors found
+	if nearest_reactor_pos == Vector2i(-1, -1):
+		return Vector2i(-1, -1)
+	return nearest_reactor_pos
+
+## Auto-route a single relay to nearest reactor (Feature 2.3)
+func _auto_route_single_relay(relay: Room):
+	# Get relay anchor position
+	var anchor_tile = relay.get_anchor_tile()
+	if not anchor_tile:
+		print("Feature 2.3 DEBUG: Relay has no anchor tile")
+		return
+
+	var relay_pos = Vector2i(anchor_tile.grid_x, anchor_tile.grid_y)
+	print("Feature 2.3 DEBUG: Routing relay at ", relay_pos)
+
+	# Find nearest reactor
+	var reactor_pos = _find_nearest_reactor(relay_pos)
+	if reactor_pos == Vector2i(-1, -1):
+		print("Feature 2.3 DEBUG: No reactors found")
+		return  # No reactors exist
+
+	print("Feature 2.3 DEBUG: Nearest reactor at ", reactor_pos)
+
+	# Find path from reactor to relay
+	var path = PowerPathfinder.find_path(reactor_pos, relay_pos, main_grid)
+	print("Feature 2.3 DEBUG: Path found with ", path.size(), " tiles: ", path)
+	if path.is_empty():
+		print("Feature 2.3 DEBUG: Path is empty - no valid route!")
+		return  # No valid path
+
+	# Store connection in secondary grid
+	# Note: We use dummy reactor room_id since we don't track it - can improve later
+	secondary_grid.add_connection(relay.room_id, 0, path)
+	print("Feature 2.3 DEBUG: Connection added to SecondaryGrid, relay_id=", relay.room_id)
+
+	# Refresh routing lines if overlay is enabled
+	if power_overlay_enabled:
+		print("Feature 2.3 DEBUG: Overlay enabled, drawing routing lines")
+		ship_grid.draw_routing_lines(secondary_grid)
+	else:
+		print("Feature 2.3 DEBUG: Overlay disabled, not drawing lines")
+
+## Auto-route all relays to their nearest reactors (Feature 2.3)
+func _auto_route_all_relays():
+	# Clear all existing connections
+	secondary_grid.clear()
+
+	# Find and route each relay
+	for room in placed_rooms:
+		if room.room_type == RoomData.RoomType.RELAY:
+			_auto_route_single_relay(room)
+
+	# Refresh routing lines if overlay is enabled
+	if power_overlay_enabled:
+		ship_grid.draw_routing_lines(secondary_grid)
+
 ## Place a shaped room at grid position (Phase 7.1 - anchor tile is top-left of room)
 func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 	# Get shape for this room type
@@ -1348,6 +1452,9 @@ func _apply_balanced_template(mission: int):
 	# 9. Fill remaining budget with armor (armor doesn't need power)
 	_fill_armor_to_budget()
 
+	# Feature 2.3: Auto-route relays after template applied
+	_auto_route_all_relays()
+
 ## Aggressive template - max damage (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Focuses on maximum weapons with synergies
@@ -1418,6 +1525,9 @@ func _apply_aggressive_template(mission: int):
 	# 8. Fill remaining budget with armor (armor doesn't need power, creates durability synergy)
 	_fill_armor_to_budget()
 
+	# Feature 2.3: Auto-route relays after template applied
+	_auto_route_all_relays()
+
 ## Tank template - high defense (Phase 10.5 - hull-aware, power-optimized)
 ## Ship points RIGHT→ (weapons at right/front, engines at left/back)
 ## Focuses on max shields + armor for survivability
@@ -1480,6 +1590,9 @@ func _apply_tank_template(mission: int):
 
 	# 7. Fill remaining budget with LOTS of armor for max HP (armor doesn't need power)
 	_fill_armor_to_budget()
+
+	# Feature 2.3: Auto-route relays after template applied
+	_auto_route_all_relays()
 
 ## Handle save button press (Phase 10.8)
 func _on_save_pressed():

@@ -22,6 +22,9 @@ var main_grid: MainGrid = null
 @onready var power_lines_container: Node2D = $PowerLinesContainer
 @onready var coverage_container: Node2D = $CoverageContainer  # Feature 1.3
 
+## Feature 2.3: Routing lines container (created dynamically)
+var routing_lines_container: Node2D = null
+
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
 
@@ -55,6 +58,13 @@ func initialize(width: int, height: int, hull_shape: Array = []):
 	# Feature 1.1: Create MainGrid for physical tile data
 	main_grid = MainGrid.new()
 	main_grid.initialize(width, height, hull_shape)
+
+	# Feature 2.3: Create routing lines container if it doesn't exist
+	if not routing_lines_container:
+		routing_lines_container = Node2D.new()
+		routing_lines_container.name = "RoutingLinesContainer"
+		routing_lines_container.z_index = 0  # Same level as coverage circles (visible above grid)
+		add_child(routing_lines_container)
 
 	grid_initialized = true
 	_create_grid()
@@ -294,3 +304,50 @@ func clear_relay_coverage():
 ## Get all tiles
 func get_all_tiles() -> Array[GridTile]:
 	return grid_tiles
+
+## Draw routing lines from reactors to relays (Feature 2.3)
+func draw_routing_lines(secondary_grid: SecondaryGrid):
+	# Safety check: ensure routing_lines_container exists
+	if not routing_lines_container:
+		print("Feature 2.3 DEBUG ERROR: routing_lines_container is null!")
+		return
+
+	print("Feature 2.3 DEBUG: routing_lines_container exists, z_index=", routing_lines_container.z_index)
+
+	# Clear existing routing lines
+	clear_routing_lines()
+
+	# Get all connections from secondary grid
+	var connections = secondary_grid.get_all_connections()
+	print("Feature 2.3 DEBUG: Drawing routing lines, found ", connections.size(), " connections")
+
+	# Draw line for each connection
+	for connection in connections:
+		var path: Array = connection.get("path", [])
+		print("Feature 2.3 DEBUG: Connection path size: ", path.size())
+		if path.is_empty():
+			print("Feature 2.3 DEBUG: Path is empty, skipping")
+			continue
+
+		# Draw line segments between consecutive path positions
+		for i in range(path.size() - 1):
+			var start_pos: Vector2i = path[i]
+			var end_pos: Vector2i = path[i + 1]
+
+			# Create line segment
+			var line = Line2D.new()
+			var start_pixel = get_tile_center(start_pos.x, start_pos.y)
+			var end_pixel = get_tile_center(end_pos.x, end_pos.y)
+			line.add_point(start_pixel)
+			line.add_point(end_pixel)
+			line.width = 2
+			line.default_color = Color(1.0, 0.867, 0.0, 0.8)  # #FFDD00 yellow at 80% opacity
+			routing_lines_container.add_child(line)
+			print("Feature 2.3 DEBUG: Added line segment from ", start_pos, " to ", end_pos, " (pixels: ", start_pixel, " to ", end_pixel, ")")
+
+## Clear routing lines display (Feature 2.3)
+func clear_routing_lines():
+	if not routing_lines_container:
+		return
+	for child in routing_lines_container.get_children():
+		child.queue_free()
