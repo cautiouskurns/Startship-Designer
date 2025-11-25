@@ -9,7 +9,8 @@ enum RoomType {
 	ENGINE,
 	REACTOR,
 	ARMOR,
-	CONDUIT
+	CONDUIT,
+	RELAY  # Feature 1.2: Power relay module (2×2)
 }
 
 ## Helper function to generate rectangular room shape from width and height
@@ -29,7 +30,8 @@ static var costs = {
 	RoomType.ENGINE: 3,  # Phase 10.7: Changed from 2 (now occupies 4 tiles in 2×2)
 	RoomType.REACTOR: 4,  # Phase 10.7: Changed to 4 (now occupies 6 tiles in 3×2 rectangle)
 	RoomType.ARMOR: 1,   # Unchanged (occupies 1 tile)
-	RoomType.CONDUIT: 1  # Feature 2.1: EPS conduit (occupies 1 tile)
+	RoomType.CONDUIT: 1,  # Feature 2.1: EPS conduit (occupies 1 tile)
+	RoomType.RELAY: 3  # Feature 1.2: Power relay (occupies 4 tiles in 2×2)
 }
 
 ## Room shapes - just specify width×height, helper function generates coordinates
@@ -41,7 +43,8 @@ static var shapes = {
 	RoomType.ENGINE: make_rect_shape(2, 2),  # 2×2 square
 	RoomType.REACTOR: make_rect_shape(3, 2), # 3×2 rectangle
 	RoomType.ARMOR: make_rect_shape(1, 1),   # 1×1 single tile
-	RoomType.CONDUIT: make_rect_shape(1, 1)  # 1×1 single tile
+	RoomType.CONDUIT: make_rect_shape(1, 1),  # 1×1 single tile
+	RoomType.RELAY: make_rect_shape(2, 2)  # 2×2 square (Feature 1.2)
 }
 
 ## Room colors (hex values from design doc)
@@ -53,7 +56,8 @@ static var colors = {
 	RoomType.ENGINE: Color(0.886, 0.627, 0.290),    # #E2A04A orange
 	RoomType.REACTOR: Color(0.886, 0.831, 0.290),   # #E2D44A yellow
 	RoomType.ARMOR: Color(0.424, 0.424, 0.424),     # #6C6C6C gray
-	RoomType.CONDUIT: Color(1.0, 0.667, 0.0)        # #FFAA00 yellow-orange
+	RoomType.CONDUIT: Color(1.0, 0.667, 0.0),        # #FFAA00 yellow-orange
+	RoomType.RELAY: Color(1.0, 0.533, 0.0)        # #FF8800 orange (Feature 1.2)
 }
 
 ## Room display labels
@@ -65,7 +69,8 @@ static var labels = {
 	RoomType.ENGINE: "ENGINE",
 	RoomType.REACTOR: "REACTOR",
 	RoomType.ARMOR: "ARMOR",
-	RoomType.CONDUIT: "CONDUIT"
+	RoomType.CONDUIT: "CONDUIT",
+	RoomType.RELAY: "RELAY"  # Feature 1.2
 }
 
 ## Placement constraints (column indices, -1 means any column)
@@ -81,7 +86,8 @@ static var placement_columns = {
 	RoomType.ENGINE: [0, 1],   # Leftmost 2 columns (back of ship)
 	RoomType.REACTOR: [],      # Any column
 	RoomType.ARMOR: [],        # Any column
-	RoomType.CONDUIT: []       # Any column
+	RoomType.CONDUIT: [],       # Any column
+	RoomType.RELAY: []         # Any column (Feature 1.2)
 }
 
 ## Get cost for a room type

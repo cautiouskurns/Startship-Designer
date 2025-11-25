@@ -75,7 +75,8 @@ var room_scenes = {
 	RoomData.RoomType.ENGINE: preload("res://scenes/components/rooms/Engine.tscn"),
 	RoomData.RoomType.REACTOR: preload("res://scenes/components/rooms/Reactor.tscn"),
 	RoomData.RoomType.ARMOR: preload("res://scenes/components/rooms/Armor.tscn"),
-	RoomData.RoomType.CONDUIT: preload("res://scenes/components/rooms/Conduit.tscn")
+	RoomData.RoomType.CONDUIT: preload("res://scenes/components/rooms/Conduit.tscn"),
+	RoomData.RoomType.RELAY: preload("res://scenes/components/rooms/Relay.tscn")  # Feature 1.2
 }
 
 ## Track all placed room instances (Phase 7.1 - multi-tile rooms)
@@ -927,7 +928,8 @@ func update_palette_counts():
 		RoomData.RoomType.ENGINE: 0,
 		RoomData.RoomType.REACTOR: 0,
 		RoomData.RoomType.ARMOR: 0,
-		RoomData.RoomType.CONDUIT: 0
+		RoomData.RoomType.CONDUIT: 0,
+		RoomData.RoomType.RELAY: 0  # Feature 1.2
 	}
 
 	# Count room instances (not tiles, to avoid counting multi-tile rooms multiple times)
@@ -944,7 +946,7 @@ func update_palette_availability():
 
 	# Check each room type
 	for room_type in [RoomData.RoomType.BRIDGE, RoomData.RoomType.WEAPON, RoomData.RoomType.SHIELD,
-					  RoomData.RoomType.ENGINE, RoomData.RoomType.REACTOR, RoomData.RoomType.ARMOR, RoomData.RoomType.CONDUIT]:
+					  RoomData.RoomType.ENGINE, RoomData.RoomType.REACTOR, RoomData.RoomType.ARMOR, RoomData.RoomType.CONDUIT, RoomData.RoomType.RELAY]:  # Feature 1.2: Added RELAY
 		var can_afford = true
 		var can_place_somewhere = false
 
