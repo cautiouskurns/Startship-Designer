@@ -6,12 +6,12 @@ class_name ShipGrid
 
 ## Grid dimensions (Phase 10.1 - made dynamic for hull selection)
 # Default dimensions for FREE DESIGN mode
-const DEFAULT_FREE_DESIGN_WIDTH: int = 50
-const DEFAULT_FREE_DESIGN_HEIGHT: int = 50
+const DEFAULT_FREE_DESIGN_WIDTH: int = 30
+const DEFAULT_FREE_DESIGN_HEIGHT: int = 30
 
 var GRID_WIDTH: int = 8
 var GRID_HEIGHT: int = 6
-const TILE_SIZE = 15
+const TILE_SIZE = 25
 const TILE_SPACING = 2  # Gap between tiles in pixels
 
 ## Feature 1.1: MainGrid handles physical tile data
@@ -329,6 +329,14 @@ func draw_routing_lines(secondary_grid: SecondaryGrid):
 			print("Feature 2.3 DEBUG: Path is empty, skipping")
 			continue
 
+		# Feature 2.4: Color-code lines based on powered state
+		var is_powered = connection.get("is_powered", false)
+		var line_color: Color
+		if is_powered:
+			line_color = Color(1.0, 0.867, 0.0, 0.8)  # Yellow #FFDD00 at 80% opacity (powered)
+		else:
+			line_color = Color(0.4, 0.4, 0.4, 0.5)  # Gray #666666 at 50% opacity (unpowered)
+
 		# Draw line segments between consecutive path positions
 		for i in range(path.size() - 1):
 			var start_pos: Vector2i = path[i]
@@ -341,7 +349,7 @@ func draw_routing_lines(secondary_grid: SecondaryGrid):
 			line.add_point(start_pixel)
 			line.add_point(end_pixel)
 			line.width = 2
-			line.default_color = Color(1.0, 0.867, 0.0, 0.8)  # #FFDD00 yellow at 80% opacity
+			line.default_color = line_color  # Feature 2.4: Use powered/unpowered color
 			routing_lines_container.add_child(line)
 			print("Feature 2.3 DEBUG: Added line segment from ", start_pos, " to ", end_pos, " (pixels: ", start_pixel, " to ", end_pixel, ")")
 

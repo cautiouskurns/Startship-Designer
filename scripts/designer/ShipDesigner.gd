@@ -446,6 +446,22 @@ func update_all_power_states():
 	# Update power lines visual (keep ship_grid for visual operations)
 	ship_grid.draw_power_lines(temp_ship)
 
+	# Feature 2.4: Update relay powered states based on connection validity
+	secondary_grid.update_all_powered_states(main_grid, placed_rooms)
+
+	# Update relay room visuals based on powered state
+	print("Feature 2.4 DEBUG: Updating relay visuals")
+	for room in placed_rooms:
+		if room.room_type == RoomData.RoomType.RELAY:
+			var conn = secondary_grid.get_connection(room.room_id)
+			var relay_is_powered = conn.get("is_powered", false) if not conn.is_empty() else false
+			print("  Relay ID ", room.room_id, ": Setting powered = ", relay_is_powered)
+			room.set_powered(relay_is_powered)
+
+	# Refresh routing lines if overlay enabled (to update colors based on powered state)
+	if power_overlay_enabled:
+		ship_grid.draw_routing_lines(secondary_grid)
+
 ## Update synergy indicators based on room adjacencies (Feature 1.1 - use main_grid)
 func update_synergies():
 	# Clear existing synergy indicators
@@ -704,8 +720,12 @@ func _on_tile_clicked(x: int, y: int):
 	# Feature 2.3: Auto-route relay or recalculate all relays if reactor placed
 	if selected_room_type == RoomData.RoomType.RELAY:
 		_auto_route_single_relay(room)
+		# Feature 2.4: Update power states again after routing (connection now exists)
+		update_all_power_states()
 	elif selected_room_type == RoomData.RoomType.REACTOR:
 		_auto_route_all_relays()
+		# Feature 2.4: Update power states again after routing (connections updated)
+		update_all_power_states()
 
 	# Play room lock sound for successful room placement
 	AudioManager.play_room_lock()
@@ -741,11 +761,13 @@ func _on_tile_right_clicked(x: int, y: int):
 	if was_relay and removed_room:
 		# Remove this relay's connection
 		secondary_grid.remove_connection(removed_room.room_id)
-		if power_overlay_enabled:
-			ship_grid.draw_routing_lines(secondary_grid)
+		# Feature 2.4: Update power states after connection removed
+		update_all_power_states()
 	elif was_reactor:
 		# Reactor removed - recalculate all relay routes
 		_auto_route_all_relays()
+		# Feature 2.4: Update power states after routes recalculated
+		update_all_power_states()
 
 ## Handle room type selection from palette (Phase 7.3 - reset rotation)
 func _on_room_type_selected(room_type: RoomData.RoomType):
