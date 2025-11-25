@@ -37,7 +37,7 @@ static var costs = {
 ## Room shapes - just specify width×height, helper function generates coordinates
 static var shapes = {
 	RoomType.EMPTY: make_rect_shape(1, 1),   # 1×1
-	RoomType.BRIDGE: make_rect_shape(4, 4),  # 2×2 square
+	RoomType.BRIDGE: make_rect_shape(2, 2),  # 2×2 square
 	RoomType.WEAPON: make_rect_shape(2, 1),  # 2×1 horizontal bar
 	RoomType.SHIELD: make_rect_shape(2, 1),  # 2×1 horizontal bar
 	RoomType.ENGINE: make_rect_shape(2, 2),  # 2×2 square
@@ -63,14 +63,14 @@ static var colors = {
 ## Room display labels
 static var labels = {
 	RoomType.EMPTY: "",
-	RoomType.BRIDGE: "BRIDGE",
-	RoomType.WEAPON: "WEAPON",
-	RoomType.SHIELD: "SHIELD",
-	RoomType.ENGINE: "ENGINE",
-	RoomType.REACTOR: "REACTOR",
-	RoomType.ARMOR: "ARMOR",
-	RoomType.CONDUIT: "CONDUIT",
-	RoomType.RELAY: "RELAY"  # Feature 1.2
+	RoomType.BRIDGE: "⭐ BRIDGE",
+	RoomType.WEAPON: "▶ WEAPON",
+	RoomType.SHIELD: "◆ SHIELD",
+	RoomType.ENGINE: "▲ ENGINE",
+	RoomType.REACTOR: "⊕ REACTOR",
+	RoomType.ARMOR: "█ ARMOR",
+	RoomType.CONDUIT: "─ CONDUIT",
+	RoomType.RELAY: "◈ RELAY"  # Feature 1.2
 }
 
 ## Placement constraints (column indices, -1 means any column)

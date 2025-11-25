@@ -4,7 +4,7 @@ extends Control
 signal launch_pressed
 
 ## Budget values
-var max_budget: int = 30  # Loaded from GameState based on mission
+var max_budget: int = 100  # Loaded from GameState based on mission
 var current_budget: int = 0
 
 ## Ship grid (handles all grid/tile management)

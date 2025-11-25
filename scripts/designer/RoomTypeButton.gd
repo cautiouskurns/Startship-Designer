@@ -11,6 +11,7 @@ signal rotation_requested(room_type: RoomData.RoomType)  # Phase 7.3
 
 ## UI elements
 @onready var room_icon: ColorRect = $HBoxContainer/Icon
+@onready var symbol_label: Label = $HBoxContainer/Icon/SymbolLabel
 @onready var rotate_button: Button = $HBoxContainer/RotateButton  # Phase 7.3
 @onready var name_label: Label = $HBoxContainer/NameLabel
 @onready var cost_label: Label = $HBoxContainer/CostLabel
@@ -70,16 +71,24 @@ func update_display():
 	if room_type == RoomData.RoomType.EMPTY:
 		return
 
-	# Set name
-	name_label.text = RoomData.labels.get(room_type, "")
+	# Get full label with symbol
+	var full_label = RoomData.labels.get(room_type, "")
+
+	# Extract symbol (first character before space) and room name
+	var parts = full_label.split(" ", false, 1)
+	if parts.size() >= 2:
+		symbol_label.text = parts[0]  # Symbol
+		name_label.text = parts[1]    # Room name without symbol
+	else:
+		symbol_label.text = ""
+		name_label.text = full_label
 
 	# Set cost
 	var cost = RoomData.costs.get(room_type, 0)
 	cost_label.text = "%d BP" % cost
 
-	# Icon will be set by instantiating the room scene for its sprite
-	# For now, use a placeholder color based on room type
-	room_icon.modulate = RoomData.colors.get(room_type, Color.WHITE)
+	# Set icon color based on room type
+	room_icon.color = RoomData.colors.get(room_type, Color.WHITE)
 
 ## Update the count displayed
 func set_count(count: int):
@@ -133,8 +142,13 @@ func _update_tooltip_text():
 	# Split on "|" separator
 	var parts = tooltip_text.split("|")
 
-	# Set room name
-	tooltip_name_label.text = RoomData.labels.get(room_type, "")
+	# Set room name (extract name without symbol)
+	var full_label = RoomData.labels.get(room_type, "")
+	var label_parts = full_label.split(" ", false, 1)
+	if label_parts.size() >= 2:
+		tooltip_name_label.text = label_parts[1]  # Room name without symbol
+	else:
+		tooltip_name_label.text = full_label
 
 	# Set description (first part)
 	if parts.size() > 0:

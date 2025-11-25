@@ -94,7 +94,7 @@ const MISSION_BRIEFS = [
 	"Capital ship inbound. This is our final stand."
 ]
 
-const MISSION_BUDGETS = [20, 25, 30]
+const MISSION_BUDGETS = [50, 25, 30]
 
 ## Unlock a mission by index
 func unlock_mission(index: int):
