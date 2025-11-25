@@ -93,6 +93,10 @@ var zoom_step: float = 0.1
 var pan_offset: Vector2 = Vector2.ZERO
 var pan_speed: float = 10.0  # Pixels per frame when holding WASD
 
+## Power overlay state (Feature 1.4)
+var power_overlay_enabled: bool = false
+@onready var power_overlay_button: Button = $PowerOverlayButton
+
 func _ready():
 	# Load mission budget from GameState
 	max_budget = GameState.get_mission_budget(GameState.current_mission)
@@ -138,6 +142,11 @@ func _ready():
 	load_button.pressed.connect(_on_load_pressed)
 	load_button.mouse_entered.connect(_on_button_hover_start.bind(load_button))
 	load_button.mouse_exited.connect(_on_button_hover_end.bind(load_button))
+
+	# Connect power overlay button signals (Feature 1.4)
+	power_overlay_button.pressed.connect(_on_power_overlay_toggled)
+	power_overlay_button.mouse_entered.connect(_on_button_hover_start.bind(power_overlay_button))
+	power_overlay_button.mouse_exited.connect(_on_button_hover_end.bind(power_overlay_button))
 
 	# Connect room palette signals
 	room_palette.room_type_selected.connect(_on_room_type_selected)
@@ -674,6 +683,11 @@ func _on_tile_clicked(x: int, y: int):
 	# Add to placed rooms tracking array
 	placed_rooms.append(room)
 
+	# Feature 1.3: Connect relay hover signals for coverage visualization
+	if selected_room_type == RoomData.RoomType.RELAY:
+		room.relay_hovered.connect(_on_relay_hovered)
+		room.relay_unhovered.connect(_on_relay_unhovered)
+
 	# Update budget display and power states
 	_update_budget_display()
 	update_all_power_states()
@@ -683,6 +697,10 @@ func _on_tile_clicked(x: int, y: int):
 	_update_ship_stats()
 	update_synergies()
 
+	# Feature 1.4: Refresh overlay if enabled and relay was placed
+	if power_overlay_enabled and selected_room_type == RoomData.RoomType.RELAY:
+		ship_grid.draw_all_relay_coverages(placed_rooms)
+
 	# Play room lock sound for successful room placement
 	AudioManager.play_room_lock()
 
@@ -691,6 +709,9 @@ func _on_tile_right_clicked(x: int, y: int):
 	var tile = main_grid.get_tile_at(x, y)
 	if not tile:
 		return
+
+	# Check if removing a relay for overlay refresh
+	var was_relay = tile.is_occupied() and tile.get_room_type() == RoomData.RoomType.RELAY
 
 	# Remove entire room instance (works for both single-tile and multi-tile rooms)
 	_remove_room_at_tile(tile)
@@ -703,6 +724,10 @@ func _on_tile_right_clicked(x: int, y: int):
 	_update_ship_status()
 	_update_ship_stats()
 	update_synergies()
+
+	# Feature 1.4: Refresh overlay if enabled and relay was removed
+	if power_overlay_enabled and was_relay:
+		ship_grid.draw_all_relay_coverages(placed_rooms)
 
 ## Handle room type selection from palette (Phase 7.3 - reset rotation)
 func _on_room_type_selected(room_type: RoomData.RoomType):
@@ -771,6 +796,48 @@ func _on_tile_unhovered(tile: GridTile):
 					preview_tile.clear_preview()
 
 	hovered_tile = null
+
+## Handle relay hovered (Feature 1.3)
+func _on_relay_hovered(room: Room):
+	# Feature 1.4: Don't show hover coverage if overlay is already enabled
+	if power_overlay_enabled:
+		return
+	# Get anchor tile coordinates for the relay
+	var anchor_tile = room.get_anchor_tile()
+	if anchor_tile:
+		ship_grid.draw_single_relay_coverage(anchor_tile.grid_x, anchor_tile.grid_y)
+
+## Handle relay unhovered (Feature 1.3)
+func _on_relay_unhovered(room: Room):
+	# Feature 1.4: Don't clear if overlay is enabled
+	if power_overlay_enabled:
+		return
+	ship_grid.clear_relay_coverage()
+
+## Handle power overlay toggle (Feature 1.4)
+func _on_power_overlay_toggled():
+	power_overlay_enabled = !power_overlay_enabled
+
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	# Update button appearance and text
+	if power_overlay_enabled:
+		power_overlay_button.text = "OVERLAY: ON"
+		power_overlay_button.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
+		var style = power_overlay_button.get_theme_stylebox("normal")
+		if style is StyleBoxFlat:
+			style.bg_color = Color(1.0, 0.867, 0.0)  # Yellow
+		# Show all relay coverage zones
+		ship_grid.draw_all_relay_coverages(placed_rooms)
+	else:
+		power_overlay_button.text = "OVERLAY: OFF"
+		power_overlay_button.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
+		var style = power_overlay_button.get_theme_stylebox("normal")
+		if style is StyleBoxFlat:
+			style.bg_color = Color(0.3, 0.3, 0.3)  # Gray
+		# Clear all coverage zones
+		ship_grid.clear_relay_coverage()
 
 ## Feature 2.1: Calculate drag line from start to end position (horizontal OR vertical, not diagonal)
 func _calculate_drag_line(start_x: int, start_y: int, end_x: int, end_y: int) -> Array[Vector2i]:
@@ -1083,6 +1150,10 @@ func _clear_all_rooms():
 	# Clear the placed_rooms tracking array
 	placed_rooms.clear()
 
+	# Feature 1.4: Clear overlay when grid is cleared
+	if power_overlay_enabled:
+		ship_grid.clear_relay_coverage()
+
 ## Place a shaped room at grid position (Phase 7.1 - anchor tile is top-left of room)
 func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 	# Get shape for this room type
@@ -1117,6 +1188,11 @@ func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 
 	# Add to placed rooms tracking array
 	placed_rooms.append(room)
+
+	# Feature 1.3: Connect relay hover signals for coverage visualization
+	if room_type == RoomData.RoomType.RELAY:
+		room.relay_hovered.connect(_on_relay_hovered)
+		room.relay_unhovered.connect(_on_relay_unhovered)
 
 ## Try to place a room for template generation (Phase 10.5 - hull-aware templates)
 ## Returns true if successfully placed, false otherwise

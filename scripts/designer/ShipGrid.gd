@@ -20,6 +20,7 @@ var main_grid: MainGrid = null
 ## Child nodes for organization
 @onready var grid_container: Node2D = $GridContainer
 @onready var power_lines_container: Node2D = $PowerLinesContainer
+@onready var coverage_container: Node2D = $CoverageContainer  # Feature 1.3
 
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
@@ -224,6 +225,71 @@ func pulse_power_lines():
 	for child in power_lines_container.get_children():
 		if child is Line2D:
 			child.default_color = Color(0.29, 0.89, 0.89, pulse)
+
+## Draw coverage for a single relay WITHOUT clearing existing coverage (Feature 1.4)
+func draw_relay_coverage_for_relay(relay_x: int, relay_y: int):
+	# Calculate relay center (2×2 module, center is midpoint between all 4 tiles)
+	# Get centers of top-left and bottom-right tiles, then average them
+	var top_left_center = get_tile_center(relay_x, relay_y)
+	var bottom_right_center = get_tile_center(relay_x + 1, relay_y + 1)
+	var center_pixel = (top_left_center + bottom_right_center) / 2.0
+
+	# Calculate radius in pixels (3 tiles)
+	var radius_tiles = 3.0
+	var radius_pixels = radius_tiles * (TILE_SIZE + TILE_SPACING)
+
+	# Create filled circle polygon (32 vertices)
+	var circle = Polygon2D.new()
+	var points = PackedVector2Array()
+	var num_segments = 32
+	for i in range(num_segments):
+		var angle = (i * TAU) / num_segments
+		var x = center_pixel.x + cos(angle) * radius_pixels
+		var y = center_pixel.y + sin(angle) * radius_pixels
+		points.append(Vector2(x, y))
+	circle.polygon = points
+	circle.color = Color(1.0, 0.867, 0.0, 0.15)  # #FFDD00 yellow at 15% opacity
+
+	# Add border line (Line2D circle outline, 2px width)
+	var border = Line2D.new()
+	border.default_color = Color(1.0, 0.867, 0.0, 0.8)  # #FFDD00 yellow at 80% opacity
+	border.width = 2
+	border.closed = true
+	for i in range(num_segments + 1):  # +1 to close the circle
+		var angle = (i * TAU) / num_segments
+		var x = center_pixel.x + cos(angle) * radius_pixels
+		var y = center_pixel.y + sin(angle) * radius_pixels
+		border.add_point(Vector2(x, y))
+
+	# Add to coverage container
+	coverage_container.add_child(circle)
+	coverage_container.add_child(border)
+
+	# Fade in animation
+	circle.modulate.a = 0.0
+	border.modulate.a = 0.0
+	var tween = create_tween().set_parallel(true)
+	tween.tween_property(circle, "modulate:a", 1.0, 0.3)
+	tween.tween_property(border, "modulate:a", 1.0, 0.3)
+
+## Draw coverage zones for ALL placed relays (Feature 1.4 - overlay mode)
+func draw_all_relay_coverages(placed_rooms: Array[Room]):
+	clear_relay_coverage()
+	for room in placed_rooms:
+		if room.room_type == RoomData.RoomType.RELAY:
+			var anchor_tile = room.get_anchor_tile()
+			if anchor_tile:
+				draw_relay_coverage_for_relay(anchor_tile.grid_x, anchor_tile.grid_y)
+
+## Draw single relay coverage for hover (Feature 1.3 - backward compatible)
+func draw_single_relay_coverage(relay_x: int, relay_y: int):
+	clear_relay_coverage()
+	draw_relay_coverage_for_relay(relay_x, relay_y)
+
+## Clear relay coverage display (Feature 1.3)
+func clear_relay_coverage():
+	for child in coverage_container.get_children():
+		child.queue_free()
 
 ## Get all tiles
 func get_all_tiles() -> Array[GridTile]:

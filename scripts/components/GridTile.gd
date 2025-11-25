@@ -127,7 +127,12 @@ func set_occupying_room(room: Room, anchor: bool = false) -> void:
 		room.z_index = 1  # Draw on top of background
 		room.visible = true
 		room.modulate = Color(1, 1, 1, 1)
-		room.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		# Feature 1.3: Relays need mouse detection for coverage hover
+		if room.room_type == RoomData.RoomType.RELAY:
+			room.mouse_filter = Control.MOUSE_FILTER_STOP
+		else:
+			room.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 ## Clear occupying room reference (Phase 7.1)
 ## Note: Room instance is freed by ShipDesigner, not here

@@ -1,6 +1,10 @@
 extends Control
 class_name Room
 
+## Signals for relay coverage hover (Feature 1.3)
+signal relay_hovered(room: Room)
+signal relay_unhovered(room: Room)
+
 ## Room type from RoomData enum
 @export var room_type: RoomData.RoomType = RoomData.RoomType.EMPTY
 
@@ -33,6 +37,11 @@ func _ready():
 	for child in get_children():
 		if child is Control:
 			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Feature 1.3: Connect hover signals for RELAY rooms
+	if room_type == RoomData.RoomType.RELAY:
+		mouse_entered.connect(_on_relay_mouse_entered)
+		mouse_exited.connect(_on_relay_mouse_exited)
 
 ## Resize to match parent tile (called after adding to tree)
 func resize_to_tile():
@@ -69,3 +78,11 @@ func get_anchor_tile() -> GridTile:
 	if occupied_tiles.size() > 0:
 		return occupied_tiles[0]
 	return null
+
+## Handle relay mouse enter (Feature 1.3)
+func _on_relay_mouse_entered():
+	emit_signal("relay_hovered", self)
+
+## Handle relay mouse exit (Feature 1.3)
+func _on_relay_mouse_exited():
+	emit_signal("relay_unhovered", self)
