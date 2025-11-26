@@ -157,16 +157,9 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 		# Use template for enemy ship
 		enemy_data = _create_enemy_from_template(enemy_template)
 	else:
-		# Fallback to auto-generated enemy
-		match mission_index:
-			0:
-				enemy_data = ShipData.create_mission1_scout()
-			1:
-				enemy_data = ShipData.create_mission2_raider()
-			2:
-				enemy_data = ShipData.create_mission3_dreadnought()
-			_:
-				enemy_data = ShipData.create_mission1_scout()  # Default fallback
+		# Phase 3: Load enemy from JSON data by enemy ID
+		var enemy_id = GameState.get_mission_enemy_id(mission_index)
+		enemy_data = ShipData.create_enemy_from_id(enemy_id)
 
 	# Set up ship displays
 	print("DEBUG Combat: Setting player_ship_display with grid size: ", player_data.grid.size(), "x", player_data.grid[0].size() if player_data.grid.size() > 0 else 0)

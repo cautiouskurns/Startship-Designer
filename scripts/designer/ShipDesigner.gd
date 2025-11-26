@@ -26,7 +26,7 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 @onready var remaining_label: Label = $BudgetPanel/RemainingLabel
 
 ## Buttons
-@onready var launch_button: Button = $LaunchButton
+@onready var launch_button: Button = $BottomMenuBar/MenuBarContainer/LaunchButton
 @onready var auto_fill_button: Button = $BottomMenuBar/MenuBarContainer/GridSection/AutoFillButton
 @onready var menu_clear_button: Button = $BottomMenuBar/MenuBarContainer/GridSection/ClearButton
 @onready var grid_clear_button: Button = $GridLayoutPanel/GridLayoutHeader/ClearButton
@@ -639,10 +639,22 @@ func update_synergies():
 				# Mark as created
 				created_synergies[synergy_key] = true
 
-	# Update synergy guide panel with counts
-	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
-	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
-	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
+	# Update inventory panel with room counts (converted from synergy panel)
+	var room_counts = {
+		RoomData.RoomType.BRIDGE: 0,
+		RoomData.RoomType.WEAPON: 0,
+		RoomData.RoomType.SHIELD: 0,
+		RoomData.RoomType.ENGINE: 0,
+		RoomData.RoomType.REACTOR: 0,
+		RoomData.RoomType.ARMOR: 0
+	}
+
+	# Count room instances
+	for room in placed_rooms:
+		if room_counts.has(room.room_type):
+			room_counts[room.room_type] += 1
+
+	synergy_guide_panel.update_synergy_counts(room_counts)
 
 ## Pulse power lines brightness, update cost indicator, and handle WASD panning
 func _process(_delta):

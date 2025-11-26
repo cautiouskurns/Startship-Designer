@@ -1,0 +1,56 @@
+{
+  "hulls": {
+    "FRIGATE": {
+      "name": "FRIGATE",
+      "grid_size": [10, 4],
+      "grid_shape": [
+        "XXXXXX....",
+        "XXXXXXXX..",
+        "XXXXXXXX..",
+        "XXXXXX...."
+      ],
+      "bonus_type": "initiative",
+      "bonus_value": 2,
+      "description": "+2 Initiative"
+    },
+    "CRUISER": {
+      "name": "CRUISER",
+      "grid_size": [8, 6],
+      "grid_shape": [
+        "XXXXX...",
+        "XXXXXX..",
+        "XXXXXXX.",
+        "XXXXXXX.",
+        "XXXXXX..",
+        "XXXXX..."
+      ],
+      "bonus_type": "none",
+      "bonus_value": 0,
+      "description": "Balanced"
+    },
+    "BATTLESHIP": {
+      "name": "BATTLESHIP",
+      "grid_size": [7, 7],
+      "grid_shape": [
+        "XXXXX..",
+        "XXXXXX.",
+        "XXXXXXX",
+        "XXXXXXX",
+        "XXXXXXX",
+        "XXXXXX.",
+        "XXXXX.."
+      ],
+      "bonus_type": "hull_hp",
+      "bonus_value": 20,
+      "description": "+20 HP"
+    },
+    "FREE_DESIGN": {
+      "name": "FREE DESIGN",
+      "grid_size": [30, 30],
+      "grid_shape": [],
+      "bonus_type": "none",
+      "bonus_value": 0,
+      "description": "No Restrictions"
+    }
+  }
+}

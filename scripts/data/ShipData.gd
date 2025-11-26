@@ -2,6 +2,12 @@ class_name ShipData
 
 ## Represents a ship's configuration and stats for combat
 
+## Flag to track if enemy data has been loaded from JSON
+static var _enemy_data_loaded: bool = false
+
+## Enemy ship data loaded from JSON (Phase 3)
+static var enemies_data: Dictionary = {}
+
 ## Targeting priority for enemy AI (Feature 1 MVP)
 enum TargetingPriority {
 	RANDOM,         # Target any component (Mission 0 Scout)
@@ -328,6 +334,108 @@ static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = [], grid
 
 	# Calculate power grid with relay coverage
 	ship.calculate_power_grid(secondary_grid)
+
+	return ship
+
+## Load enemy ship data from JSON file (Phase 3: Data-driven design)
+static func _load_enemy_data_from_json():
+	if _enemy_data_loaded:
+		return
+
+	# Load JSON file
+	var file = FileAccess.open("res://data/enemies.json", FileAccess.READ)
+	if not file:
+		push_error("Failed to load enemies.json! Using fallback data.")
+		_enemy_data_loaded = true  # Prevent infinite retry
+		return
+
+	var json_text = file.get_as_text()
+	file.close()
+
+	# Parse JSON
+	var json = JSON.new()
+	var error = json.parse(json_text)
+	if error != OK:
+		push_error("Failed to parse enemies.json: %s" % json.get_error_message())
+		_enemy_data_loaded = true
+		return
+
+	var data = json.data
+	if not data:
+		push_error("enemies.json is empty!")
+		_enemy_data_loaded = true
+		return
+
+	# Load enemy definitions
+	if data.has("enemies"):
+		enemies_data = data["enemies"]
+		print("Enemy ship data loaded from JSON successfully")
+
+	_enemy_data_loaded = true
+
+## Convert targeting priority string to enum
+static func _get_targeting_priority_from_name(name: String) -> TargetingPriority:
+	match name:
+		"RANDOM": return TargetingPriority.RANDOM
+		"WEAPONS_FIRST": return TargetingPriority.WEAPONS_FIRST
+		"POWER_FIRST": return TargetingPriority.POWER_FIRST
+		_:
+			push_warning("Unknown targeting priority: %s" % name)
+			return TargetingPriority.RANDOM
+
+## Convert room type string to RoomType enum (for enemy data loading)
+static func _get_room_type_from_name(name: String):
+	match name:
+		"EMPTY": return RoomData.RoomType.EMPTY
+		"BRIDGE": return RoomData.RoomType.BRIDGE
+		"WEAPON": return RoomData.RoomType.WEAPON
+		"SHIELD": return RoomData.RoomType.SHIELD
+		"ENGINE": return RoomData.RoomType.ENGINE
+		"REACTOR": return RoomData.RoomType.REACTOR
+		"ARMOR": return RoomData.RoomType.ARMOR
+		"CONDUIT": return RoomData.RoomType.CONDUIT
+		"RELAY": return RoomData.RoomType.RELAY
+		_:
+			push_warning("Unknown room type for enemy: %s" % name)
+			return null
+
+## Create enemy ship from JSON data by enemy ID (Phase 3)
+static func create_enemy_from_id(enemy_id: String) -> ShipData:
+	_load_enemy_data_from_json()  # Ensure data is loaded
+
+	if not enemies_data.has(enemy_id):
+		push_error("Enemy ID '%s' not found in enemies.json! Using fallback." % enemy_id)
+		# Fallback to original hardcoded functions
+		match enemy_id:
+			"scout": return create_mission1_scout()
+			"raider": return create_mission2_raider()
+			"dreadnought": return create_mission3_dreadnought()
+			_: return create_mission1_scout()
+
+	var enemy_def = enemies_data[enemy_id]
+
+	# Parse room placements
+	var room_placements = []
+	if enemy_def.has("room_placements"):
+		for placement in enemy_def["room_placements"]:
+			var room_type = _get_room_type_from_name(placement.get("type", "EMPTY"))
+			if room_type != null:
+				room_placements.append({
+					"type": room_type,
+					"x": placement.get("x", 0),
+					"y": placement.get("y", 0)
+				})
+
+	# Create ship
+	var hp = enemy_def.get("hp", 60)
+	var grid_width = enemy_def.get("grid_width", 8)
+	var grid_height = enemy_def.get("grid_height", 6)
+
+	var ship = create_enemy_ship_with_shaped_rooms(room_placements, hp, grid_width, grid_height)
+
+	# Set targeting priority
+	var priority_name = enemy_def.get("targeting_priority", "RANDOM")
+	ship.targeting_priority = _get_targeting_priority_from_name(priority_name)
 
 	return ship
 

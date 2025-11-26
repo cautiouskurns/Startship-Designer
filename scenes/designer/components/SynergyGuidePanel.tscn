@@ -1,20 +1,20 @@
-[gd_scene load_steps=3 format=3 uid="uid://synergy_guide_panel"]
+[gd_scene load_steps=4 format=3 uid="uid://walih11idf0w"]
 
-[ext_resource type="Script" path="res://scripts/designer/SynergyGuidePanel.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://synergy_row" path="res://scenes/designer/components/SynergyRow.tscn" id="2"]
+[ext_resource type="Script" uid="uid://nrn772ifmntl" path="res://scripts/designer/SynergyGuidePanel.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://cmvbsd60kuwob" path="res://assets/sprites/ui/components.png" id="2_components"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.101961, 0.101961, 0.101961, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
+bg_color = Color(0.0627451, 0.09411765, 0.13333334, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 border_color = Color(0.290196, 0.886275, 0.886275, 1)
 
 [node name="SynergyGuidePanel" type="Panel"]
-custom_minimum_size = Vector2(280, 200)
-offset_right = 280.0
-offset_bottom = 200.0
+custom_minimum_size = Vector2(360, 220)
+offset_right = 360.0
+offset_bottom = 220.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 script = ExtResource("1")
 
@@ -29,34 +29,132 @@ theme_override_constants/separation = 8
 
 [node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
 
-[node name="Content" type="VBoxContainer" parent="VBoxContainer/MarginContainer"]
+[node name="HeaderContainer" type="HBoxContainer" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="InventoryIcon" type="TextureRect" parent="VBoxContainer/MarginContainer/HeaderContainer"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+texture = ExtResource("2_components")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer/MarginContainer/HeaderContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.29, 0.886, 0.886, 1)
+theme_override_font_sizes/font_size = 18
+text = "INVENTORY"
+vertical_alignment = 1
+
+[node name="ContentMargin" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="ContentContainer" type="VBoxContainer" parent="VBoxContainer/ContentMargin"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="HeaderLabel" type="Label" parent="VBoxContainer/MarginContainer/Content"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
-theme_override_font_sizes/font_size = 20
-text = "SYNERGIES"
-horizontal_alignment = 1
-
-[node name="Spacer" type="Control" parent="VBoxContainer/MarginContainer/Content"]
-custom_minimum_size = Vector2(0, 5)
+[node name="BridgeRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 
-[node name="FireRateRow" parent="VBoxContainer/MarginContainer/Content" instance=ExtResource("2")]
+[node name="BridgeLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/BridgeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 13
+text = "Bridge:"
+
+[node name="BridgeValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/BridgeRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+
+[node name="WeaponsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 
-[node name="ShieldCapacityRow" parent="VBoxContainer/MarginContainer/Content" instance=ExtResource("2")]
+[node name="WeaponsLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/WeaponsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 13
+text = "Weapons:"
+
+[node name="WeaponsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/WeaponsRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+
+[node name="ShieldsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 
-[node name="InitiativeRow" parent="VBoxContainer/MarginContainer/Content" instance=ExtResource("2")]
+[node name="ShieldsLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ShieldsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 13
+text = "Shields:"
+
+[node name="ShieldsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ShieldsRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+
+[node name="EnginesRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 
-[node name="DurabilityRow" parent="VBoxContainer/MarginContainer/Content" instance=ExtResource("2")]
+[node name="EnginesLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/EnginesRow"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 13
+text = "Engines:"
+
+[node name="EnginesValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/EnginesRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+
+[node name="ReactorsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+layout_mode = 2
+
+[node name="ReactorsLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ReactorsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 13
+text = "Reactors:"
+
+[node name="ReactorsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ReactorsRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+
+[node name="ArmorRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+layout_mode = 2
+
+[node name="ArmorLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ArmorRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 13
+text = "Armor:"
+
+[node name="ArmorValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ArmorRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"

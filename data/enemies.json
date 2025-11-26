@@ -1,0 +1,65 @@
+{
+  "enemies": {
+    "scout": {
+      "name": "Scout",
+      "hp": 60,
+      "grid_width": 8,
+      "grid_height": 6,
+      "targeting_priority": "RANDOM",
+      "room_placements": [
+        {"type": "REACTOR", "x": 1, "y": 1},
+        {"type": "WEAPON", "x": 0, "y": 1},
+        {"type": "SHIELD", "x": 3, "y": 0},
+        {"type": "BRIDGE", "x": 4, "y": 2},
+        {"type": "ENGINE", "x": 6, "y": 2},
+        {"type": "ARMOR", "x": 0, "y": 4}
+      ]
+    },
+    "raider": {
+      "name": "Raider",
+      "hp": 80,
+      "grid_width": 8,
+      "grid_height": 6,
+      "targeting_priority": "WEAPONS_FIRST",
+      "room_placements": [
+        {"type": "REACTOR", "x": 1, "y": 1},
+        {"type": "WEAPON", "x": 0, "y": 1},
+        {"type": "WEAPON", "x": 0, "y": 2},
+        {"type": "WEAPON", "x": 1, "y": 0},
+        {"type": "SHIELD", "x": 3, "y": 0},
+        {"type": "SHIELD", "x": 2, "y": 2},
+        {"type": "BRIDGE", "x": 4, "y": 2},
+        {"type": "ENGINE", "x": 6, "y": 2},
+        {"type": "ARMOR", "x": 0, "y": 0},
+        {"type": "ARMOR", "x": 0, "y": 3},
+        {"type": "ARMOR", "x": 1, "y": 3}
+      ]
+    },
+    "dreadnought": {
+      "name": "Dreadnought",
+      "hp": 120,
+      "grid_width": 8,
+      "grid_height": 6,
+      "targeting_priority": "POWER_FIRST",
+      "room_placements": [
+        {"type": "REACTOR", "x": 1, "y": 0},
+        {"type": "REACTOR", "x": 1, "y": 3},
+        {"type": "WEAPON", "x": 0, "y": 0},
+        {"type": "WEAPON", "x": 0, "y": 1},
+        {"type": "WEAPON", "x": 0, "y": 3},
+        {"type": "WEAPON", "x": 0, "y": 4},
+        {"type": "SHIELD", "x": 4, "y": 0},
+        {"type": "SHIELD", "x": 1, "y": 2},
+        {"type": "SHIELD", "x": 4, "y": 4},
+        {"type": "BRIDGE", "x": 5, "y": 1},
+        {"type": "ENGINE", "x": 6, "y": 3},
+        {"type": "ARMOR", "x": 0, "y": 2},
+        {"type": "ARMOR", "x": 3, "y": 2},
+        {"type": "ARMOR", "x": 4, "y": 3},
+        {"type": "ARMOR", "x": 0, "y": 5},
+        {"type": "ARMOR", "x": 1, "y": 5},
+        {"type": "ARMOR", "x": 4, "y": 5}
+      ]
+    }
+  }
+}

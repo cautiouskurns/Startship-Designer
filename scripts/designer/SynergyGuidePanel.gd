@@ -1,48 +1,33 @@
 extends Panel
 class_name SynergyGuidePanel
 
-## Panel displaying all synergy types with live counts
+## Panel displaying inventory of placed components
 
-## References to synergy rows
-@onready var fire_rate_row: SynergyRow = $VBoxContainer/MarginContainer/Content/FireRateRow
-@onready var shield_capacity_row: SynergyRow = $VBoxContainer/MarginContainer/Content/ShieldCapacityRow
-@onready var initiative_row: SynergyRow = $VBoxContainer/MarginContainer/Content/InitiativeRow
-@onready var durability_row: SynergyRow = $VBoxContainer/MarginContainer/Content/DurabilityRow
+## References to value labels
+@onready var bridge_value: Label = $VBoxContainer/ContentMargin/ContentContainer/BridgeRow/BridgeValue
+@onready var weapons_value: Label = $VBoxContainer/ContentMargin/ContentContainer/WeaponsRow/WeaponsValue
+@onready var shields_value: Label = $VBoxContainer/ContentMargin/ContentContainer/ShieldsRow/ShieldsValue
+@onready var engines_value: Label = $VBoxContainer/ContentMargin/ContentContainer/EnginesRow/EnginesValue
+@onready var reactors_value: Label = $VBoxContainer/ContentMargin/ContentContainer/ReactorsRow/ReactorsValue
+@onready var armor_value: Label = $VBoxContainer/ContentMargin/ContentContainer/ArmorRow/ArmorValue
 
-func _ready():
-	# Configure each row with its synergy type
-	fire_rate_row.setup(
-		RoomData.SynergyType.FIRE_RATE,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.WEAPON,
-		"+15% Damage"
-	)
+## Update inventory counts from room counts dictionary
+func update_synergy_counts(room_counts: Dictionary):
+	# This function is called from ShipDesigner with room counts
+	# We keep the same function name for compatibility
+	update_inventory_counts(room_counts)
 
-	shield_capacity_row.setup(
-		RoomData.SynergyType.SHIELD_CAPACITY,
-		RoomData.RoomType.SHIELD,
-		RoomData.RoomType.REACTOR,
-		"+20% Absorption"
-	)
-
-	initiative_row.setup(
-		RoomData.SynergyType.INITIATIVE,
-		RoomData.RoomType.ENGINE,
-		RoomData.RoomType.ENGINE,
-		"+1 Initiative"
-	)
-
-	durability_row.setup(
-		RoomData.SynergyType.DURABILITY,
-		RoomData.RoomType.WEAPON,
-		RoomData.RoomType.ARMOR,
-		"-25% Destruction"
-	)
-
-## Update synergy counts from ShipData synergy calculation
-func update_synergy_counts(synergy_counts: Dictionary):
-	# Update each row with its count
-	fire_rate_row.update_count(synergy_counts.get(RoomData.SynergyType.FIRE_RATE, 0))
-	shield_capacity_row.update_count(synergy_counts.get(RoomData.SynergyType.SHIELD_CAPACITY, 0))
-	initiative_row.update_count(synergy_counts.get(RoomData.SynergyType.INITIATIVE, 0))
-	durability_row.update_count(synergy_counts.get(RoomData.SynergyType.DURABILITY, 0))
+## Update inventory counts
+func update_inventory_counts(room_counts: Dictionary):
+	if bridge_value:
+		bridge_value.text = str(room_counts.get(RoomData.RoomType.BRIDGE, 0))
+	if weapons_value:
+		weapons_value.text = str(room_counts.get(RoomData.RoomType.WEAPON, 0))
+	if shields_value:
+		shields_value.text = str(room_counts.get(RoomData.RoomType.SHIELD, 0))
+	if engines_value:
+		engines_value.text = str(room_counts.get(RoomData.RoomType.ENGINE, 0))
+	if reactors_value:
+		reactors_value.text = str(room_counts.get(RoomData.RoomType.REACTOR, 0))
+	if armor_value:
+		armor_value.text = str(room_counts.get(RoomData.RoomType.ARMOR, 0))
