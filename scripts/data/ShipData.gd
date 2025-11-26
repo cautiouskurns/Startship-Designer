@@ -158,6 +158,16 @@ func calculate_power_grid(secondary_grid = null):
 							# Fallback for old single-tile system
 							power_grid[y][x] = true
 						break
+					# Fallback for enemy ships: treat relays like mini-reactors (power adjacent rooms)
+					# Only if no secondary_grid provided (player ships use relay connections)
+					elif grid[pos.y][pos.x] == RoomData.RoomType.RELAY and secondary_grid == null:
+						# Power entire room instance (if using room instances)
+						if room_id != -1:
+							powered_room_ids[room_id] = true
+						else:
+							# Fallback for old single-tile system
+							power_grid[y][x] = true
+						break
 
 	# Relay coverage pass: Power rooms within 3-tile radius of powered relays
 	if secondary_grid and not room_instances.is_empty():
