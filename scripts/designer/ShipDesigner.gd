@@ -22,6 +22,7 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 
 ## Budget UI elements
 @onready var budget_label: Label = $BudgetPanel/BudgetLabel
+@onready var budget_progress_bar: ProgressBar = $BudgetPanel/BudgetProgressBar
 @onready var remaining_label: Label = $BudgetPanel/RemainingLabel
 
 ## Buttons
@@ -230,8 +231,12 @@ func _update_budget_display():
 	current_budget = calculate_current_budget()
 	var remaining = max_budget - current_budget
 
-	# Update budget label
-	budget_label.text = "BUDGET: %d/%d" % [current_budget, max_budget]
+	# Update budget label with new format: "0 / 30"
+	budget_label.text = "%d / %d" % [current_budget, max_budget]
+
+	# Update progress bar
+	budget_progress_bar.max_value = max_budget
+	budget_progress_bar.value = current_budget
 
 	# Check if Bridge is missing
 	if count_bridges() == 0:
@@ -284,11 +289,13 @@ func _update_ship_stats():
 	# Update panel
 	ship_stats_panel.update_stats(temp_ship, hull_data)
 
-## Update classification label with current hull type
+## Update classification label with current hull type and grid size
 func _update_classification_label():
 	var hull_data = GameState.get_current_hull_data()
 	var hull_type_name = hull_data.get("type_name", "UNKNOWN").to_upper()
-	classification_label.text = "CLASSIFICATION: %s" % hull_type_name
+	var grid_width = main_grid.grid_width
+	var grid_height = main_grid.grid_height
+	classification_label.text = "CLASSIFICATION: %s • GRID: %d×%d" % [hull_type_name, grid_width, grid_height]
 
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:

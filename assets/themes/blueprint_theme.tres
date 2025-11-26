@@ -1,0 +1,7 @@
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://blueprint_theme"]
+
+[ext_resource type="FontFile" uid="uid://dy5wy0hqce88w" path="res://assets/fonts/Inter-VariableFont_opsz,wght.ttf" id="1_inter_font"]
+
+[resource]
+default_font = ExtResource("1_inter_font")
+default_font_size = 16

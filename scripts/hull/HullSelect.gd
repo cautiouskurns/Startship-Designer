@@ -15,6 +15,8 @@ extends Control
 @onready var load_template_button: Button = $DesignChoicePanel/Panel/LoadTemplateButton
 @onready var choice_back_button: Button = $DesignChoicePanel/Panel/BackButton
 
+## Main back button
+@onready var back_button: Button = $BackButton
 
 ## Template panel
 @onready var template_list_panel = $TemplateListPanel
@@ -45,6 +47,9 @@ func _ready():
 	new_design_button.pressed.connect(_on_new_design_pressed)
 	load_template_button.pressed.connect(_on_load_template_pressed)
 	choice_back_button.pressed.connect(_on_choice_back_pressed)
+
+	# Connect main back button
+	back_button.pressed.connect(_on_back_pressed)
 
 	# Connect template panel signals
 	template_list_panel.template_selected.connect(_on_template_selected)
@@ -108,3 +113,8 @@ func _on_free_design_selected(_hull_type):
 
 	# Load Ship Designer directly (blank 18×16 grid)
 	get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
+
+## Handle main "BACK" button - return to main menu
+func _on_back_pressed():
+	AudioManager.play_button_click()
+	get_tree().change_scene_to_file("res://scenes/main/Main.tscn")

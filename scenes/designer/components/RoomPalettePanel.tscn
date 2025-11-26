@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://room_palette_panel"]
+[gd_scene load_steps=4 format=3 uid="uid://gbexenfull3j"]
 
-[ext_resource type="Script" path="res://scripts/designer/RoomPalettePanel.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://room_type_button" path="res://scenes/designer/components/RoomTypeButton.tscn" id="2"]
+[ext_resource type="Script" uid="uid://bp5i0835ou0q1" path="res://scripts/designer/RoomPalettePanel.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/designer/components/RoomTypeButton.tscn" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_components_panel"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -12,9 +12,9 @@ border_width_bottom = 2
 border_color = Color(0.290196, 0.886275, 0.886275, 1)
 
 [node name="RoomPalettePanel" type="Panel"]
-custom_minimum_size = Vector2(250, 0)
-offset_right = 250.0
-offset_bottom = 400.0
+custom_minimum_size = Vector2(340, 600)
+offset_right = 340.0
+offset_bottom = 600.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_components_panel")
 script = ExtResource("1")
 
@@ -25,13 +25,20 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/separation = 8
 
-[node name="HeaderLabel" type="Label" parent="VBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="HeaderLabel" type="Label" parent="VBoxContainer/MarginContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.29, 0.886, 0.886, 1)
-theme_override_font_sizes/font_size = 20
-text = "COMPONENTS"
-horizontal_alignment = 1
+theme_override_font_sizes/font_size = 18
+text = "⊕ COMPONENTS"
 vertical_alignment = 1
 
 [node name="Spacer1" type="Control" parent="VBoxContainer"]
@@ -39,33 +46,41 @@ custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
 [node name="BridgeButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 1
 
 [node name="WeaponButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 2
 
 [node name="ShieldButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 3
 
 [node name="EngineButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 4
 
 [node name="ReactorButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 5
 
 [node name="ArmorButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 6
 
 [node name="ConduitButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 7
 
 [node name="RelayButton" parent="VBoxContainer" instance=ExtResource("2")]
+custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 8

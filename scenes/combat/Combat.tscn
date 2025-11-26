@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://dly506ra5y862" path="res://scripts/combat/CombatFX.gd" id="4"]
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="5_ship_stats"]
 [ext_resource type="Texture2D" uid="uid://y1akstmn6odh" path="res://assets/sprites/ui/starfield.png" id="6_starfield"]
+[ext_resource type="Theme" uid="uid://blueprint_theme" path="res://assets/themes/blueprint_theme.tres" id="7_blueprint_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_green"]
 bg_color = Color(0.290196, 0.886275, 0.290196, 1)
@@ -17,6 +18,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("7_blueprint_theme")
 script = ExtResource("1")
 
 [node name="Background" type="TextureRect" parent="."]
