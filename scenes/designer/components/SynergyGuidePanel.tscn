@@ -89,10 +89,14 @@ theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 13
 text = "Weapons:"
 
-[node name="WeaponsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/WeaponsRow"]
+[node name="WeaponsValue" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/WeaponsRow"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 text = "0"
 
 [node name="ShieldsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
@@ -105,10 +109,14 @@ theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 13
 text = "Shields:"
 
-[node name="ShieldsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ShieldsRow"]
+[node name="ShieldsValue" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/ShieldsRow"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 text = "0"
 
 [node name="EnginesRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
@@ -121,10 +129,14 @@ theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 13
 text = "Engines:"
 
-[node name="EnginesValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/EnginesRow"]
+[node name="EnginesValue" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/EnginesRow"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/normal_font_size = 13
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
 text = "0"
 
 [node name="ReactorsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]

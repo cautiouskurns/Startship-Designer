@@ -639,7 +639,7 @@ func update_synergies():
 				# Mark as created
 				created_synergies[synergy_key] = true
 
-	# Update inventory panel with room counts (converted from synergy panel)
+	# Update inventory panel with room counts AND synergy data
 	var room_counts = {
 		RoomData.RoomType.BRIDGE: 0,
 		RoomData.RoomType.WEAPON: 0,
@@ -654,7 +654,13 @@ func update_synergies():
 		if room_counts.has(room.room_type):
 			room_counts[room.room_type] += 1
 
-	synergy_guide_panel.update_synergy_counts(room_counts)
+	# Calculate synergy bonuses for subtle display
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
+	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
+	var synergy_counts = synergy_bonuses["counts"]
+
+	# Pass both room counts and synergy data to panel
+	synergy_guide_panel.update_inventory(room_counts, synergy_counts)
 
 ## Pulse power lines brightness, update cost indicator, and handle WASD panning
 func _process(_delta):
