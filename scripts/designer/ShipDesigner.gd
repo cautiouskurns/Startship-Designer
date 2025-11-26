@@ -42,6 +42,9 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 ## Room palette panel
 @onready var room_palette: RoomPalettePanel = $RoomPalettePanel
 
+## Specifications panel
+@onready var specifications_panel: SpecificationsPanel = $SpecificationsPanel
+
 ## Ship status panel
 @onready var ship_status_panel: ShipStatusPanel = $ShipStatusPanel
 
@@ -897,6 +900,8 @@ func _on_room_type_selected(room_type: RoomData.RoomType):
 	room_palette.update_rotation_display(current_rotation)
 	# Update button availability based on new selection
 	update_palette_availability()
+	# Update specifications panel with selected room type
+	specifications_panel.update_specifications(room_type)
 
 ## Handle tile hover - show preview (Phase 7.2/7.3 - per-tile mixed preview states with rotation)
 ## Feature 2.1: Update drag line when dragging conduits

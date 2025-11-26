@@ -1,8 +1,9 @@
-[gd_scene load_steps=25 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=26 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
 [ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
 [ext_resource type="PackedScene" uid="uid://gbexenfull3j" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://p7hx2grevdey" path="res://scenes/designer/components/SpecificationsPanel.tscn" id="2_specifications"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/designer/components/SynergyGuidePanel.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://b3vn8y4qxc7h2" path="res://scenes/designer/components/TemplateNameDialog.tscn" id="5_template_name"]
@@ -23,7 +24,7 @@ border_color = Color(0.290196, 0.886275, 0.886275, 1)
 bg_color = Color(0.3, 0.3, 0.3, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grid_panel"]
-bg_color = Color(0.0588235, 0.0588235, 0.121569, 1)
+bg_color = Color(0.0627451, 0.09411765, 0.13333334, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
@@ -38,6 +39,11 @@ bg_color = Color(0.3, 0.3, 0.3, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_grid_background"]
 bg_color = Color(0.0588235, 0.0588235, 0.121569, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22352941, 0.6392157, 0.6509804, 0.49803922)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status_bridge"]
 bg_color = Color(0.4, 0.15, 0.15, 1)
@@ -149,6 +155,7 @@ text = "CLASSIFICATION: CRUISER • GRID: 8×6"
 vertical_alignment = 1
 
 [node name="GridInstructions" type="Label" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -264,10 +271,10 @@ layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -493.0
-offset_top = 909.0
-offset_right = -338.0
-offset_bottom = 959.0
+offset_left = -318.0
+offset_top = 952.0
+offset_right = -163.0
+offset_bottom = 1002.0
 grow_horizontal = 0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
@@ -285,15 +292,23 @@ offset_bottom = 447.0
 layout_mode = 0
 offset_left = 33.0
 offset_top = 150.0
-offset_right = 373.0
+offset_right = 432.0
 offset_bottom = 750.0
+
+[node name="SpecificationsPanel" parent="." instance=ExtResource("2_specifications")]
+custom_minimum_size = Vector2(400, 200)
+layout_mode = 0
+offset_left = 33.0
+offset_top = 760.0
+offset_right = 433.0
+offset_bottom = 1020.0
 
 [node name="GridLayoutPanel" type="Panel" parent="."]
 layout_mode = 0
-offset_left = 408.0
-offset_top = 153.0
+offset_left = 457.0
+offset_top = 146.0
 offset_right = 1546.0
-offset_bottom = 873.0
+offset_bottom = 981.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_grid_panel")
 
 [node name="GridLayoutHeader" type="HBoxContainer" parent="GridLayoutPanel"]
@@ -324,6 +339,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_clear_button_hover")
 text = "Clear"
 
 [node name="InstructionsPanel" type="VBoxContainer" parent="GridLayoutPanel"]
+visible = false
 layout_mode = 0
 offset_left = 16.0
 offset_top = 62.0
@@ -350,11 +366,12 @@ theme_override_font_sizes/font_size = 14
 text = "→ Click existing component to remove"
 
 [node name="GridBackground" type="Panel" parent="GridLayoutPanel"]
+visible = false
 layout_mode = 0
 offset_left = 16.0
-offset_top = 158.0
-offset_right = 764.0
-offset_bottom = 618.0
+offset_top = 74.0
+offset_right = 1072.0
+offset_bottom = 820.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_grid_background")
 
 [node name="GridSizeLabel" type="Label" parent="GridLayoutPanel/GridBackground"]
@@ -368,11 +385,12 @@ theme_override_font_sizes/font_size = 13
 text = "10×4"
 
 [node name="StatusIndicators" type="HBoxContainer" parent="GridLayoutPanel"]
+visible = false
 layout_mode = 0
 offset_left = 180.0
-offset_top = 627.0
+offset_top = 755.0
 offset_right = 928.0
-offset_bottom = 687.0
+offset_bottom = 815.0
 theme_override_constants/separation = 8
 
 [node name="BridgeStatus" type="Panel" parent="GridLayoutPanel/StatusIndicators"]
@@ -574,6 +592,7 @@ disabled = true
 text = "LAUNCH"
 
 [node name="ShipGrid" type="Node2D" parent="."]
+z_index = 10
 position = Vector2(960, 540)
 script = ExtResource("1_grid")
 
