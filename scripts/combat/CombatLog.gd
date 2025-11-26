@@ -54,6 +54,11 @@ func add_turn_start(turn: int, is_player: bool):
 	var color = COLOR_PLAYER if is_player else COLOR_ENEMY
 	add_entry("--- Turn %d: %s ---" % [turn, attacker], color)
 
+## Log targeting selection (Feature 1 MVP)
+func add_targeting(attacker: String, target_type: String, defender: String):
+	var color = COLOR_ENEMY if attacker == "ENEMY" else COLOR_PLAYER
+	add_entry("%s targets %s's %s" % [attacker, defender, target_type], color)
+
 ## Log attack details
 func add_attack(attacker: String, weapons: int, damage: int, shields_absorbed: int, net_damage: int):
 	var color = COLOR_PLAYER if attacker == "PLAYER" else COLOR_ENEMY

@@ -2,6 +2,13 @@ class_name ShipData
 
 ## Represents a ship's configuration and stats for combat
 
+## Targeting priority for enemy AI (Feature 1 MVP)
+enum TargetingPriority {
+	RANDOM,         # Target any component (Mission 0 Scout)
+	WEAPONS_FIRST,  # Prioritize weapons (Mission 1 Raider)
+	POWER_FIRST     # Prioritize reactors/relays (Mission 2 Dreadnought)
+}
+
 ## 8x6 grid of room types (Phase 7.1 - still used for backward compatibility and power calc)
 var grid: Array = []  # Array of Arrays (rows), each containing RoomType values
 
@@ -18,6 +25,9 @@ var room_instances: Dictionary = {}
 ## Health points
 var max_hp: int = 0
 var current_hp: int = 0
+
+## Targeting priority for enemy AI (Feature 1 MVP)
+var targeting_priority: TargetingPriority = TargetingPriority.RANDOM
 
 ## Initialize with grid data and HP
 func _init(room_grid: Array = [], hp: int = 100):
@@ -390,7 +400,9 @@ static func create_mission1_scout() -> ShipData:
 		{"type": RoomData.RoomType.ARMOR, "x": 0, "y": 4}
 	]
 
-	return create_enemy_ship_with_shaped_rooms(room_placements, 60)
+	var ship = create_enemy_ship_with_shaped_rooms(room_placements, 60)
+	ship.targeting_priority = TargetingPriority.RANDOM  # Feature 1 MVP: Scout uses random targeting
+	return ship
 
 ## Create Mission 2 Raider enemy ship (Phase 10.7 - updated for 3×2 reactor)
 ## Enemy faces LEFT (←): weapons on left, engines on right
@@ -416,7 +428,9 @@ static func create_mission2_raider() -> ShipData:
 		{"type": RoomData.RoomType.ARMOR, "x": 1, "y": 3}
 	]
 
-	return create_enemy_ship_with_shaped_rooms(room_placements, 80)
+	var ship = create_enemy_ship_with_shaped_rooms(room_placements, 80)
+	ship.targeting_priority = TargetingPriority.WEAPONS_FIRST  # Feature 1 MVP: Raider targets weapons
+	return ship
 
 ## Create Mission 3 Dreadnought enemy ship (Phase 10.7 - updated for 3×2 reactor)
 ## Enemy faces LEFT (←): weapons on left, engines on right
@@ -448,7 +462,9 @@ static func create_mission3_dreadnought() -> ShipData:
 		{"type": RoomData.RoomType.ARMOR, "x": 4, "y": 5}   # Bottom right protection
 	]
 
-	return create_enemy_ship_with_shaped_rooms(room_placements, 120)
+	var ship = create_enemy_ship_with_shaped_rooms(room_placements, 120)
+	ship.targeting_priority = TargetingPriority.POWER_FIRST  # Feature 1 MVP: Dreadnought targets power systems
+	return ship
 
 ## Calculate synergy bonuses based on adjacent compatible rooms
 ## Returns a Dictionary with synergy counts and per-room bonuses

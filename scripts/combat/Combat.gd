@@ -80,8 +80,10 @@ func _ready():
 
 ## Start combat with player ship data and mission index
 func start_combat(player_ship: ShipData, mission_index: int = 0):
+	print("DEBUG Combat.start_combat: Received player_ship with HP: ", player_ship.current_hp if player_ship else "NULL")
 	player_data = player_ship
 	current_mission = mission_index
+	print("DEBUG Combat.start_combat: player_data set, mission: ", mission_index)
 
 	# Apply hull bonuses (Phase 10.1)
 	var hull_data = GameState.get_current_hull_data()
@@ -111,7 +113,10 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 				enemy_data = ShipData.create_mission1_scout()  # Default fallback
 
 	# Set up ship displays
+	print("DEBUG Combat: Setting player_ship_display with grid size: ", player_data.grid.size(), "x", player_data.grid[0].size() if player_data.grid.size() > 0 else 0)
+	print("DEBUG Combat: Player ship has ", player_data.room_instances.size(), " room instances")
 	player_ship_display.set_ship_data(player_data)
+	print("DEBUG Combat: Setting enemy_ship_display with grid size: ", enemy_data.grid.size(), "x", enemy_data.grid[0].size() if enemy_data.grid.size() > 0 else 0)
 	enemy_ship_display.set_ship_data(enemy_data)
 
 	# Position ships to face each other at the center with dynamic scaling
@@ -138,7 +143,8 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 
 	# Apply scale to ship displays
 	player_ship_display.scale = Vector2(uniform_scale, uniform_scale)
-	enemy_ship_display.scale = Vector2(uniform_scale, uniform_scale)
+	# Feature 1 MVP: Flip enemy ship horizontally so it faces the player (left)
+	enemy_ship_display.scale = Vector2(-uniform_scale, uniform_scale)  # Negative X = horizontal flip
 
 	# Calculate visual sizes with the new scale
 	var player_visual_width = player_grid_width * tile_size * uniform_scale
@@ -154,18 +160,28 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	var player_y_offset = (max_visual_height - player_visual_height) / 2.0
 	var enemy_y_offset = (max_visual_height - enemy_visual_height) / 2.0
 
-	# Position horizontally: player ship on right side of left container, enemy on left side of right container
+	# Position horizontally: player ship on right side of left container, enemy on right side of right container
 	var player_x = container_width - player_visual_width - 50  # 50px gap from center
-	var enemy_x = 50  # 50px gap from center
+	# Enemy is flipped (negative scale), so position at RIGHT edge (it draws backwards to the left)
+	var enemy_x = container_width - 50  # Position at right edge, ship draws leftward
 
 	# Apply positions
 	player_ship_display.position = Vector2(player_x, base_y + player_y_offset)
 	enemy_ship_display.position = Vector2(enemy_x, base_y + enemy_y_offset)
 
 	print("DEBUG Combat scaling: Player grid=%dx%d, Enemy grid=%dx%d, Scale=%.2f" % [player_grid_width, player_grid_height, enemy_grid_width, enemy_grid_height, uniform_scale])
+	print("DEBUG Combat positions: Player ShipDisplay pos=", player_ship_display.position, ", Enemy ShipDisplay pos=", enemy_ship_display.position)
+	print("DEBUG Combat containers: Player container global_pos=", player_ship_display.get_parent().global_position, ", Enemy container global_pos=", enemy_ship_display.get_parent().global_position)
 
 	# Update power visuals (Phase 10.9 - show powered/unpowered rooms)
+	print("DEBUG: Player powered weapons: ", player_data.count_powered_room_type(RoomData.RoomType.WEAPON))
+	print("DEBUG: Player powered shields: ", player_data.count_powered_room_type(RoomData.RoomType.SHIELD))
+	print("DEBUG: Player powered engines: ", player_data.count_powered_room_type(RoomData.RoomType.ENGINE))
 	player_ship_display.update_power_visuals(player_data)
+
+	print("DEBUG: Enemy powered weapons: ", enemy_data.count_powered_room_type(RoomData.RoomType.WEAPON))
+	print("DEBUG: Enemy powered shields: ", enemy_data.count_powered_room_type(RoomData.RoomType.SHIELD))
+	print("DEBUG: Enemy powered engines: ", enemy_data.count_powered_room_type(RoomData.RoomType.ENGINE))
 	enemy_ship_display.update_power_visuals(enemy_data)
 
 	# Initialize health bars
@@ -357,14 +373,33 @@ func _execute_turn():
 	# Wait to see turn indicator
 	await get_tree().create_timer(0.5 * speed_multiplier).timeout
 
+	# Check pause after indicator
+	while is_paused:
+		await get_tree().create_timer(0.1).timeout
+
 	# Calculate damage first (needed for visual effects)
 	var weapons = attacker.count_powered_room_type(RoomData.RoomType.WEAPON)
 	var damage = _calculate_damage(attacker)
 	var shield_absorption = _calculate_shield_absorption(defender, damage)
 	var net_damage = max(0, damage - shield_absorption)
 
+	# Feature 1 MVP: Select primary target for visual feedback
+	var primary_target_id = -1
+	if not defender.room_instances.is_empty():
+		primary_target_id = _select_target_room(defender, attacker)
+
+	# Feature 1 MVP: Log targeting selection
+	if combat_log and primary_target_id != -1:
+		var target_type = RoomData.get_label(defender.room_instances[primary_target_id]["type"])
+		combat_log.add_targeting(attacker_name, target_type, defender_name)
+
 	# Phase 10.6: Fire weapons with visual effects (muzzle flashes, projectiles, impacts)
-	await _fire_weapons_with_effects(attacker, defender, attacker_display, defender_display, damage, shield_absorption)
+	# Feature 1 MVP: Pass primary target for targeting line visual
+	await _fire_weapons_with_effects(attacker, defender, attacker_display, defender_display, damage, shield_absorption, primary_target_id)
+
+	# Check pause after weapons fire
+	while is_paused:
+		await get_tree().create_timer(0.1).timeout
 
 	# Log attack
 	if combat_log:
@@ -391,14 +426,23 @@ func _execute_turn():
 	# Spawn damage number
 	_spawn_damage_number(net_damage, damage, shield_absorption, !is_player_attacking)
 
+	# Check pause after damage display
+	while is_paused:
+		await get_tree().create_timer(0.1).timeout
+
 	# Destroy rooms (1 per 10 damage - adjusted from 20 for more frequent destruction)
 	var rooms_to_destroy = int(net_damage / 10)
 	print("DEBUG Combat: net_damage=", net_damage, ", rooms_to_destroy=", rooms_to_destroy, ", defender=", defender_name)
 	if rooms_to_destroy > 0:
 		print("DEBUG Combat: Calling _destroy_random_rooms with count=", rooms_to_destroy)
-		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy, defender_name)
+		# Feature 1 MVP: Pass attacker to enable targeting priority
+		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy, defender_name, attacker)
 	else:
 		print("DEBUG Combat: No rooms to destroy (damage too low or fully absorbed)")
+
+	# Check pause after room destruction
+	while is_paused:
+		await get_tree().create_timer(0.1).timeout
 
 	# Wait a moment to see final state
 	await get_tree().create_timer(0.3 * speed_multiplier).timeout
@@ -478,8 +522,9 @@ func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 	return min(damage, total_absorption)
 
 ## Fire weapons with visual effects (Phase 10.6 - lasers, torpedos, shield impacts)
+## Feature 1 MVP: target_room_id - primary target for visual targeting line (-1 if none)
 ## Returns after all weapon effects have completed
-func _fire_weapons_with_effects(attacker: ShipData, _defender: ShipData, attacker_display: ShipDisplay, defender_display: ShipDisplay, damage: int, shield_absorption: int):
+func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker_display: ShipDisplay, defender_display: ShipDisplay, damage: int, shield_absorption: int, target_room_id: int = -1):
 	# Get weapon grid positions from attacker
 	var weapon_positions = attacker.get_weapon_grid_positions()
 
@@ -492,8 +537,57 @@ func _fire_weapons_with_effects(attacker: ShipData, _defender: ShipData, attacke
 		var world_pos = attacker_display.grid_to_world_position(grid_pos.x, grid_pos.y)
 		weapon_world_positions.append(world_pos)
 
-	# Get target position on defender (center of ship)
+	# Get target position on defender
 	var defender_center = defender_display.get_ship_center_world_position()
+
+	# Feature 1 MVP: Draw targeting line to specific target component if available
+	var targeting_line: Line2D = null
+	if target_room_id != -1 and target_room_id in defender.room_instances:
+		var room_data = defender.room_instances[target_room_id]
+		var target_tiles = room_data["tiles"]
+
+		# Calculate target room center from its tiles
+		var target_center_x = 0.0
+		var target_center_y = 0.0
+		for tile_pos in target_tiles:
+			target_center_x += tile_pos.x
+			target_center_y += tile_pos.y
+		target_center_x /= target_tiles.size()
+		target_center_y /= target_tiles.size()
+
+		# Get world position of target center
+		var target_world_pos = defender_display.grid_to_world_position(int(target_center_x), int(target_center_y))
+
+		# Draw targeting line from attacker center to target
+		var attacker_center = attacker_display.get_ship_center_world_position()
+		targeting_line = Line2D.new()
+		targeting_line.add_point(attacker_center)
+		targeting_line.add_point(target_world_pos)
+		targeting_line.default_color = Color(1.0, 0.867, 0.0, 1.0)  # Yellow #FFDD00
+		targeting_line.width = 2.0
+		targeting_line.z_index = 100  # On top
+		add_child(targeting_line)
+
+		# Fade out targeting line after 0.2s
+		var line_tween = create_tween()
+		line_tween.tween_interval(0.2 * speed_multiplier)
+		line_tween.tween_property(targeting_line, "modulate:a", 0.0, 0.1 * speed_multiplier)
+		line_tween.tween_callback(targeting_line.queue_free)
+
+		# Wait for targeting line to display
+		await get_tree().create_timer(0.15 * speed_multiplier).timeout
+
+		# Feature 1 MVP: Flash target component white (2 flashes) before hit
+		if target_room_id in defender_display.room_instance_nodes:
+			var room_container = defender_display.room_instance_nodes[target_room_id]
+			for i in range(2):
+				# Flash white
+				room_container.modulate = Color(2.0, 2.0, 2.0, 1.0)  # Bright white flash
+				await get_tree().create_timer(0.05 * speed_multiplier).timeout
+
+				# Return to normal
+				room_container.modulate = Color(1.0, 1.0, 1.0, 1.0)  # Normal color
+				await get_tree().create_timer(0.05 * speed_multiplier).timeout
 
 	# Determine weapon type based on mission/ship (player uses lasers, enemy uses torpedos for variety)
 	var use_lasers = (attacker == player_data)
@@ -538,6 +632,45 @@ func _fire_weapons_with_effects(attacker: ShipData, _defender: ShipData, attacke
 	# Wait for impacts to complete
 	await get_tree().create_timer(0.3 * speed_multiplier).timeout
 
+## Select target room based on attacker's targeting priority (Feature 1 MVP)
+## Returns room_id of selected target, or -1 if no valid target
+func _select_target_room(defender: ShipData, attacker: ShipData) -> int:
+	var targeting_priority = attacker.targeting_priority
+	var active_room_ids = []
+
+	# Get list of active room instances (exclude Bridge initially)
+	for room_id in defender.room_instances:
+		var room_data = defender.room_instances[room_id]
+		if room_data["type"] != RoomData.RoomType.BRIDGE:
+			active_room_ids.append(room_id)
+
+	# Filter by priority
+	var filtered_ids = []
+
+	if targeting_priority == ShipData.TargetingPriority.WEAPONS_FIRST:
+		# Target weapons only
+		for room_id in active_room_ids:
+			var room_data = defender.room_instances[room_id]
+			if room_data["type"] == RoomData.RoomType.WEAPON:
+				filtered_ids.append(room_id)
+
+	elif targeting_priority == ShipData.TargetingPriority.POWER_FIRST:
+		# Target reactors and relays only
+		for room_id in active_room_ids:
+			var room_data = defender.room_instances[room_id]
+			if room_data["type"] == RoomData.RoomType.REACTOR or room_data["type"] == RoomData.RoomType.RELAY:
+				filtered_ids.append(room_id)
+
+	# Fallback to random if no priority targets available
+	if filtered_ids.is_empty():
+		filtered_ids = active_room_ids
+
+	# Return random from filtered list
+	if not filtered_ids.is_empty():
+		return filtered_ids[randi() % filtered_ids.size()]
+
+	return -1  # No valid target
+
 ## Spawn floating damage number above target ship
 func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption: int, is_player_target: bool):
 	var damage_label = Label.new()
@@ -579,7 +712,8 @@ func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption
 	tween.tween_callback(damage_label.queue_free)
 
 ## Destroy random rooms from defender (Phase 7.1 - destroys entire multi-tile room instances)
-func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int, defender_name: String = ""):
+## Feature 1 MVP: Now uses attacker's targeting priority to select primary target
+func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int, defender_name: String = "", attacker: ShipData = null):
 	print("DEBUG _destroy_random_rooms: ENTERED with count=", count, ", defender=", defender_name)
 	print("DEBUG: defender.room_instances.size()=", defender.room_instances.size())
 	print("DEBUG: defender.room_instances.keys()=", defender.room_instances.keys())
@@ -604,6 +738,12 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 
 	print("DEBUG: active_room_ids (non-Bridge)=", active_room_ids)
 
+	# Feature 1 MVP: Select primary target using attacker's targeting priority
+	var primary_target_id = -1
+	if attacker and not defender.room_instances.is_empty():
+		primary_target_id = _select_target_room(defender, attacker)
+		print("DEBUG: Feature 1 - primary_target_id=", primary_target_id, ", attacker targeting=", attacker.targeting_priority)
+
 	# Fallback for old single-tile enemies (no room_instances yet)
 	# Get all active room positions if room_instances is empty
 	var active_rooms_fallback = []
@@ -613,7 +753,7 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			if room_type != RoomData.RoomType.BRIDGE:
 				active_rooms_fallback.append(pos)
 
-	# Destroy random rooms sequentially with animation
+	# Destroy targeted rooms sequentially with animation (Feature 1 MVP: primary target first)
 	var destroyed = 0
 	while destroyed < count:
 		# Phase 7.1: Use room instance destruction if available
@@ -621,9 +761,18 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			if active_room_ids.is_empty():
 				break  # No more rooms to destroy
 
-			# Pick random room instance
-			var index = randi() % active_room_ids.size()
-			var room_id = active_room_ids[index]
+			# Feature 1 MVP: Pick primary target first, then random for remaining destructions
+			var room_id: int
+			var index: int
+			if primary_target_id != -1 and primary_target_id in active_room_ids:
+				# Destroy primary target first
+				room_id = primary_target_id
+				index = active_room_ids.find(room_id)
+				primary_target_id = -1  # Clear so we only use it once
+			else:
+				# Pick random room instance
+				index = randi() % active_room_ids.size()
+				room_id = active_room_ids[index]
 			var room_data = defender.room_instances[room_id]
 			var room_type = room_data["type"]
 
@@ -932,7 +1081,7 @@ func _create_enemy_from_template(template: ShipTemplate) -> ShipData:
 	ship_data.max_hp = 20 + (armor_count * 10)
 	ship_data.current_hp = ship_data.max_hp
 
-	# Calculate power grid
+	# Recalculate power for enemy ship
 	ship_data.recalculate_power()
 
 	return ship_data
