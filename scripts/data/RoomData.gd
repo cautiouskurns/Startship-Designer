@@ -13,6 +13,9 @@ enum RoomType {
 	RELAY  # Feature 1.2: Power relay module (2×2)
 }
 
+## Flag to track if data has been loaded from JSON
+static var _data_loaded: bool = false
+
 ## Helper function to generate rectangular room shape from width and height
 static func make_rect_shape(width: int, height: int) -> Array:
 	var shape = []
@@ -21,7 +24,132 @@ static func make_rect_shape(width: int, height: int) -> Array:
 			shape.append([x, y])
 	return shape
 
+## Load room and synergy data from JSON file (Phase 2: Data-driven design)
+static func _load_data_from_json():
+	if _data_loaded:
+		return
+
+	# Load JSON file
+	var file = FileAccess.open("res://data/rooms.json", FileAccess.READ)
+	if not file:
+		push_error("Failed to load rooms.json! Using fallback data.")
+		_data_loaded = true  # Prevent infinite retry
+		return
+
+	var json_text = file.get_as_text()
+	file.close()
+
+	# Parse JSON
+	var json = JSON.new()
+	var error = json.parse(json_text)
+	if error != OK:
+		push_error("Failed to parse rooms.json: %s" % json.get_error_message())
+		_data_loaded = true
+		return
+
+	var data = json.data
+	if not data:
+		push_error("rooms.json is empty!")
+		_data_loaded = true
+		return
+
+	# Load room definitions
+	if data.has("rooms"):
+		var rooms_data = data["rooms"]
+		for room_name in rooms_data.keys():
+			var room_type = _get_room_type_from_name(room_name)
+			if room_type == null:
+				continue
+
+			var room_def = rooms_data[room_name]
+
+			# Load cost
+			if room_def.has("cost"):
+				costs[room_type] = room_def["cost"]
+
+			# Load shape (convert [width, height] array to coordinate array)
+			if room_def.has("shape"):
+				var shape_array = room_def["shape"]
+				if shape_array.size() == 2:
+					shapes[room_type] = make_rect_shape(shape_array[0], shape_array[1])
+
+			# Load color (convert hex string to Color)
+			if room_def.has("color"):
+				colors[room_type] = _hex_to_color(room_def["color"])
+
+			# Load label
+			if room_def.has("label"):
+				labels[room_type] = room_def["label"]
+
+			# Load placement columns
+			if room_def.has("placement_columns"):
+				placement_columns[room_type] = room_def["placement_columns"]
+
+	# Load synergy definitions
+	if data.has("synergies"):
+		var synergies_data = data["synergies"]
+		for synergy_name in synergies_data.keys():
+			var synergy_type = _get_synergy_type_from_name(synergy_name)
+			if synergy_type == null:
+				continue
+
+			var synergy_def = synergies_data[synergy_name]
+
+			# Load synergy color
+			if synergy_def.has("color"):
+				synergy_colors[synergy_type] = _hex_to_color(synergy_def["color"])
+
+			# Load synergy pairs
+			if synergy_def.has("pairs"):
+				for pair in synergy_def["pairs"]:
+					if pair.size() == 2:
+						var room_a = _get_room_type_from_name(pair[0])
+						var room_b = _get_room_type_from_name(pair[1])
+						if room_a != null and room_b != null:
+							synergy_pairs[[room_a, room_b]] = synergy_type
+
+	_data_loaded = true
+	print("Room data loaded from JSON successfully")
+
+## Convert hex color string to Color object (supports #RRGGBB, #RRGGBBAA)
+static func _hex_to_color(hex: String) -> Color:
+	# Godot 4 Color.html() method for parsing hex colors
+	# Ensure hex starts with #
+	if not hex.begins_with("#"):
+		hex = "#" + hex
+
+	# Use Godot's built-in hex color parser
+	return Color.html(hex)
+
+## Convert room name string to RoomType enum
+static func _get_room_type_from_name(name: String):
+	match name:
+		"EMPTY": return RoomType.EMPTY
+		"BRIDGE": return RoomType.BRIDGE
+		"WEAPON": return RoomType.WEAPON
+		"SHIELD": return RoomType.SHIELD
+		"ENGINE": return RoomType.ENGINE
+		"REACTOR": return RoomType.REACTOR
+		"ARMOR": return RoomType.ARMOR
+		"CONDUIT": return RoomType.CONDUIT
+		"RELAY": return RoomType.RELAY
+		_:
+			push_warning("Unknown room type: %s" % name)
+			return null
+
+## Convert synergy name string to SynergyType enum
+static func _get_synergy_type_from_name(name: String):
+	match name:
+		"FIRE_RATE": return SynergyType.FIRE_RATE
+		"SHIELD_CAPACITY": return SynergyType.SHIELD_CAPACITY
+		"INITIATIVE": return SynergyType.INITIATIVE
+		"DURABILITY": return SynergyType.DURABILITY
+		_:
+			push_warning("Unknown synergy type: %s" % name)
+			return null
+
 ## Room costs in budget points (Phase 7.1 updated costs)
+## Now loaded from JSON, these are fallback values
 static var costs = {
 	RoomType.EMPTY: 0,
 	RoomType.BRIDGE: 5,  # Changed from 2 (occupies 4 tiles)
@@ -92,14 +220,17 @@ static var placement_columns = {
 
 ## Get cost for a room type
 static func get_cost(room_type: RoomType) -> int:
+	_load_data_from_json()  # Ensure data is loaded
 	return costs.get(room_type, 0)
 
 ## Get color for a room type
 static func get_color(room_type: RoomType) -> Color:
+	_load_data_from_json()  # Ensure data is loaded
 	return colors.get(room_type, Color.WHITE)
 
 ## Get label for a room type
 static func get_label(room_type: RoomType) -> String:
+	_load_data_from_json()  # Ensure data is loaded
 	return labels.get(room_type, "")
 
 ## Synergy type enumeration
@@ -142,6 +273,7 @@ static func can_place_in_column(room_type: RoomType, column: int, grid_width: in
 
 ## Get synergy type between two room types (order-independent)
 static func get_synergy_type(room_type_a: RoomType, room_type_b: RoomType) -> SynergyType:
+	_load_data_from_json()  # Ensure data is loaded
 	# Check both orderings since dictionary keys are ordered
 	var key = [room_type_a, room_type_b]
 	if key in synergy_pairs:
@@ -150,10 +282,12 @@ static func get_synergy_type(room_type_a: RoomType, room_type_b: RoomType) -> Sy
 
 ## Get color for synergy type
 static func get_synergy_color(synergy_type: SynergyType) -> Color:
+	_load_data_from_json()  # Ensure data is loaded
 	return synergy_colors.get(synergy_type, Color.WHITE)
 
 ## Get shape (array of tile offsets) for a room type
 static func get_shape(room_type: RoomType) -> Array:
+	_load_data_from_json()  # Ensure data is loaded
 	return shapes.get(room_type, [[0, 0]])
 
 ## Get bounding box size for a room shape (for tooltips/display)

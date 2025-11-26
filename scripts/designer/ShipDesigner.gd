@@ -27,11 +27,14 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 
 ## Buttons
 @onready var launch_button: Button = $LaunchButton
-@onready var auto_fill_button: Button = $AutoFillButton
-@onready var clear_grid_button: Button = $ClearGridButton
+@onready var auto_fill_button: Button = $BottomMenuBar/MenuBarContainer/GridSection/AutoFillButton
+@onready var menu_clear_button: Button = $BottomMenuBar/MenuBarContainer/GridSection/ClearButton
 @onready var grid_clear_button: Button = $GridLayoutPanel/GridLayoutHeader/ClearButton
-@onready var save_button: Button = $SaveButton
-@onready var load_button: Button = $LoadButton
+@onready var save_button: Button = $BottomMenuBar/MenuBarContainer/FileSection/SaveButton
+@onready var load_button: Button = $BottomMenuBar/MenuBarContainer/FileSection/LoadButton
+@onready var enemy_setup_button_menu: Button = $BottomMenuBar/MenuBarContainer/ViewSection/EnemyButton
+@onready var power_overlay_button_menu: Button = $BottomMenuBar/MenuBarContainer/ViewSection/OverlayButton
+@onready var theme_dropdown: OptionButton = $BottomMenuBar/MenuBarContainer/ThemeSection/ThemeDropdown
 
 ## Grid Layout Panel elements
 @onready var grid_size_label: Label = $GridLayoutPanel/GridBackground/GridSizeLabel
@@ -62,7 +65,6 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 @onready var template_list_panel = $TemplateListPanel
 
 ## Enemy setup UI (moved from MissionSelect) - optional nodes
-@onready var enemy_setup_button: Button = get_node_or_null("EnemySetupButton")
 @onready var enemy_setup_panel = get_node_or_null("EnemySetupPanel")
 
 ## Current template index for cycling
@@ -113,13 +115,10 @@ var pan_speed: float = BalanceConstants.DESIGNER_PAN_SPEED  # Pixels per frame w
 
 ## Power overlay state (Feature 1.4)
 var power_overlay_enabled: bool = false
-@onready var power_overlay_button: Button = $PowerOverlayButton
 
 ## Hull overlay state
 var current_hull_type: HullData.HullType = HullData.HullType.NONE
 var hull_overlay_visible: bool = false
-@onready var hull_type_dropdown: OptionButton = $HullTypeDropdown
-@onready var hull_overlay_toggle: Button = $HullOverlayToggle
 
 func _ready():
 	# Load mission budget from GameState
@@ -154,12 +153,11 @@ func _ready():
 	auto_fill_button.mouse_entered.connect(_on_button_hover_start.bind(auto_fill_button))
 	auto_fill_button.mouse_exited.connect(_on_button_hover_end.bind(auto_fill_button))
 
-	# Connect clear grid button signals
-	clear_grid_button.pressed.connect(_on_clear_grid_pressed)
-	clear_grid_button.mouse_entered.connect(_on_button_hover_start.bind(clear_grid_button))
-	clear_grid_button.mouse_exited.connect(_on_button_hover_end.bind(clear_grid_button))
+	# Connect clear grid buttons signals (both menu bar and grid panel)
+	menu_clear_button.pressed.connect(_on_clear_grid_pressed)
+	menu_clear_button.mouse_entered.connect(_on_button_hover_start.bind(menu_clear_button))
+	menu_clear_button.mouse_exited.connect(_on_button_hover_end.bind(menu_clear_button))
 
-	# Connect grid layout panel clear button
 	grid_clear_button.pressed.connect(_on_clear_grid_pressed)
 	grid_clear_button.mouse_entered.connect(_on_button_hover_start.bind(grid_clear_button))
 	grid_clear_button.mouse_exited.connect(_on_button_hover_end.bind(grid_clear_button))
@@ -177,16 +175,17 @@ func _ready():
 	load_button.mouse_exited.connect(_on_button_hover_end.bind(load_button))
 
 	# Connect power overlay button signals (Feature 1.4)
-	power_overlay_button.pressed.connect(_on_power_overlay_toggled)
-	power_overlay_button.mouse_entered.connect(_on_button_hover_start.bind(power_overlay_button))
-	power_overlay_button.mouse_exited.connect(_on_button_hover_end.bind(power_overlay_button))
+	power_overlay_button_menu.pressed.connect(_on_power_overlay_toggled)
+	power_overlay_button_menu.mouse_entered.connect(_on_button_hover_start.bind(power_overlay_button_menu))
+	power_overlay_button_menu.mouse_exited.connect(_on_button_hover_end.bind(power_overlay_button_menu))
 
-	# Initialize hull overlay controls
-	_initialize_hull_overlay_controls()
-	hull_type_dropdown.item_selected.connect(_on_hull_type_selected)
-	hull_overlay_toggle.pressed.connect(_on_hull_overlay_toggled)
-	hull_overlay_toggle.mouse_entered.connect(_on_button_hover_start.bind(hull_overlay_toggle))
-	hull_overlay_toggle.mouse_exited.connect(_on_button_hover_end.bind(hull_overlay_toggle))
+	# Connect enemy setup button
+	enemy_setup_button_menu.pressed.connect(_on_enemy_setup_pressed)
+	enemy_setup_button_menu.mouse_entered.connect(_on_button_hover_start.bind(enemy_setup_button_menu))
+	enemy_setup_button_menu.mouse_exited.connect(_on_button_hover_end.bind(enemy_setup_button_menu))
+
+	# Initialize theme dropdown with blueprint theme (default)
+	theme_dropdown.selected = 0
 
 	# Connect room palette signals
 	room_palette.room_type_selected.connect(_on_room_type_selected)
@@ -197,11 +196,6 @@ func _ready():
 	template_list_panel.template_selected.connect(_on_template_selected)
 	template_list_panel.start_fresh_requested.connect(_on_start_fresh_requested)
 
-	# Connect enemy setup button (if it exists in the scene)
-	if enemy_setup_button and enemy_setup_panel:
-		enemy_setup_button.pressed.connect(_on_enemy_setup_pressed)
-		enemy_setup_button.mouse_entered.connect(_on_button_hover_start.bind(enemy_setup_button))
-		enemy_setup_button.mouse_exited.connect(_on_button_hover_end.bind(enemy_setup_button))
 
 	# Initialize palette display
 	update_palette_counts()
@@ -987,21 +981,13 @@ func _on_power_overlay_toggled():
 
 	# Update button appearance and text
 	if power_overlay_enabled:
-		power_overlay_button.text = "OVERLAY: ON"
-		power_overlay_button.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
-		var style = power_overlay_button.get_theme_stylebox("normal")
-		if style is StyleBoxFlat:
-			style.bg_color = Color(1.0, 0.867, 0.0)  # Yellow
+		power_overlay_button_menu.text = "OVERLAY"
 		# Show all relay coverage zones
 		ship_grid.draw_all_relay_coverages(placed_rooms)
 		# Feature 2.3: Show routing lines
 		ship_grid.draw_routing_lines(secondary_grid)
 	else:
-		power_overlay_button.text = "OVERLAY: OFF"
-		power_overlay_button.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
-		var style = power_overlay_button.get_theme_stylebox("normal")
-		if style is StyleBoxFlat:
-			style.bg_color = Color(0.3, 0.3, 0.3)  # Gray
+		power_overlay_button_menu.text = "OVERLAY"
 		# Clear all coverage zones
 		ship_grid.clear_relay_coverage()
 		# Feature 2.3: Clear routing lines
@@ -1820,57 +1806,5 @@ func _on_enemy_setup_pressed():
 	# Play button click sound
 	AudioManager.play_button_click()
 
-	enemy_setup_panel.show_panel()
-
-## Initialize hull overlay dropdown with all hull types
-func _initialize_hull_overlay_controls():
-	# Clear existing items
-	hull_type_dropdown.clear()
-
-	# Add all hull types to dropdown
-	for hull_type in [HullData.HullType.NONE, HullData.HullType.FRIGATE, HullData.HullType.CORVETTE,
-					  HullData.HullType.DESTROYER, HullData.HullType.CRUISER, HullData.HullType.BATTLESHIP]:
-		hull_type_dropdown.add_item(HullData.get_label(hull_type))
-
-	# Set default to NONE
-	hull_type_dropdown.selected = 0
-	current_hull_type = HullData.HullType.NONE
-
-## Handle hull type dropdown selection
-func _on_hull_type_selected(index: int):
-	# Map dropdown index to HullType enum
-	current_hull_type = index as HullData.HullType
-
-	# Play button click sound
-	AudioManager.play_button_click()
-
-	# Update hull overlay if visible
-	if hull_overlay_visible:
-		var hull_shape = HullData.get_shape(current_hull_type)
-		ship_grid.draw_hull_overlay(hull_shape)
-
-## Handle hull overlay toggle button
-func _on_hull_overlay_toggled():
-	hull_overlay_visible = !hull_overlay_visible
-
-	# Play button click sound
-	AudioManager.play_button_click()
-
-	# Update button appearance and text
-	if hull_overlay_visible:
-		hull_overlay_toggle.text = "HIDE HULL"
-		hull_overlay_toggle.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
-		var style = hull_overlay_toggle.get_theme_stylebox("normal")
-		if style is StyleBoxFlat:
-			style.bg_color = Color(0.29, 0.89, 0.89)  # Cyan to match hull color
-		# Show hull overlay
-		var hull_shape = HullData.get_shape(current_hull_type)
-		ship_grid.draw_hull_overlay(hull_shape)
-	else:
-		hull_overlay_toggle.text = "SHOW HULL"
-		hull_overlay_toggle.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
-		var style = hull_overlay_toggle.get_theme_stylebox("normal")
-		if style is StyleBoxFlat:
-			style.bg_color = Color(0.3, 0.3, 0.3)  # Gray (off state)
-		# Clear hull overlay
-		ship_grid.clear_hull_overlay()
+	if enemy_setup_panel:
+		enemy_setup_panel.show_panel()

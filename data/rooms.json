@@ -1,0 +1,95 @@
+{
+  "rooms": {
+    "EMPTY": {
+      "cost": 0,
+      "shape": [1, 1],
+      "color": "#00000000",
+      "label": "",
+      "placement_columns": []
+    },
+    "BRIDGE": {
+      "cost": 5,
+      "shape": [2, 2],
+      "color": "#4A90E2",
+      "label": "⭐ BRIDGE",
+      "placement_columns": []
+    },
+    "WEAPON": {
+      "cost": 2,
+      "shape": [2, 1],
+      "color": "#E24A4A",
+      "label": "▶ WEAPON",
+      "placement_columns": [6, 7]
+    },
+    "SHIELD": {
+      "cost": 3,
+      "shape": [2, 1],
+      "color": "#4AE2E2",
+      "label": "◆ SHIELD",
+      "placement_columns": []
+    },
+    "ENGINE": {
+      "cost": 3,
+      "shape": [2, 2],
+      "color": "#E2A04A",
+      "label": "▲ ENGINE",
+      "placement_columns": [0, 1]
+    },
+    "REACTOR": {
+      "cost": 4,
+      "shape": [3, 2],
+      "color": "#E2D44A",
+      "label": "⊕ REACTOR",
+      "placement_columns": []
+    },
+    "ARMOR": {
+      "cost": 1,
+      "shape": [1, 1],
+      "color": "#6C6C6C",
+      "label": "█ ARMOR",
+      "placement_columns": []
+    },
+    "CONDUIT": {
+      "cost": 1,
+      "shape": [1, 1],
+      "color": "#FFAA00",
+      "label": "─ CONDUIT",
+      "placement_columns": []
+    },
+    "RELAY": {
+      "cost": 3,
+      "shape": [2, 2],
+      "color": "#FF8800",
+      "label": "◈ RELAY",
+      "placement_columns": []
+    }
+  },
+  "synergies": {
+    "FIRE_RATE": {
+      "pairs": [
+        ["WEAPON", "WEAPON"]
+      ],
+      "color": "#E2904A"
+    },
+    "SHIELD_CAPACITY": {
+      "pairs": [
+        ["SHIELD", "REACTOR"],
+        ["REACTOR", "SHIELD"]
+      ],
+      "color": "#4AE2E2"
+    },
+    "INITIATIVE": {
+      "pairs": [
+        ["ENGINE", "ENGINE"]
+      ],
+      "color": "#4A90E2"
+    },
+    "DURABILITY": {
+      "pairs": [
+        ["WEAPON", "ARMOR"],
+        ["ARMOR", "WEAPON"]
+      ],
+      "color": "#E24A4A"
+    }
+  }
+}

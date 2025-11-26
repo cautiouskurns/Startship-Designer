@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=36 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
 [ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
@@ -11,6 +11,11 @@
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="7_ship_stats"]
 [ext_resource type="PackedScene" path="res://scenes/mission/EnemySetupPanel.tscn" id="9_enemy_setup"]
 [ext_resource type="Theme" path="res://assets/themes/blueprint_theme.tres" id="10_blueprint_theme"]
+[ext_resource type="Texture2D" uid="uid://det0ehgyqq2qp" path="res://assets/sprites/ui/save.png" id="11_icon_save"]
+[ext_resource type="Texture2D" uid="uid://3mhepptrw5ex" path="res://assets/sprites/ui/load.png" id="12_icon_load"]
+[ext_resource type="Texture2D" uid="uid://bln3on3wakkuc" path="res://assets/sprites/ui/view.png" id="13_icon_view"]
+[ext_resource type="Texture2D" uid="uid://badf6ohnx27x1" path="res://assets/sprites/ui/overlay.png" id="14_icon_overlay"]
+[ext_resource type="Texture2D" uid="uid://cfivjdbep8b6w" path="res://assets/sprites/ui/autofill.png" id="15_icon_autofill"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_budget"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -83,6 +88,59 @@ bg_color = Color(0.227451, 0.415686, 0.792157, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_launch_disabled"]
 bg_color = Color(0.298039, 0.298039, 0.298039, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu_bar"]
+bg_color = Color(0.039215688, 0.08627451, 0.15686275, 1)
+border_width_top = 1
+border_color = Color(0.290196, 0.886275, 0.886275, 0.3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu_button_normal"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.1, 0.15, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.290196, 0.886275, 0.886275, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu_button_hover"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.15, 0.2, 0.25, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.290196, 0.886275, 0.886275, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu_button_red_normal"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.6, 0.2, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.886275, 0.290196, 0.290196, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu_button_red_hover"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.7, 0.25, 0.25, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.886275, 0.290196, 0.290196, 1)
 
 [node name="ShipDesigner" type="Control"]
 layout_mode = 3
@@ -239,22 +297,8 @@ text = "Remaining: 30"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PowerOverlayButton" type="Button" parent="."]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -1085.0
-offset_top = 1003.0
-offset_right = -885.0
-offset_bottom = 1053.0
-grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_overlay_off")
-text = "OVERLAY: OFF"
-
 [node name="HullTypeDropdown" type="OptionButton" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -267,6 +311,7 @@ grow_horizontal = 0
 theme_override_font_sizes/font_size = 16
 
 [node name="HullOverlayToggle" type="Button" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -301,7 +346,7 @@ layout_mode = 0
 offset_left = 33.0
 offset_top = 760.0
 offset_right = 433.0
-offset_bottom = 1020.0
+offset_bottom = 1001.0
 
 [node name="GridLayoutPanel" type="Panel" parent="."]
 layout_mode = 0
@@ -515,6 +560,7 @@ offset_bottom = -138.0
 grow_vertical = 0
 
 [node name="ClearGridButton" type="Button" parent="."]
+visible = false
 layout_mode = 0
 offset_left = 1261.0
 offset_top = 1008.0
@@ -527,6 +573,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_clear_hover")
 text = "CLEAR GRID"
 
 [node name="SaveButton" type="Button" parent="."]
+visible = false
 layout_mode = 0
 offset_left = 363.0
 offset_top = 1007.0
@@ -536,6 +583,7 @@ theme_override_font_sizes/font_size = 18
 text = "SAVE"
 
 [node name="LoadButton" type="Button" parent="."]
+visible = false
 layout_mode = 0
 offset_left = 505.0
 offset_top = 1007.0
@@ -545,6 +593,7 @@ theme_override_font_sizes/font_size = 18
 text = "LOAD"
 
 [node name="AutoFillButton" type="Button" parent="."]
+visible = false
 layout_mode = 0
 offset_left = 1091.0
 offset_top = 1007.0
@@ -554,6 +603,7 @@ theme_override_font_sizes/font_size = 18
 text = "AUTO-FILL"
 
 [node name="EnemySetupButton" type="Button" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
@@ -626,3 +676,174 @@ layout_mode = 1
 
 [node name="EnemySetupPanel" parent="." instance=ExtResource("9_enemy_setup")]
 layout_mode = 1
+
+[node name="BottomMenuBar" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_menu_bar")
+
+[node name="MenuBarContainer" type="HBoxContainer" parent="BottomMenuBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="LeftMargin" type="Control" parent="BottomMenuBar/MenuBarContainer"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+
+[node name="FileSection" type="HBoxContainer" parent="BottomMenuBar/MenuBarContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="FileLabel" type="Label" parent="BottomMenuBar/MenuBarContainer/FileSection"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 11
+text = "FILE"
+vertical_alignment = 1
+
+[node name="SaveButton" type="Button" parent="BottomMenuBar/MenuBarContainer/FileSection"]
+custom_minimum_size = Vector2(90, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_constants/icon_max_width = 16
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_hover")
+text = "SAVE"
+icon = ExtResource("11_icon_save")
+
+[node name="LoadButton" type="Button" parent="BottomMenuBar/MenuBarContainer/FileSection"]
+custom_minimum_size = Vector2(90, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_constants/icon_max_width = 16
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_hover")
+text = "LOAD"
+icon = ExtResource("12_icon_load")
+
+[node name="Separator1" type="ColorRect" parent="BottomMenuBar/MenuBarContainer"]
+custom_minimum_size = Vector2(1, 40)
+layout_mode = 2
+color = Color(0.290196, 0.886275, 0.886275, 0.3)
+
+[node name="ViewSection" type="HBoxContainer" parent="BottomMenuBar/MenuBarContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ViewLabel" type="Label" parent="BottomMenuBar/MenuBarContainer/ViewSection"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 11
+text = "VIEW"
+vertical_alignment = 1
+
+[node name="EnemyButton" type="Button" parent="BottomMenuBar/MenuBarContainer/ViewSection"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_constants/icon_max_width = 16
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_hover")
+text = "ENEMY"
+icon = ExtResource("13_icon_view")
+
+[node name="OverlayButton" type="Button" parent="BottomMenuBar/MenuBarContainer/ViewSection"]
+custom_minimum_size = Vector2(110, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_constants/icon_max_width = 16
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_hover")
+text = "OVERLAY"
+icon = ExtResource("14_icon_overlay")
+
+[node name="Separator2" type="ColorRect" parent="BottomMenuBar/MenuBarContainer"]
+custom_minimum_size = Vector2(1, 40)
+layout_mode = 2
+color = Color(0.290196, 0.886275, 0.886275, 0.3)
+
+[node name="GridSection" type="HBoxContainer" parent="BottomMenuBar/MenuBarContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GridLabel" type="Label" parent="BottomMenuBar/MenuBarContainer/GridSection"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 11
+text = "GRID"
+vertical_alignment = 1
+
+[node name="AutoFillButton" type="Button" parent="BottomMenuBar/MenuBarContainer/GridSection"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_constants/icon_max_width = 16
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_hover")
+text = "AUTO-FILL"
+icon = ExtResource("15_icon_autofill")
+
+[node name="ClearButton" type="Button" parent="BottomMenuBar/MenuBarContainer/GridSection"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_red_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_red_hover")
+text = "🗑 CLEAR"
+
+[node name="Spacer" type="Control" parent="BottomMenuBar/MenuBarContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Separator3" type="ColorRect" parent="BottomMenuBar/MenuBarContainer"]
+custom_minimum_size = Vector2(1, 40)
+layout_mode = 2
+color = Color(0.290196, 0.886275, 0.886275, 0.3)
+
+[node name="ThemeSection" type="HBoxContainer" parent="BottomMenuBar/MenuBarContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="ThemeLabel" type="Label" parent="BottomMenuBar/MenuBarContainer/ThemeSection"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 11
+text = "THEME"
+vertical_alignment = 1
+
+[node name="ThemeDropdown" type="OptionButton" parent="BottomMenuBar/MenuBarContainer/ThemeSection"]
+custom_minimum_size = Vector2(130, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_hover")
+selected = 0
+item_count = 1
+popup/item_0/text = "BLUEPRINT"
+popup/item_0/id = 0
+
+[node name="RightMargin" type="Control" parent="BottomMenuBar/MenuBarContainer"]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
