@@ -3,7 +3,7 @@ class_name ShipDisplay
 
 ## Displays a ship's grid of rooms visually (Phase 10.4 - supports shaped hulls)
 
-const TILE_SIZE = 96
+var TILE_SIZE: int = BalanceConstants.COMBAT_DISPLAY_TILE_SIZE
 
 ## Ship data to display
 var ship_data: ShipData = null

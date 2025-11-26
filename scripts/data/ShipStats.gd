@@ -7,7 +7,7 @@ class_name ShipStats
 ## Returns: {damage: int, weapons: int, synergy_bonus: int, rating: int}
 static func calculate_offense(ship: ShipData) -> Dictionary:
 	var weapons = ship.count_powered_room_type(RoomData.RoomType.WEAPON)
-	var base_damage = weapons * 10
+	var base_damage = weapons * BalanceConstants.DAMAGE_PER_WEAPON
 
 	# Calculate synergy bonuses (matching Combat.gd formula)
 	var synergies = ship.calculate_synergy_bonuses()
@@ -23,7 +23,7 @@ static func calculate_offense(ship: ShipData) -> Dictionary:
 					if RoomData.SynergyType.FIRE_RATE in room_synergies[pos]:
 						weapons_with_synergy += 1
 
-	var synergy_bonus = int(weapons_with_synergy * 10 * 0.15)
+	var synergy_bonus = int(weapons_with_synergy * BalanceConstants.DAMAGE_PER_WEAPON * BalanceConstants.FIRE_RATE_SYNERGY_BONUS)
 	var total_damage = base_damage + synergy_bonus
 
 	# Calculate rating (0-100 scale)
@@ -48,7 +48,7 @@ static func calculate_defense(ship: ShipData, hull_bonus: int = 0) -> Dictionary
 	var total_hp = hp + hull_bonus
 
 	# Calculate shield absorption (matching Combat.gd formula)
-	var base_absorption = shields * 15
+	var base_absorption = shields * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD
 
 	var synergies = ship.calculate_synergy_bonuses()
 	var room_synergies = synergies["room_synergies"]
@@ -63,7 +63,7 @@ static func calculate_defense(ship: ShipData, hull_bonus: int = 0) -> Dictionary
 					if RoomData.SynergyType.SHIELD_CAPACITY in room_synergies[pos]:
 						shields_with_synergy += 1
 
-	var synergy_bonus = int(shields_with_synergy * 15 * 0.20)
+	var synergy_bonus = int(shields_with_synergy * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD * BalanceConstants.SHIELD_CAPACITY_SYNERGY_BONUS)
 	var max_absorption = base_absorption + synergy_bonus
 
 	# Calculate rating (0-100 scale)
@@ -110,7 +110,7 @@ static func get_offense_rating(damage: int, _weapons: int) -> int:
 	# 0 dmg = 0, 20 dmg = 40, 30 dmg = 60, 50+ dmg = 100
 	if damage == 0:
 		return 0
-	elif damage >= 50:
+	elif damage >= BalanceConstants.OFFENSE_RATING_MAX_DAMAGE:
 		return 100
 	else:
 		# Linear interpolation: rating = damage * 2 (clamped to 100)
@@ -118,14 +118,14 @@ static func get_offense_rating(damage: int, _weapons: int) -> int:
 
 ## Convert defense HP + shields to 0-100 rating
 static func get_defense_rating(hp: int, shield_absorption: int) -> int:
-	# Combined defense value: HP + (shield absorption * 2) since shields regenerate
-	var defense_value = hp + (shield_absorption * 2)
+	# Combined defense value: HP + (shield absorption * multiplier) since shields regenerate
+	var defense_value = hp + (shield_absorption * BalanceConstants.SHIELD_VALUE_MULTIPLIER)
 
 	# Rating curve:
 	# 40 = 20, 80 = 40, 120 = 60, 160 = 80, 200+ = 100
 	if defense_value == 0:
 		return 0
-	elif defense_value >= 200:
+	elif defense_value >= BalanceConstants.DEFENSE_RATING_MAX_VALUE:
 		return 100
 	else:
 		# Linear interpolation: rating = defense_value / 2
@@ -137,7 +137,7 @@ static func get_thrust_rating(initiative: int) -> int:
 	# 0 = 0, 1 = 25, 2 = 50, 3 = 75, 4+ = 100
 	if initiative == 0:
 		return 0
-	elif initiative >= 4:
+	elif initiative >= BalanceConstants.THRUST_RATING_MAX_INITIATIVE:
 		return 100
 	else:
 		# Linear: rating = initiative * 25

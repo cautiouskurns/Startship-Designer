@@ -70,7 +70,7 @@ func has_bridge() -> bool:
 ## Calculate hull HP based on armor count
 func calculate_hull_hp() -> int:
 	var armor_count = count_room_type(RoomData.RoomType.ARMOR)
-	return 60 + (armor_count * 20)
+	return BalanceConstants.BASE_HULL_HP + (armor_count * BalanceConstants.HP_PER_ARMOR)
 
 ## Destroy room at grid position (old single-tile method, kept for backward compatibility)
 func destroy_room_at(x: int, y: int):
@@ -171,8 +171,6 @@ func calculate_power_grid(secondary_grid = null):
 
 	# Relay coverage pass: Power rooms within 3-tile radius of powered relays
 	if secondary_grid and not room_instances.is_empty():
-		const RELAY_COVERAGE_RADIUS = 3.0
-
 		# Find all relays with valid powered connections
 		for room_id in room_instances:
 			var room_data = room_instances[room_id]
@@ -227,7 +225,7 @@ func calculate_power_grid(secondary_grid = null):
 				var distance = sqrt(dx * dx + dy * dy)
 
 				# Power room if within coverage radius
-				if distance <= RELAY_COVERAGE_RADIUS:
+				if distance <= BalanceConstants.RELAY_COVERAGE_RADIUS:
 					powered_room_ids[check_room_id] = true
 
 	# Second pass: Apply power to all tiles belonging to powered room instances

@@ -11,8 +11,8 @@ const DEFAULT_FREE_DESIGN_HEIGHT: int = 30
 
 var GRID_WIDTH: int = 8
 var GRID_HEIGHT: int = 6
-const TILE_SIZE = 25
-const TILE_SPACING = 2  # Gap between tiles in pixels
+var TILE_SIZE: int = BalanceConstants.DESIGNER_TILE_SIZE
+var TILE_SPACING: int = BalanceConstants.DESIGNER_TILE_SPACING  # Gap between tiles in pixels
 
 ## Feature 1.1: MainGrid handles physical tile data
 var main_grid: MainGrid = null

@@ -61,18 +61,18 @@ var current_mission: int = 0
 var is_paused: bool = false
 
 ## Speed control (2.0 = 0.5x speed by default)
-var speed_multiplier: float = 2.0  # 4.0 = 0.25x, 2.0 = 0.5x, 1.0 = 1x, 0.5 = 2x
+var speed_multiplier: float = BalanceConstants.COMBAT_SPEED_DEFAULT  # 4.0 = 0.25x, 2.0 = 0.5x, 1.0 = 1x, 0.5 = 2x
 
 ## Zoom controls
 var current_zoom: float = 1.0
-const ZOOM_MIN: float = 0.5
-const ZOOM_MAX: float = 1.5
-const ZOOM_STEP: float = 0.25
+const ZOOM_MIN: float = BalanceConstants.COMBAT_ZOOM_MIN
+const ZOOM_MAX: float = BalanceConstants.COMBAT_ZOOM_MAX
+const ZOOM_STEP: float = BalanceConstants.COMBAT_ZOOM_STEP
 
 ## Pan controls (WASD)
 var pan_offset: Vector2 = Vector2.ZERO
-const PAN_SPEED: float = 20.0
-const PAN_LIMIT: float = 300.0
+const PAN_SPEED: float = BalanceConstants.COMBAT_PAN_SPEED
+const PAN_LIMIT: float = BalanceConstants.COMBAT_PAN_LIMIT
 
 func _ready():
 	# Connect buttons
@@ -486,8 +486,8 @@ func _execute_turn():
 	while is_paused:
 		await get_tree().create_timer(0.1).timeout
 
-	# Destroy rooms (1 per 10 damage - adjusted from 20 for more frequent destruction)
-	var rooms_to_destroy = int(net_damage / 10)
+	# Destroy rooms (1 per ROOM_DESTRUCTION_THRESHOLD damage)
+	var rooms_to_destroy = int(net_damage / BalanceConstants.ROOM_DESTRUCTION_THRESHOLD)
 	print("DEBUG Combat: net_damage=", net_damage, ", rooms_to_destroy=", rooms_to_destroy, ", defender=", defender_name)
 	if rooms_to_destroy > 0:
 		print("DEBUG Combat: Calling _destroy_random_rooms with count=", rooms_to_destroy)
@@ -530,7 +530,7 @@ func _determine_initiative_detailed() -> Dictionary:
 ## Calculate damage dealt by attacker
 func _calculate_damage(attacker: ShipData) -> int:
 	var weapons = attacker.count_powered_room_type(RoomData.RoomType.WEAPON)
-	var base_damage = weapons * 10
+	var base_damage = weapons * BalanceConstants.DAMAGE_PER_WEAPON
 
 	# Apply synergy bonuses (Weapon+Weapon gives +15% damage per weapon in synergy)
 	var synergies = attacker.calculate_synergy_bonuses()
@@ -547,14 +547,14 @@ func _calculate_damage(attacker: ShipData) -> int:
 					if RoomData.SynergyType.FIRE_RATE in room_synergies[pos]:
 						weapons_with_synergy += 1
 
-	# Add 15% bonus damage for each weapon with synergy
-	var synergy_damage = int(weapons_with_synergy * 10 * 0.15)
+	# Add synergy bonus damage for each weapon with synergy
+	var synergy_damage = int(weapons_with_synergy * BalanceConstants.DAMAGE_PER_WEAPON * BalanceConstants.FIRE_RATE_SYNERGY_BONUS)
 	return base_damage + synergy_damage
 
 ## Calculate shield absorption for defender
 func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 	var shields = defender.count_powered_room_type(RoomData.RoomType.SHIELD)
-	var base_absorption = shields * 15
+	var base_absorption = shields * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD
 
 	# Apply synergy bonuses (Shield+Reactor gives +20% absorption per shield in synergy)
 	var synergies = defender.calculate_synergy_bonuses()
@@ -571,8 +571,8 @@ func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 					if RoomData.SynergyType.SHIELD_CAPACITY in room_synergies[pos]:
 						shields_with_synergy += 1
 
-	# Add 20% bonus absorption for each shield with synergy
-	var synergy_absorption = int(shields_with_synergy * 15 * 0.20)
+	# Add synergy bonus absorption for each shield with synergy
+	var synergy_absorption = int(shields_with_synergy * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD * BalanceConstants.SHIELD_CAPACITY_SYNERGY_BONUS)
 	var total_absorption = base_absorption + synergy_absorption
 
 	return min(damage, total_absorption)
@@ -850,15 +850,15 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			var room_data = defender.room_instances[room_id]
 			var room_type = room_data["type"]
 
-			# Check if this weapon has DURABILITY synergy (25% chance to resist destruction)
+			# Check if this weapon has DURABILITY synergy (chance to resist destruction)
 			var resisted = false
 			if room_type == RoomData.RoomType.WEAPON:
 				# Check if any tile of this room has DURABILITY synergy
 				for tile_pos in room_data["tiles"]:
 					if tile_pos in room_synergies:
 						if RoomData.SynergyType.DURABILITY in room_synergies[tile_pos]:
-							# 25% chance to resist destruction
-							if randf() < 0.25:
+							# Chance to resist destruction based on durability synergy
+							if randf() < BalanceConstants.DURABILITY_SYNERGY_RESISTANCE_CHANCE:
 								resisted = true
 								break
 
@@ -910,7 +910,7 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			if room_type == RoomData.RoomType.WEAPON:
 				if pos in room_synergies:
 					if RoomData.SynergyType.DURABILITY in room_synergies[pos]:
-						if randf() < 0.25:
+						if randf() < BalanceConstants.DURABILITY_SYNERGY_RESISTANCE_CHANCE:
 							if combat_log:
 								combat_log.add_durability_resist(RoomData.get_label(room_type), defender_name)
 							active_rooms_fallback.remove_at(index)

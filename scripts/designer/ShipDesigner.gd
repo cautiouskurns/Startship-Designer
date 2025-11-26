@@ -29,8 +29,15 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 @onready var launch_button: Button = $LaunchButton
 @onready var auto_fill_button: Button = $AutoFillButton
 @onready var clear_grid_button: Button = $ClearGridButton
+@onready var grid_clear_button: Button = $GridLayoutPanel/GridLayoutHeader/ClearButton
 @onready var save_button: Button = $SaveButton
 @onready var load_button: Button = $LoadButton
+
+## Grid Layout Panel elements
+@onready var grid_size_label: Label = $GridLayoutPanel/GridBackground/GridSizeLabel
+@onready var bridge_status_label: Label = $GridLayoutPanel/StatusIndicators/BridgeStatus/VBoxContainer/BridgeValue
+@onready var budget_status_label: Label = $GridLayoutPanel/StatusIndicators/BudgetStatus/VBoxContainer/BudgetValue
+@onready var ship_status_label: Label = $GridLayoutPanel/StatusIndicators/ShipStatus/VBoxContainer/StatusValue
 
 ## Room palette panel
 @onready var room_palette: RoomPalettePanel = $RoomPalettePanel
@@ -95,11 +102,11 @@ var next_room_id: int = 1
 
 ## Zoom and pan variables
 var zoom_level: float = 1.0
-var min_zoom: float = 0.5
-var max_zoom: float = 3.0
-var zoom_step: float = 0.1
+var min_zoom: float = BalanceConstants.DESIGNER_ZOOM_MIN
+var max_zoom: float = BalanceConstants.DESIGNER_ZOOM_MAX
+var zoom_step: float = BalanceConstants.DESIGNER_ZOOM_STEP
 var pan_offset: Vector2 = Vector2.ZERO
-var pan_speed: float = 10.0  # Pixels per frame when holding WASD
+var pan_speed: float = BalanceConstants.DESIGNER_PAN_SPEED  # Pixels per frame when holding WASD
 
 ## Power overlay state (Feature 1.4)
 var power_overlay_enabled: bool = false
@@ -148,6 +155,15 @@ func _ready():
 	clear_grid_button.pressed.connect(_on_clear_grid_pressed)
 	clear_grid_button.mouse_entered.connect(_on_button_hover_start.bind(clear_grid_button))
 	clear_grid_button.mouse_exited.connect(_on_button_hover_end.bind(clear_grid_button))
+
+	# Connect grid layout panel clear button
+	grid_clear_button.pressed.connect(_on_clear_grid_pressed)
+	grid_clear_button.mouse_entered.connect(_on_button_hover_start.bind(grid_clear_button))
+	grid_clear_button.mouse_exited.connect(_on_button_hover_end.bind(grid_clear_button))
+
+	# Initialize grid layout panel
+	_update_grid_size_label()
+	_update_grid_status_indicators()
 
 	# Connect save/load button signals (Phase 10.8)
 	save_button.pressed.connect(_on_save_pressed)
@@ -297,11 +313,48 @@ func _update_classification_label():
 	var grid_height = main_grid.grid_height
 	classification_label.text = "CLASSIFICATION: %s • GRID: %d×%d" % [hull_type_name, grid_width, grid_height]
 
+## Update grid size label with current grid dimensions
+func _update_grid_size_label():
+	var grid_width = main_grid.grid_width
+	var grid_height = main_grid.grid_height
+	grid_size_label.text = "%d×%d" % [grid_width, grid_height]
+
+## Update grid status indicator labels
+func _update_grid_status_indicators():
+	# Update Bridge status
+	var bridge_count = count_bridges()
+	if bridge_count == 0:
+		bridge_status_label.text = "✕ MISSING"
+		bridge_status_label.add_theme_color_override("font_color", Color(0.886, 0.290, 0.290))  # Red
+	elif bridge_count == 1:
+		bridge_status_label.text = "✓ INSTALLED"
+		bridge_status_label.add_theme_color_override("font_color", Color(0.290, 0.886, 0.290))  # Green
+	else:
+		bridge_status_label.text = "⚠ TOO MANY"
+		bridge_status_label.add_theme_color_override("font_color", Color(0.886, 0.831, 0.290))  # Yellow
+
+	# Update Budget status
+	if current_budget <= max_budget:
+		budget_status_label.text = "✓ NOMINAL"
+		budget_status_label.add_theme_color_override("font_color", Color(0.290, 0.886, 0.886))  # Cyan
+	else:
+		budget_status_label.text = "✕ OVER BUDGET"
+		budget_status_label.add_theme_color_override("font_color", Color(0.886, 0.290, 0.290))  # Red
+
+	# Update Ship status (overall)
+	var is_valid = (bridge_count == 1) and (current_budget <= max_budget)
+	if is_valid:
+		ship_status_label.text = "✓ READY"
+		ship_status_label.add_theme_color_override("font_color", Color(0.290, 0.886, 0.290))  # Green
+	else:
+		ship_status_label.text = "⚠ STANDBY"
+		ship_status_label.add_theme_color_override("font_color", Color(0.886, 0.831, 0.290))  # Yellow
+
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:
-	if remaining > 5:
+	if remaining > BalanceConstants.BUDGET_GREEN_THRESHOLD:
 		return Color(0.290, 0.886, 0.290)  # Green #4AE24A
-	elif remaining >= 1:
+	elif remaining >= BalanceConstants.BUDGET_YELLOW_THRESHOLD:
 		return Color(0.886, 0.831, 0.290)  # Yellow #E2D44A
 	else:
 		return Color(0.886, 0.290, 0.290)  # Red #E24A4A
@@ -775,6 +828,7 @@ func _on_tile_clicked(x: int, y: int):
 	update_palette_availability()
 	_update_ship_status()
 	_update_ship_stats()
+	_update_grid_status_indicators()
 	update_synergies()
 
 	# Feature 1.4: Refresh overlay if enabled and relay was placed
@@ -815,6 +869,7 @@ func _on_tile_right_clicked(x: int, y: int):
 	update_palette_availability()
 	_update_ship_status()
 	_update_ship_stats()
+	_update_grid_status_indicators()
 	update_synergies()
 
 	# Feature 1.4: Refresh overlay if enabled and relay was removed
@@ -1219,6 +1274,7 @@ func _on_auto_fill_pressed():
 	update_palette_availability()
 	_update_ship_status()
 	_update_ship_stats()
+	_update_grid_status_indicators()
 	update_synergies()
 
 	# Play success sound
@@ -1239,6 +1295,7 @@ func _on_clear_grid_pressed():
 	update_palette_availability()
 	_update_ship_status()
 	_update_ship_stats()
+	_update_grid_status_indicators()
 	update_synergies()
 
 	# Play success sound
@@ -1747,6 +1804,7 @@ func _on_start_fresh_requested():
 	update_palette_availability()
 	_update_ship_status()
 	_update_ship_stats()
+	_update_grid_status_indicators()
 	update_synergies()
 
 	print("Starting fresh - grid cleared for custom design")

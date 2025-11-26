@@ -26,12 +26,12 @@ class_name ShipStatusPanel
 @onready var hull_icon_label: Label = $VBoxContainer/MarginContainer/Content/HullStatusRow/StatusLine/HullIconLabel
 @onready var hull_text_label: Label = $VBoxContainer/MarginContainer/Content/HullStatusRow/StatusLine/HullTextLabel
 
-## Colors
-const COLOR_GREEN = Color(0.290, 0.886, 0.290)  # #4AE24A
-const COLOR_YELLOW = Color(0.886, 0.831, 0.290)  # #E2D44A
-const COLOR_RED = Color(0.886, 0.290, 0.290)  # #E24A4A
-const COLOR_PURPLE = Color(0.627, 0.290, 0.886)  # #A04AE2
-const COLOR_GRAY = Color(0.666667, 0.666667, 0.666667)  # #AAAAAA
+## Colors (from BalanceConstants)
+const COLOR_GREEN = BalanceConstants.COLOR_GREEN
+const COLOR_YELLOW = BalanceConstants.COLOR_YELLOW
+const COLOR_RED = BalanceConstants.COLOR_RED
+const COLOR_PURPLE = BalanceConstants.COLOR_PURPLE
+const COLOR_GRAY = BalanceConstants.COLOR_GRAY
 
 ## Update bridge status
 func update_bridge_status(bridge_count: int):

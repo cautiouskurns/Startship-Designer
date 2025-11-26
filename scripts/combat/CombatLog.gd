@@ -5,14 +5,14 @@ class_name CombatLog
 
 @onready var log_container: VBoxContainer = $VBoxContainer
 
-## Color constants
-const COLOR_PLAYER = Color(0.290, 0.886, 0.886)    # Cyan #4AE2E2
-const COLOR_ENEMY = Color(0.886, 0.290, 0.290)     # Red #E24A4A
-const COLOR_DAMAGE = Color(0.886, 0.627, 0.290)    # Orange #E2A04A
-const COLOR_SHIELD = Color(0.290, 0.565, 0.886)    # Blue #4A90E2
-const COLOR_DESTROYED = Color(0.886, 0.831, 0.290) # Yellow #E2D44A
-const COLOR_VICTORY = Color(0.290, 0.886, 0.290)   # Green #4AE24A
-const COLOR_NEUTRAL = Color(0.667, 0.667, 0.667)   # Gray #AAAAAA
+## Color constants (from BalanceConstants)
+const COLOR_PLAYER = BalanceConstants.COLOR_CYAN    # Cyan - player
+const COLOR_ENEMY = BalanceConstants.COLOR_RED      # Red - enemy
+const COLOR_DAMAGE = BalanceConstants.COLOR_ORANGE  # Orange - damage
+const COLOR_SHIELD = BalanceConstants.COLOR_BLUE    # Blue - shields
+const COLOR_DESTROYED = BalanceConstants.COLOR_YELLOW  # Yellow - destroyed
+const COLOR_VICTORY = BalanceConstants.COLOR_GREEN  # Green - victory
+const COLOR_NEUTRAL = BalanceConstants.COLOR_GRAY   # Gray - neutral
 
 ## Add a generic log entry with custom color
 func add_entry(text: String, color: Color = COLOR_NEUTRAL):

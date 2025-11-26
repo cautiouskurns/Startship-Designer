@@ -13,9 +13,9 @@ class_name SynergyRow
 ## The synergy type this row represents
 var synergy_type: RoomData.SynergyType = RoomData.SynergyType.NONE
 
-## Colors
-const COLOR_CYAN = Color(0.290, 0.886, 0.886)  # #4AE2E2 for active counts
-const COLOR_GRAY = Color(0.666667, 0.666667, 0.666667)  # #AAAAAA for inactive counts
+## Colors (from BalanceConstants)
+const COLOR_CYAN = BalanceConstants.COLOR_CYAN  # For active counts
+const COLOR_GRAY = BalanceConstants.COLOR_GRAY  # For inactive counts
 
 ## Setup the row with synergy configuration
 func setup(synergy: RoomData.SynergyType, room_a: RoomData.RoomType, room_b: RoomData.RoomType, bonus_text: String):

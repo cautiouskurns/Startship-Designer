@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" path="res://scenes/designer/components/RoomTypeButton.tscn" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_components_panel"]
-bg_color = Color(0.101961, 0.101961, 0.101961, 1)
+bg_color = Color(0.101961, 0.101961, 0.101961, 0.4)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
