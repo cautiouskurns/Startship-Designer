@@ -435,8 +435,8 @@ func _execute_turn():
 	print("DEBUG Combat: net_damage=", net_damage, ", rooms_to_destroy=", rooms_to_destroy, ", defender=", defender_name)
 	if rooms_to_destroy > 0:
 		print("DEBUG Combat: Calling _destroy_random_rooms with count=", rooms_to_destroy)
-		# Feature 1 MVP: Pass attacker to enable targeting priority
-		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy, defender_name, attacker)
+		# Feature 1 MVP: Pass primary_target_id so we destroy the same target shown in visuals/log
+		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy, defender_name, attacker, primary_target_id)
 	else:
 		print("DEBUG Combat: No rooms to destroy (damage too low or fully absorbed)")
 
@@ -537,11 +537,10 @@ func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker
 		var world_pos = attacker_display.grid_to_world_position(grid_pos.x, grid_pos.y)
 		weapon_world_positions.append(world_pos)
 
-	# Get target position on defender
-	var defender_center = defender_display.get_ship_center_world_position()
+	# Get target position on defender (default to center, but prefer specific target room)
+	var target_position = defender_display.get_ship_center_world_position()
 
-	# Feature 1 MVP: Draw targeting line to specific target component if available
-	var targeting_line: Line2D = null
+	# Feature 1 MVP: Calculate specific target room position if available
 	if target_room_id != -1 and target_room_id in defender.room_instances:
 		var room_data = defender.room_instances[target_room_id]
 		var target_tiles = room_data["tiles"]
@@ -555,24 +554,48 @@ func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker
 		target_center_x /= target_tiles.size()
 		target_center_y /= target_tiles.size()
 
-		# Get world position of target center
-		var target_world_pos = defender_display.grid_to_world_position(int(target_center_x), int(target_center_y))
+		# Get world position of target center - THIS is where projectiles should go
+		target_position = defender_display.grid_to_world_position(int(target_center_x), int(target_center_y))
 
-		# Draw targeting line from attacker center to target
+	# Feature 1 MVP: Draw targeting line with arrow to specific target
+	var targeting_line: Line2D = null
+	if target_room_id != -1 and target_room_id in defender.room_instances:
+		# Draw dashed targeting line from attacker center to target
 		var attacker_center = attacker_display.get_ship_center_world_position()
+
+		# Create main line (more transparent, thinner)
 		targeting_line = Line2D.new()
 		targeting_line.add_point(attacker_center)
-		targeting_line.add_point(target_world_pos)
-		targeting_line.default_color = Color(1.0, 0.867, 0.0, 1.0)  # Yellow #FFDD00
-		targeting_line.width = 2.0
+		targeting_line.add_point(target_position)
+		targeting_line.default_color = Color(1.0, 0.867, 0.0, 0.5)  # Yellow with 50% transparency
+		targeting_line.width = 3.0
 		targeting_line.z_index = 100  # On top
 		add_child(targeting_line)
 
-		# Fade out targeting line after 0.2s
+		# Create arrow at the end pointing to target
+		var arrow = Polygon2D.new()
+		var direction = (target_position - attacker_center).normalized()
+		var perpendicular = Vector2(-direction.y, direction.x)
+
+		# Arrow pointing toward target (triangle at end of line)
+		var arrow_size = 15.0
+		var arrow_points = PackedVector2Array([
+			target_position,  # Tip of arrow at target
+			target_position - direction * arrow_size + perpendicular * (arrow_size * 0.5),  # Left wing
+			target_position - direction * arrow_size - perpendicular * (arrow_size * 0.5)   # Right wing
+		])
+		arrow.polygon = arrow_points
+		arrow.color = Color(1.0, 0.867, 0.0, 0.7)  # Slightly more opaque than line
+		arrow.z_index = 101
+		add_child(arrow)
+
+		# Fade out targeting line and arrow after 0.2s
 		var line_tween = create_tween()
 		line_tween.tween_interval(0.2 * speed_multiplier)
 		line_tween.tween_property(targeting_line, "modulate:a", 0.0, 0.1 * speed_multiplier)
+		line_tween.parallel().tween_property(arrow, "modulate:a", 0.0, 0.1 * speed_multiplier)
 		line_tween.tween_callback(targeting_line.queue_free)
+		line_tween.tween_callback(arrow.queue_free)
 
 		# Wait for targeting line to display
 		await get_tree().create_timer(0.15 * speed_multiplier).timeout
@@ -595,7 +618,7 @@ func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker
 	# Play laser fire sound
 	AudioManager.play_laser_fire()
 
-	# Fire all weapons simultaneously
+	# Fire all weapons simultaneously (all targeting the same target_position)
 	for weapon_pos in weapon_world_positions:
 		# Spawn muzzle flash at weapon position
 		if combat_fx:
@@ -604,26 +627,26 @@ func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker
 		# Small delay between muzzle flash and projectile
 		await get_tree().create_timer(0.05 * speed_multiplier).timeout
 
-		# Fire projectile
+		# Fire projectile toward the specific target (not just ship center!)
 		if combat_fx:
 			if use_lasers:
-				combat_fx.spawn_laser_beam(weapon_pos, defender_center, 0.3)
+				combat_fx.spawn_laser_beam(weapon_pos, target_position, 0.3)
 			else:
-				combat_fx.spawn_torpedo(weapon_pos, defender_center, 0.5)
+				combat_fx.spawn_torpedo(weapon_pos, target_position, 0.5)
 
 	# Wait for projectiles to reach target
 	var projectile_travel_time = 0.3 if use_lasers else 0.5
 	await get_tree().create_timer(projectile_travel_time * speed_multiplier).timeout
 
-	# Spawn impacts based on whether shields absorbed damage
+	# Spawn impacts at the specific target position (not ship center!)
 	if combat_fx:
 		if shield_absorption > 0:
-			# Shields absorbed some/all damage - show shield impact
-			combat_fx.spawn_shield_impact(defender_center, 60.0, 0.4)
+			# Shields absorbed some/all damage - show shield impact at target
+			combat_fx.spawn_shield_impact(target_position, 60.0, 0.4)
 
 		if damage - shield_absorption > 0:
-			# Some damage got through - show hull impact
-			combat_fx.spawn_hull_impact(defender_center, 30, 0.5)
+			# Some damage got through - show hull impact at target
+			combat_fx.spawn_hull_impact(target_position, 30, 0.5)
 
 			# Screen shake for significant hits
 			if damage - shield_absorption > 20:
@@ -712,11 +735,12 @@ func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption
 	tween.tween_callback(damage_label.queue_free)
 
 ## Destroy random rooms from defender (Phase 7.1 - destroys entire multi-tile room instances)
-## Feature 1 MVP: Now uses attacker's targeting priority to select primary target
-func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int, defender_name: String = "", attacker: ShipData = null):
+## Feature 1 MVP: Uses pre-selected primary_target_id for consistent targeting
+func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int, defender_name: String = "", attacker: ShipData = null, primary_target_id: int = -1):
 	print("DEBUG _destroy_random_rooms: ENTERED with count=", count, ", defender=", defender_name)
 	print("DEBUG: defender.room_instances.size()=", defender.room_instances.size())
 	print("DEBUG: defender.room_instances.keys()=", defender.room_instances.keys())
+	print("DEBUG: Feature 1 - Using pre-selected primary_target_id=", primary_target_id)
 
 	if count <= 0:
 		print("DEBUG: Exiting early - count <= 0")
@@ -737,12 +761,6 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			active_room_ids.append(room_id)
 
 	print("DEBUG: active_room_ids (non-Bridge)=", active_room_ids)
-
-	# Feature 1 MVP: Select primary target using attacker's targeting priority
-	var primary_target_id = -1
-	if attacker and not defender.room_instances.is_empty():
-		primary_target_id = _select_target_room(defender, attacker)
-		print("DEBUG: Feature 1 - primary_target_id=", primary_target_id, ", attacker targeting=", attacker.targeting_priority)
 
 	# Fallback for old single-tile enemies (no room_instances yet)
 	# Get all active room positions if room_instances is empty
