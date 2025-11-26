@@ -1,8 +1,8 @@
 extends Control
 
 ## Ship display nodes
-@onready var player_ship_display: ShipDisplay = $PlayerShipDisplay
-@onready var enemy_ship_display: ShipDisplay = $EnemyShipDisplay
+@onready var player_ship_display: ShipDisplay = $ShipBattleArea/PlayerShipContainer/PlayerShipDisplay
+@onready var enemy_ship_display: ShipDisplay = $ShipBattleArea/EnemyShipContainer/EnemyShipDisplay
 
 ## Health bar nodes
 @onready var player_health_bar: ProgressBar = $PlayerHealthBar
@@ -113,6 +113,56 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	# Set up ship displays
 	player_ship_display.set_ship_data(player_data)
 	enemy_ship_display.set_ship_data(enemy_data)
+
+	# Position ships to face each other at the center with dynamic scaling
+	var player_grid_width = player_ship_display.GRID_WIDTH
+	var player_grid_height = player_ship_display.GRID_HEIGHT
+	var enemy_grid_width = enemy_ship_display.GRID_WIDTH
+	var enemy_grid_height = enemy_ship_display.GRID_HEIGHT
+	var tile_size = 96.0  # ShipDisplay.TILE_SIZE
+	var container_height = 600.0
+	var container_width = 600.0
+	var margin = 50.0  # Margin from edges
+
+	# Calculate required scale for each ship to fit in container
+	var max_container_size = container_width - margin * 2  # Leave margins
+	var player_max_dimension = max(player_grid_width * tile_size, player_grid_height * tile_size)
+	var enemy_max_dimension = max(enemy_grid_width * tile_size, enemy_grid_height * tile_size)
+
+	# Calculate scale factors to fit each ship (never scale up, only down)
+	var player_scale = min(1.0, max_container_size / player_max_dimension) if player_max_dimension > 0 else 0.6
+	var enemy_scale = min(1.0, max_container_size / enemy_max_dimension) if enemy_max_dimension > 0 else 0.6
+
+	# Use smaller scale to ensure both ships are comparable in size
+	var uniform_scale = min(player_scale, enemy_scale, 0.6)  # Cap at 0.6 max
+
+	# Apply scale to ship displays
+	player_ship_display.scale = Vector2(uniform_scale, uniform_scale)
+	enemy_ship_display.scale = Vector2(uniform_scale, uniform_scale)
+
+	# Calculate visual sizes with the new scale
+	var player_visual_width = player_grid_width * tile_size * uniform_scale
+	var player_visual_height = player_grid_height * tile_size * uniform_scale
+	var enemy_visual_width = enemy_grid_width * tile_size * uniform_scale
+	var enemy_visual_height = enemy_grid_height * tile_size * uniform_scale
+
+	# Find max visual height to align centers vertically
+	var max_visual_height = max(player_visual_height, enemy_visual_height)
+	var base_y = (container_height - max_visual_height) / 2.0
+
+	# Offset to align ship centers vertically
+	var player_y_offset = (max_visual_height - player_visual_height) / 2.0
+	var enemy_y_offset = (max_visual_height - enemy_visual_height) / 2.0
+
+	# Position horizontally: player ship on right side of left container, enemy on left side of right container
+	var player_x = container_width - player_visual_width - 50  # 50px gap from center
+	var enemy_x = 50  # 50px gap from center
+
+	# Apply positions
+	player_ship_display.position = Vector2(player_x, base_y + player_y_offset)
+	enemy_ship_display.position = Vector2(enemy_x, base_y + enemy_y_offset)
+
+	print("DEBUG Combat scaling: Player grid=%dx%d, Enemy grid=%dx%d, Scale=%.2f" % [player_grid_width, player_grid_height, enemy_grid_width, enemy_grid_height, uniform_scale])
 
 	# Update power visuals (Phase 10.9 - show powered/unpowered rooms)
 	player_ship_display.update_power_visuals(player_data)
