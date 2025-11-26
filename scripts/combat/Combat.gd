@@ -29,6 +29,12 @@ extends Control
 ## Fast Forward button
 @onready var ff_button: Button = $FFButton
 
+## Zoom controls
+@onready var zoom_in_button: Button = $ZoomInButton
+@onready var zoom_out_button: Button = $ZoomOutButton
+@onready var zoom_level_label: Label = $ZoomLevelLabel
+@onready var ship_battle_area: HBoxContainer = $ShipBattleArea
+
 ## Combat log
 @onready var combat_log: CombatLog = $CombatLog
 
@@ -57,12 +63,25 @@ var is_paused: bool = false
 ## Speed control (2.0 = 0.5x speed by default)
 var speed_multiplier: float = 2.0  # 4.0 = 0.25x, 2.0 = 0.5x, 1.0 = 1x, 0.5 = 2x
 
+## Zoom controls
+var current_zoom: float = 1.0
+const ZOOM_MIN: float = 0.5
+const ZOOM_MAX: float = 1.5
+const ZOOM_STEP: float = 0.25
+
+## Pan controls (WASD)
+var pan_offset: Vector2 = Vector2.ZERO
+const PAN_SPEED: float = 20.0
+const PAN_LIMIT: float = 300.0
+
 func _ready():
 	# Connect buttons
 	redesign_button.pressed.connect(_on_redesign_pressed)
 	victory_return_button.pressed.connect(_on_victory_return_pressed)
 	pause_button.pressed.connect(_on_pause_pressed)
 	ff_button.pressed.connect(_on_ff_pressed)
+	zoom_in_button.pressed.connect(_zoom_in)
+	zoom_out_button.pressed.connect(_zoom_out)
 
 	# Set initial button text
 	pause_button.text = "PAUSE"
@@ -77,6 +96,34 @@ func _ready():
 	pause_button.mouse_exited.connect(_on_button_hover_end.bind(pause_button))
 	ff_button.mouse_entered.connect(_on_button_hover_start.bind(ff_button))
 	ff_button.mouse_exited.connect(_on_button_hover_end.bind(ff_button))
+	zoom_in_button.mouse_entered.connect(_on_button_hover_start.bind(zoom_in_button))
+	zoom_in_button.mouse_exited.connect(_on_button_hover_end.bind(zoom_in_button))
+	zoom_out_button.mouse_entered.connect(_on_button_hover_start.bind(zoom_out_button))
+	zoom_out_button.mouse_exited.connect(_on_button_hover_end.bind(zoom_out_button))
+
+## Handle input for mouse wheel zoom and WASD panning
+func _input(event: InputEvent) -> void:
+	# Mouse wheel zoom
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			_zoom_in()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			_zoom_out()
+
+	# WASD panning
+	elif event is InputEventKey and event.pressed:
+		var pan_delta = Vector2.ZERO
+		if event.keycode == KEY_W:
+			pan_delta.y = -PAN_SPEED
+		elif event.keycode == KEY_S:
+			pan_delta.y = PAN_SPEED
+		elif event.keycode == KEY_A:
+			pan_delta.x = -PAN_SPEED
+		elif event.keycode == KEY_D:
+			pan_delta.x = PAN_SPEED
+
+		if pan_delta != Vector2.ZERO:
+			_apply_pan(pan_delta)
 
 ## Start combat with player ship data and mission index
 func start_combat(player_ship: ShipData, mission_index: int = 0):
@@ -84,6 +131,15 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	player_data = player_ship
 	current_mission = mission_index
 	print("DEBUG Combat.start_combat: player_data set, mission: ", mission_index)
+
+	# Reset zoom and pan to default
+	current_zoom = 1.0
+	pan_offset = Vector2.ZERO
+	ship_battle_area.scale = Vector2(1.0, 1.0)
+	ship_battle_area.position = Vector2.ZERO
+	zoom_level_label.text = "100%"
+	zoom_in_button.disabled = false
+	zoom_out_button.disabled = false
 
 	# Apply hull bonuses (Phase 10.1)
 	var hull_data = GameState.get_current_hull_data()
@@ -1051,6 +1107,46 @@ func _on_ff_pressed():
 ## Get current speed multiplier (Phase 10.6 - for CombatFX to access)
 func _get_speed_multiplier_value() -> float:
 	return speed_multiplier
+
+## Zoom in - increase zoom level
+func _zoom_in() -> void:
+	var new_zoom = min(ZOOM_MAX, current_zoom + ZOOM_STEP)
+	_apply_zoom(new_zoom)
+
+## Zoom out - decrease zoom level
+func _zoom_out() -> void:
+	var new_zoom = max(ZOOM_MIN, current_zoom - ZOOM_STEP)
+	_apply_zoom(new_zoom)
+
+## Apply zoom level with smooth transition
+func _apply_zoom(new_zoom: float) -> void:
+	if new_zoom == current_zoom:
+		return
+
+	current_zoom = new_zoom
+
+	# Update zoom level display
+	zoom_level_label.text = "%d%%" % int(current_zoom * 100)
+
+	# Apply zoom with smooth tween
+	var tween = create_tween()
+	tween.tween_property(ship_battle_area, "scale", Vector2(current_zoom, current_zoom), 0.2)
+
+	# Update button states
+	zoom_in_button.disabled = (current_zoom >= ZOOM_MAX)
+	zoom_out_button.disabled = (current_zoom <= ZOOM_MIN)
+
+## Apply panning offset (WASD)
+func _apply_pan(delta: Vector2) -> void:
+	# Update pan offset
+	pan_offset += delta
+
+	# Clamp to limits
+	pan_offset.x = clamp(pan_offset.x, -PAN_LIMIT, PAN_LIMIT)
+	pan_offset.y = clamp(pan_offset.y, -PAN_LIMIT, PAN_LIMIT)
+
+	# Apply to ship battle area position
+	ship_battle_area.position = pan_offset
 
 ## Create enemy ship from template (Phase 10.8 - template system)
 func _create_enemy_from_template(template: ShipTemplate) -> ShipData:
