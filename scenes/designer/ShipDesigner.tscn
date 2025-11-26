@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=18 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
 [ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://cc7qm3y5r8vph" path="res://scenes/designer/components/TemplateListPanel.tscn" id="6_template_list"]
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="7_ship_stats"]
 [ext_resource type="Texture2D" uid="uid://y1akstmn6odh" path="res://assets/sprites/ui/starfield.png" id="8_starfield"]
+[ext_resource type="PackedScene" path="res://scenes/mission/EnemySetupPanel.tscn" id="9_enemy_setup"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_budget"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -203,6 +204,22 @@ offset_bottom = 1057.0
 theme_override_font_sizes/font_size = 18
 text = "AUTO-FILL"
 
+[node name="EnemySetupButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -90.0
+offset_top = -75.0
+offset_right = 90.0
+offset_bottom = -25.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 18
+text = "ENEMY SETUP"
+
 [node name="LaunchButton" type="Button" parent="."]
 layout_mode = 1
 anchors_preset = 3
@@ -260,6 +277,14 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="TemplateListPanel" parent="." instance=ExtResource("6_template_list")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EnemySetupPanel" parent="." instance=ExtResource("9_enemy_setup")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

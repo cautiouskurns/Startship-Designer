@@ -62,12 +62,16 @@ func _render_ship():
 
 ## Render ship with shaped rooms (Phase 7.4 - for player ships from designer)
 func _render_ship_instances():
+	print("DEBUG: Rendering ship with room_instances, count=", ship_data.room_instances.size())
+
 	# Render each room instance by creating ColorRects at each tile position
 	for room_id in ship_data.room_instances:
 		var room_data = ship_data.room_instances[room_id]
 		var room_type = room_data["type"]
 		var tiles = room_data["tiles"]
 		var room_color = RoomData.get_color(room_type)
+
+		print("DEBUG: Rendering room_id=", room_id, ", type=", RoomData.get_label(room_type), ", tiles=", tiles.size())
 
 		# Create a container for this room's visuals
 		var room_container = Control.new()
@@ -186,8 +190,13 @@ func destroy_room_visual(x: int, y: int, speed_mult: float = 1.0, all_tiles: Arr
 
 ## Destroy shaped room visual (Phase 7.4 - flash all tiles, spawn all explosions)
 func _destroy_shaped_room(tiles: Array, room_id: int, speed_mult: float):
+	# Debug: Print available room_ids
+	print("DEBUG: Attempting to destroy room_id=", room_id)
+	print("DEBUG: Available room_instance_nodes keys: ", room_instance_nodes.keys())
+
 	# Get the room instance container
 	if not room_instance_nodes.has(room_id):
+		print("ERROR: room_id ", room_id, " not found in room_instance_nodes!")
 		return
 
 	var room_container = room_instance_nodes[room_id]

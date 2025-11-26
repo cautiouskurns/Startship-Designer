@@ -47,6 +47,10 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 @onready var template_name_dialog = $TemplateNameDialog
 @onready var template_list_panel = $TemplateListPanel
 
+## Enemy setup UI (moved from MissionSelect) - optional nodes
+@onready var enemy_setup_button: Button = get_node_or_null("EnemySetupButton")
+@onready var enemy_setup_panel = get_node_or_null("EnemySetupPanel")
+
 ## Current template index for cycling
 var current_template_index: int = 0
 
@@ -156,6 +160,12 @@ func _ready():
 	template_name_dialog.template_name_entered.connect(_on_template_name_entered)
 	template_list_panel.template_selected.connect(_on_template_selected)
 	template_list_panel.start_fresh_requested.connect(_on_start_fresh_requested)
+
+	# Connect enemy setup button (if it exists in the scene)
+	if enemy_setup_button and enemy_setup_panel:
+		enemy_setup_button.pressed.connect(_on_enemy_setup_pressed)
+		enemy_setup_button.mouse_entered.connect(_on_button_hover_start.bind(enemy_setup_button))
+		enemy_setup_button.mouse_exited.connect(_on_button_hover_end.bind(enemy_setup_button))
 
 	# Initialize palette display
 	update_palette_counts()
@@ -1709,3 +1719,10 @@ func _on_start_fresh_requested():
 
 	print("Starting fresh - grid cleared for custom design")
 	AudioManager.play_success()
+
+## Handle enemy setup button pressed
+func _on_enemy_setup_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	enemy_setup_panel.show_panel()

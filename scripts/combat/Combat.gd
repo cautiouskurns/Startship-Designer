@@ -391,10 +391,14 @@ func _execute_turn():
 	# Spawn damage number
 	_spawn_damage_number(net_damage, damage, shield_absorption, !is_player_attacking)
 
-	# Destroy rooms (1 per 20 damage)
-	var rooms_to_destroy = int(net_damage / 20)
+	# Destroy rooms (1 per 10 damage - adjusted from 20 for more frequent destruction)
+	var rooms_to_destroy = int(net_damage / 10)
+	print("DEBUG Combat: net_damage=", net_damage, ", rooms_to_destroy=", rooms_to_destroy, ", defender=", defender_name)
 	if rooms_to_destroy > 0:
+		print("DEBUG Combat: Calling _destroy_random_rooms with count=", rooms_to_destroy)
 		await _destroy_random_rooms(defender, defender_display, rooms_to_destroy, defender_name)
+	else:
+		print("DEBUG Combat: No rooms to destroy (damage too low or fully absorbed)")
 
 	# Wait a moment to see final state
 	await get_tree().create_timer(0.3 * speed_multiplier).timeout
@@ -576,7 +580,12 @@ func _spawn_damage_number(net_damage: int, _total_damage: int, shield_absorption
 
 ## Destroy random rooms from defender (Phase 7.1 - destroys entire multi-tile room instances)
 func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, count: int, defender_name: String = ""):
+	print("DEBUG _destroy_random_rooms: ENTERED with count=", count, ", defender=", defender_name)
+	print("DEBUG: defender.room_instances.size()=", defender.room_instances.size())
+	print("DEBUG: defender.room_instances.keys()=", defender.room_instances.keys())
+
 	if count <= 0:
+		print("DEBUG: Exiting early - count <= 0")
 		return
 
 	# Track if any reactors were destroyed
@@ -592,6 +601,8 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 		var room_data = defender.room_instances[room_id]
 		if room_data["type"] != RoomData.RoomType.BRIDGE:
 			active_room_ids.append(room_id)
+
+	print("DEBUG: active_room_ids (non-Bridge)=", active_room_ids)
 
 	# Fallback for old single-tile enemies (no room_instances yet)
 	# Get all active room positions if room_instances is empty
@@ -651,6 +662,7 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 
 			# Phase 7.4: Destroy entire shaped room visual with all tiles simultaneously
 			var first_tile = room_data["tiles"][0]
+			print("DEBUG Combat: Destroying room_id=", room_id, ", type=", RoomData.get_label(room_type), ", tiles=", room_data["tiles"].size())
 			await defender_display.destroy_room_visual(
 				first_tile.x, first_tile.y, speed_multiplier, room_data["tiles"], room_id
 			)
