@@ -74,10 +74,12 @@ theme_override_font_sizes/font_size = 13
 text = "Bridge:"
 
 [node name="BridgeValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/BridgeRow"]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 13
 text = "0"
+horizontal_alignment = 2
 
 [node name="WeaponsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
@@ -89,15 +91,25 @@ theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 13
 text = "Weapons:"
 
-[node name="WeaponsValue" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/WeaponsRow"]
-custom_minimum_size = Vector2(80, 0)
+[node name="WeaponsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/WeaponsRow"]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/normal_font_size = 13
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 2
+
+[node name="WeaponsSynergy" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/WeaponsRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+mouse_filter = 0
+theme_override_colors/default_color = Color(0.886, 0.565, 0.290, 1)
+theme_override_font_sizes/normal_font_size = 10
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
-text = "0"
+text = ""
+tooltip_text = ""
 
 [node name="ShieldsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
@@ -109,15 +121,25 @@ theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 13
 text = "Shields:"
 
-[node name="ShieldsValue" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/ShieldsRow"]
-custom_minimum_size = Vector2(80, 0)
+[node name="ShieldsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ShieldsRow"]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/normal_font_size = 13
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 2
+
+[node name="ShieldsSynergy" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/ShieldsRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+mouse_filter = 0
+theme_override_colors/default_color = Color(0.290, 0.886, 0.886, 1)
+theme_override_font_sizes/normal_font_size = 10
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
-text = "0"
+text = ""
+tooltip_text = ""
 
 [node name="EnginesRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
@@ -129,15 +151,25 @@ theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 13
 text = "Engines:"
 
-[node name="EnginesValue" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/EnginesRow"]
-custom_minimum_size = Vector2(80, 0)
+[node name="EnginesValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/EnginesRow"]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
-theme_override_colors/default_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/normal_font_size = 13
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+horizontal_alignment = 2
+
+[node name="EnginesSynergy" type="RichTextLabel" parent="VBoxContainer/ContentMargin/ContentContainer/EnginesRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+mouse_filter = 0
+theme_override_colors/default_color = Color(0.290, 0.565, 0.886, 1)
+theme_override_font_sizes/normal_font_size = 10
 bbcode_enabled = true
 fit_content = true
 scroll_active = false
-text = "0"
+text = ""
+tooltip_text = ""
 
 [node name="ReactorsRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
@@ -150,10 +182,12 @@ theme_override_font_sizes/font_size = 13
 text = "Reactors:"
 
 [node name="ReactorsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ReactorsRow"]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 13
 text = "0"
+horizontal_alignment = 2
 
 [node name="ArmorRow" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
@@ -166,7 +200,9 @@ theme_override_font_sizes/font_size = 13
 text = "Armor:"
 
 [node name="ArmorValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ArmorRow"]
+custom_minimum_size = Vector2(20, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 13
 text = "0"
+horizontal_alignment = 2

@@ -6,6 +6,6 @@
 
 [node name="ShipDesigner" parent="." instance=ExtResource("1")]
 offset_left = 36.0
-offset_top = -97.0
+offset_top = -98.0
 offset_right = 36.0
-offset_bottom = -97.0
+offset_bottom = -98.0
