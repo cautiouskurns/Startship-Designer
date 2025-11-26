@@ -5,10 +5,10 @@
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_components_panel"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
 border_color = Color(0.290196, 0.886275, 0.886275, 1)
 
 [node name="RoomPalettePanel" type="Panel"]
@@ -45,42 +45,52 @@ vertical_alignment = 1
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
-[node name="BridgeButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="ButtonsMargin" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+
+[node name="ButtonsContainer" type="VBoxContainer" parent="VBoxContainer/ButtonsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BridgeButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 1
 
-[node name="WeaponButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="WeaponButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 2
 
-[node name="ShieldButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="ShieldButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 3
 
-[node name="EngineButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="EngineButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 4
 
-[node name="ReactorButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="ReactorButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 5
 
-[node name="ArmorButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="ArmorButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 6
 
-[node name="ConduitButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="ConduitButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 7
 
-[node name="RelayButton" parent="VBoxContainer" instance=ExtResource("2")]
+[node name="RelayButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
 custom_minimum_size = Vector2(240, 50)
 layout_mode = 2
 room_type = 8

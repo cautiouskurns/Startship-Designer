@@ -7,14 +7,14 @@ signal room_type_selected(room_type: RoomData.RoomType)
 signal rotation_requested  # Phase 7.3 - emitted when rotation button is pressed
 
 ## References to room type buttons
-@onready var bridge_button: RoomTypeButton = $VBoxContainer/BridgeButton
-@onready var weapon_button: RoomTypeButton = $VBoxContainer/WeaponButton
-@onready var shield_button: RoomTypeButton = $VBoxContainer/ShieldButton
-@onready var engine_button: RoomTypeButton = $VBoxContainer/EngineButton
-@onready var reactor_button: RoomTypeButton = $VBoxContainer/ReactorButton
-@onready var armor_button: RoomTypeButton = $VBoxContainer/ArmorButton
-@onready var conduit_button: RoomTypeButton = $VBoxContainer/ConduitButton
-@onready var relay_button: RoomTypeButton = $VBoxContainer/RelayButton  # Feature 1.2
+@onready var bridge_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/BridgeButton
+@onready var weapon_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/WeaponButton
+@onready var shield_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/ShieldButton
+@onready var engine_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/EngineButton
+@onready var reactor_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/ReactorButton
+@onready var armor_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/ArmorButton
+@onready var conduit_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/ConduitButton
+@onready var relay_button: RoomTypeButton = $VBoxContainer/ButtonsMargin/ButtonsContainer/RelayButton  # Feature 1.2
 
 ## Track currently selected button
 var selected_button: RoomTypeButton = null
