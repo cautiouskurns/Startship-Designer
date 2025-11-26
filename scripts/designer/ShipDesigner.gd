@@ -17,6 +17,9 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 ## Synergy container (now inside ShipGrid for correct positioning)
 @onready var synergy_container: Node2D = $ShipGrid/SynergyContainer
 
+## Header UI elements
+@onready var classification_label: Label = $ClassificationLabel
+
 ## Budget UI elements
 @onready var budget_label: Label = $BudgetPanel/BudgetLabel
 @onready var remaining_label: Label = $BudgetPanel/RemainingLabel
@@ -190,6 +193,9 @@ func _ready():
 	# Initialize stats panel (Phase 10.9)
 	_update_ship_stats()
 
+	# Update classification label with current hull
+	_update_classification_label()
+
 	# Check if a template should be auto-loaded (from hull selection)
 	if GameState.template_to_load:
 		var template = GameState.template_to_load
@@ -277,6 +283,12 @@ func _update_ship_stats():
 
 	# Update panel
 	ship_stats_panel.update_stats(temp_ship, hull_data)
+
+## Update classification label with current hull type
+func _update_classification_label():
+	var hull_data = GameState.get_current_hull_data()
+	var hull_type_name = hull_data.get("type_name", "UNKNOWN").to_upper()
+	classification_label.text = "CLASSIFICATION: %s" % hull_type_name
 
 ## Get color for remaining budget based on value
 func _get_remaining_color(remaining: int) -> Color:

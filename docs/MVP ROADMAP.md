@@ -806,4 +806,684 @@ These defer to post-MVP development.
 
 ---
 
+# Ship Designer Visual Enhancement (Figma Design)
+
+**Total Time Estimate:** 10-14 hours
+**Tests Critical Questions:** Q5 (Engineering fantasy), Q2 (Placement strategic), Q4 (Budget trade-offs)
+
+**Purpose:** Transform the Ship Designer from basic functional UI to polished sci-fi interface matching Figma design. Enhance visual clarity, improve information hierarchy, and strengthen engineering/blueprint aesthetic.
+
+**Design Reference:** Figma - Vessel Design Blueprint
+**Color Palette:**
+- Background: Dark navy #0A0A1A
+- Primary accent: Cyan #4AE2E2
+- Secondary accent: Blue #4A90E2
+- Panel backgrounds: Dark gray #1A1A1A with cyan borders
+- Text: White #FFFFFF, gray #AAAAAA for labels
+
+---
+
+## Feature 1: Header & Title Treatment
+
+**Tests:** Q5 (Engineering fantasy)
+**Time:** 1 hour
+
+### What Player Sees:
+- **Top header bar** spanning full width (1920×80px)
+  - "VESSEL DESIGN BLUEPRINT" in large display font (32pt, cyan #4AE2E2)
+  - "SCHEMATIC VIEW" label in smaller text (14pt, gray #AAAAAA) above title
+  - "CLASSIFICATION: [Hull Type] • GRID: [W×H]" subtitle (16pt, white #FFFFFF)
+- **Spacelab branding** in top-right corner (optional, small logo/text)
+- **Dark background** (#0A0A1A) with subtle horizontal line separator (1px, #2C2C2C)
+
+### What Player Does:
+- **See immediately** what screen they're on
+- **Understand context** - designing a ship blueprint
+- **Know grid size** at a glance without counting tiles
+
+### How It Works:
+**Title Bar Structure:**
+1. Header container spans top of screen (full width × 80px)
+2. Title VBoxContainer with vertical layout:
+   - Label 1: "SCHEMATIC VIEW" (small, gray)
+   - Label 2: "VESSEL DESIGN BLUEPRINT" (large, cyan, bold)
+   - Label 3: "CLASSIFICATION: FIGHTER • GRID: 7×7" (medium, white)
+3. Dynamic classification updates based on selected hull type
+4. Dynamic grid size reads from current grid dimensions
+
+**Font Treatment:**
+- Use monospace or technical font for blueprint feel
+- Letter spacing: +2px for title (wider tracking)
+- All caps for "VESSEL DESIGN BLUEPRINT" and "SCHEMATIC VIEW"
+
+### Acceptance Criteria:
+- [ ] Visual check: "VESSEL DESIGN BLUEPRINT" visible at top in large cyan text
+- [ ] Visual check: "SCHEMATIC VIEW" label appears above main title in gray
+- [ ] Visual check: Classification shows "FIGHTER • GRID: 7×7" (or current hull/grid size)
+- [ ] Manual test: Select different hull → classification text updates to "CRUISER • GRID: 8×6"
+- [ ] Visual check: Header has dark background with subtle border below
+
+### Shortcuts for This Phase:
+- Use Godot's default font initially (replace with custom font in polish phase)
+- Hard-code "SCHEMATIC VIEW" text (don't make it changeable)
+- Grid size reads from actual grid dimensions (not manually updated)
+- Skip Spacelab logo (just placeholder text if desired)
+
+---
+
+## Feature 2: Components Panel Styling
+
+**Tests:** Q2 (Placement strategic), Q5 (Engineering fantasy)
+**Time:** 1.5 hours
+
+### What Player Sees:
+- **Left panel** (340×600px, positioned 20px from left edge, 120px from top)
+- **Panel header:** "⊕ COMPONENTS" in cyan with icon
+- **Component cards** in vertical list:
+  - BRIDGE: "2×2 • 2BP" (each card: 300×60px)
+  - WEAPON: "1×2 • 3BP"
+  - SHIELD: "2×1 • 3BP"
+  - ENGINE: "1×2 • 2BP"
+  - REACTOR: "2×2 • 2BP"
+  - ARMOR: "1×1 • 1BP"
+- **Visual style:**
+  - Dark background (#1A1A1A)
+  - Cyan border (2px, #4AE2E2)
+  - Hover state: lighter background (#2C2C2C)
+  - Selected state: cyan background overlay (0.2 alpha)
+- **Layout:** Component name left-aligned, size/cost right-aligned
+
+### What Player Does:
+- **Click component card** → selects that component for placement
+- **See hover feedback** → card background lightens
+- **See selection** → clicked card has cyan highlight
+- **Read size/cost** at a glance without clicking
+
+### How It Works:
+**Panel Structure:**
+1. VBoxContainer with header label "⊕ COMPONENTS"
+2. Six component buttons in vertical list
+3. Each button: HBoxContainer with:
+   - Label (left): Component name
+   - Label (right): "WxH • XBP" format
+4. Custom theme for dark background + cyan border
+
+**Interaction:**
+- Mouse enter → tween background color to #2C2C2C (0.1s)
+- Mouse exit → tween back to #1A1A1A (0.1s)
+- Click → emit "component_selected(type)" signal
+- Track selected_component variable, apply cyan overlay to that button
+
+**Size/Cost Display:**
+- Read from RoomData.gd definitions
+- Format: "%dx%d • %dBP" % [width, height, cost]
+
+### Acceptance Criteria:
+- [ ] Visual check: Components panel visible on left with dark background and cyan border
+- [ ] Visual check: Six component cards listed with names and "WxH • XBP" format
+- [ ] Interaction check: Hover over WEAPON card → background lightens
+- [ ] Interaction check: Click BRIDGE card → card gets cyan highlight overlay
+- [ ] Visual check: "⊕ COMPONENTS" header in cyan at top of panel
+- [ ] Manual test: Click different components → previously selected loses highlight, new one gains it
+
+### Shortcuts for This Phase:
+- Use simple ColorRect for backgrounds (not custom panel sprites)
+- Icons are text symbols (⊕) not custom SVG icons
+- Fixed panel size and position (not responsive/resizable)
+- Component order hard-coded (don't make it sortable)
+
+---
+
+## Feature 3: Grid Layout Enhancement
+
+**Tests:** Q2 (Placement strategic)
+**Time:** 2 hours
+
+### What Player Sees:
+- **Center grid area** (700×700px, centered horizontally, 120px from top)
+- **Instructions panel** above grid (600×80px):
+  - "→ Select component from left panel"
+  - "→ Click grid to place component"
+  - "→ Click existing component to remove"
+  - Text in gray (#AAAAAA), 14pt
+- **Clear button** in top-right of grid area (80×40px, white text on dark button)
+- **Grid background:** Darker than panels (#0F0F1F) with cyan grid lines (1px, #2C4C4C)
+- **Placed components:** Cyan borders when powered, gray when unpowered
+
+### What Player Does:
+- **Read instructions** → understand how to place components
+- **Click grid tiles** → place selected component
+- **Click Clear button** → remove all components, reset grid
+- **See visual feedback** → grid glows on hover
+
+### How It Works:
+**Instructions Panel:**
+1. Panel above grid (600×80px) with dark background
+2. VBoxContainer with three Label nodes
+3. Each label: "→ [instruction text]"
+4. Arrow symbol (→) in cyan, instruction text in gray
+
+**Clear Button:**
+1. Button positioned top-right of grid area
+2. Click → call clear_grid() function
+3. clear_grid() sets all tiles to EMPTY, updates budget to 0
+4. Confirmation dialog: "Clear all components? (Cannot undo)"
+
+**Grid Visual Enhancement:**
+1. GridContainer or custom grid rendering
+2. Draw vertical/horizontal lines between tiles (1px cyan)
+3. Tile hover: add subtle cyan glow (ColorRect overlay, 0.2 alpha)
+4. Powered tiles: thicker cyan border (2px)
+5. Unpowered tiles: gray border (2px, #4C4C4C)
+
+### Acceptance Criteria:
+- [ ] Visual check: Instructions panel above grid with three instruction lines
+- [ ] Visual check: "Clear" button visible in top-right of grid area
+- [ ] Interaction check: Click Clear → confirmation dialog appears
+- [ ] Interaction check: Confirm clear → all components removed, grid empty
+- [ ] Visual check: Grid has cyan lines between tiles
+- [ ] Interaction check: Hover over empty tile → subtle cyan glow appears
+- [ ] Visual check: Placed powered component has cyan border
+- [ ] Visual check: Placed unpowered component has gray border
+
+### Shortcuts for This Phase:
+- Simple confirmation dialog (Godot's ConfirmationDialog node, not custom)
+- Grid lines drawn with Line2D (not shader effects)
+- Hover glow is ColorRect (not particle effects)
+- Instructions are static text (don't animate or highlight)
+
+---
+
+## Feature 4: Performance Panel
+
+**Tests:** Q2 (Placement strategic), Q5 (Engineering fantasy)
+**Time:** 1.5 hours
+
+### What Player Sees:
+- **Right panel - top section** (340×200px, positioned 1560px from left, 120px from top)
+- **Panel header:** "⊙ PERFORMANCE" in cyan with icon
+- **Four stat rows:**
+  - "◉ OFFENSE" with value (right-aligned, large 24pt)
+  - "◉ DEFENSE" with value
+  - "⚡ MOBILITY" with value
+  - "⚡ POWER" with value
+- **Visual style:**
+  - Dark background (#1A1A1A), cyan border
+  - Icon + label in gray (#AAAAAA)
+  - Value in white (#FFFFFF), bold
+  - Icons color-coded: red for offense, blue for defense, orange for mobility, yellow for power
+
+### What Player Does:
+- **Place components** → see stats update in real-time
+- **Compare designs** → quickly scan performance numbers
+- **Understand ship capabilities** at a glance
+
+### How It Works:
+**Stat Calculation:**
+1. OFFENSE = count of powered weapons
+2. DEFENSE = count of powered shields
+3. MOBILITY = count of powered engines
+4. POWER = total power output (reactors × 4 adjacency)
+
+**Real-time Updates:**
+- Connect to "component_placed" and "component_removed" signals
+- Recalculate all stats when grid changes
+- Update label text: "%d" % offense_value
+- Tween value changes (scale pulse when stat increases)
+
+**Panel Structure:**
+1. VBoxContainer with header "⊙ PERFORMANCE"
+2. Four HBoxContainers, each with:
+   - Icon label (left): "◉" or "⚡"
+   - Stat name (left): "OFFENSE"
+   - Value label (right): "0"
+
+### Acceptance Criteria:
+- [ ] Visual check: Performance panel visible on right with four stat rows
+- [ ] Visual check: Icons color-coded (red ◉ for OFFENSE, blue ◉ for DEFENSE, etc.)
+- [ ] Interaction check: Place weapon → OFFENSE increases by 1
+- [ ] Interaction check: Place shield → DEFENSE increases by 1
+- [ ] Interaction check: Place unpowered weapon → OFFENSE stays 0 (only counts powered)
+- [ ] Visual check: Values right-aligned in large white text
+- [ ] Manual test: Place reactor + weapon → weapon becomes powered → OFFENSE = 1
+
+### Shortcuts for This Phase:
+- Simple text icons (◉ ⚡) not custom sprites
+- Color applied via theme color override
+- Linear stat calculation (no complex formulas yet)
+- Stats don't show max values (just current count)
+- No stat comparison to previous design
+
+---
+
+## Feature 5: Inventory Panel
+
+**Tests:** Q4 (Budget trade-offs)
+**Time:** 1 hour
+
+### What Player Sees:
+- **Right panel - middle section** (340×280px, below performance panel, 10px gap)
+- **Panel header:** "⊙ INVENTORY" in cyan
+- **Six component rows:**
+  - "Bridge:" with count (right-aligned)
+  - "Weapons:" with count
+  - "Shields:" with count
+  - "Engines:" with count
+  - "Reactors:" with count
+  - "Armor:" with count
+- **Visual style:** Same dark background + cyan border as other panels
+- **Counts update** in real-time as components placed
+
+### What Player Does:
+- **See component usage** at a glance
+- **Track how many weapons** placed vs shields (balance check)
+- **Verify bridge placed** (should show "1", not "0")
+
+### How It Works:
+**Count Tracking:**
+1. When component placed → increment count for that type
+2. When component removed → decrement count
+3. Store counts in Dictionary: {BRIDGE: 0, WEAPON: 0, SHIELD: 0, ...}
+
+**Display Update:**
+1. Six labels in VBoxContainer
+2. Each label: "%s: %d" % [name, count]
+3. Connect to grid signals for updates
+
+**Panel Structure:**
+- VBoxContainer with header
+- Six HBoxContainers:
+  - Label (left): "Bridges:"
+  - Label (right): "0"
+
+### Acceptance Criteria:
+- [ ] Visual check: Inventory panel below performance panel with six component types
+- [ ] Interaction check: Place bridge → "Bridge: 1" appears
+- [ ] Interaction check: Place 3 weapons → "Weapons: 3"
+- [ ] Interaction check: Remove 1 weapon → "Weapons: 2"
+- [ ] Visual check: Counts right-aligned in white text
+- [ ] Manual test: Place multiple of each type → all counts update correctly
+
+### Shortcuts for This Phase:
+- Simple count (don't differentiate between powered/unpowered)
+- No icons next to component names
+- Counts don't show max limits (just current)
+- Component names plural (hard-coded strings)
+
+---
+
+## Feature 6: Notes Section
+
+**Tests:** Q2 (Placement strategic), Q5 (Engineering fantasy)
+**Time:** 0.5 hours
+
+### What Player Sees:
+- **Right panel - bottom section** (340×200px, below inventory, 10px gap)
+- **Panel header:** "NOTES" in white
+- **Bulleted tips list:**
+  - "• 2×2 components more efficient"
+  - "• Central reactors power more rooms"
+  - "• Weapons face forward (top)"
+  - "• Engines face aft (bottom)"
+  - "• Balance offense vs defense"
+- **Visual style:** Same panel styling, text in gray (#AAAAAA), 12pt
+
+### What Player Does:
+- **Read strategy tips** while designing
+- **Learn placement rules** (weapons top, engines bottom)
+- **Understand efficiency** (2×2 components better)
+
+### How It Works:
+**Static Content:**
+1. VBoxContainer with header "NOTES"
+2. Five Label nodes with tips
+3. Bullet character: "•" in cyan
+4. Tip text in gray
+
+**Optional Enhancement:**
+- Tips could be dynamic based on current design
+- Example: If no reactors placed, show tip "• Add reactors for power"
+- For MVP: static tips are fine
+
+### Acceptance Criteria:
+- [ ] Visual check: Notes panel visible with "NOTES" header
+- [ ] Visual check: Five tips displayed with bullet points
+- [ ] Visual check: Tips mention weapons (top), engines (bottom), reactors (central)
+- [ ] Visual check: Text in gray, bullets in cyan
+
+### Shortcuts for This Phase:
+- Static tips (don't make them dynamic/contextual)
+- Simple bullet character (not custom icon)
+- No scrolling if more tips added (fixed 5 tips)
+- Tips don't link to documentation
+
+---
+
+## Feature 7: Specifications Panel
+
+**Tests:** Q2 (Placement strategic), Q4 (Budget trade-offs)
+**Time:** 1.5 hours
+
+### What Player Sees:
+- **Bottom-left panel** (400×260px, positioned 20px from left, 760px from top)
+- **Panel header:** "⚒ SPECIFICATIONS" in cyan
+- **Selected component details:**
+  - "COMPONENT" label with component name (e.g., "Bridge")
+  - "DIMENSIONS: 2 × 2 units"
+  - "COST: 2 BP"
+  - "DESCRIPTION: Command center - required to launch"
+- **Visual style:** Same dark panel + cyan border
+- **Updates when component selected** from left panel
+
+### What Player Sees (continued):
+- **Empty state:** When no component selected, shows "Select a component to view specifications"
+
+### What Player Does:
+- **Click component** in left panel → see detailed specs
+- **Read description** → understand component purpose
+- **Check dimensions** before placing (know how much space needed)
+- **Verify cost** before committing to design
+
+### How It Works:
+**Component Data:**
+1. Store in RoomData.gd or separate ComponentSpecs.gd:
+```gdscript
+BRIDGE: {
+  "dimensions": Vector2i(2, 2),
+  "cost": 2,
+  "description": "Command center - required to launch"
+}
+```
+
+**Display Logic:**
+1. Connect to "component_selected" signal from components panel
+2. When component selected:
+   - Get component data from specs dictionary
+   - Update labels: component_name_label.text = "Bridge"
+   - dimensions_label.text = "DIMENSIONS: %d × %d units" % [w, h]
+   - cost_label.text = "COST: %d BP" % cost
+   - description_label.text = description
+
+**Panel Structure:**
+- VBoxContainer with header
+- Four labels:
+  1. "COMPONENT" (gray label) + component name (white, large)
+  2. "DIMENSIONS" (gray label) + dimensions value (white)
+  3. "COST" (gray label) + cost value (white)
+  4. "DESCRIPTION" (gray label) + description text (white, wrapped)
+
+### Acceptance Criteria:
+- [ ] Visual check: Specifications panel visible bottom-left
+- [ ] Interaction check: Click BRIDGE in components panel → specs show "Bridge, 2×2, 2 BP"
+- [ ] Interaction check: Click WEAPON → specs update to "Weapon, 1×2, 3 BP"
+- [ ] Visual check: Description text wraps if too long (doesn't overflow panel)
+- [ ] Visual check: Empty state shows "Select a component..." when nothing selected
+- [ ] Manual test: Click each component → all specs display correctly
+
+### Shortcuts for This Phase:
+- Hard-code component descriptions (not loaded from external file)
+- Simple text wrapping (autowrap_mode enabled, not custom)
+- No component icon displayed in specs panel
+- Descriptions are short (1 sentence each)
+
+---
+
+## Feature 8: Status Indicators & Bottom Bar
+
+**Tests:** Q4 (Budget trade-offs)
+**Time:** 1.5 hours
+
+### What Player Sees:
+- **Bottom status bar** spanning center width (1200×80px, bottom edge)
+- **Three status boxes** side by side:
+  - **BRIDGE:** "✗ MISSING" (red) or "✓ NOMINAL" (green)
+  - **BUDGET:** "✓ NOMINAL" (green) or "⚠ OVER BUDGET" (yellow/red)
+  - **STATUS:** "⚠ STANDBY" (yellow) or "✓ READY" (green)
+- **Launch button** (centered below status boxes, 200×60px):
+  - "BRIDGE REQUIRED" (gray, disabled) if no bridge
+  - "LAUNCH" (cyan, enabled) if ready
+- **Visual style:** Dark background, colored status text, thick borders
+
+### What Player Does:
+- **Check status** at a glance → see what's preventing launch
+- **See "BRIDGE REQUIRED"** → know to place bridge
+- **See "BUDGET NOMINAL"** → know they're within limits
+- **Click LAUNCH** when green → proceed to combat
+
+### How It Works:
+**Status Calculation:**
+1. BRIDGE status:
+   - Count bridges in inventory
+   - If count == 1: "✓ NOMINAL" (green)
+   - If count == 0: "✗ MISSING" (red)
+   - If count > 1: "⚠ MULTIPLE" (yellow)
+
+2. BUDGET status:
+   - Calculate total_cost from placed components
+   - If total_cost <= max_budget: "✓ NOMINAL" (green)
+   - If total_cost > max_budget: "⚠ OVER BUDGET" (red)
+
+3. OVERALL status:
+   - If bridge nominal AND budget nominal: "✓ READY" (green), enable launch
+   - Otherwise: "⚠ STANDBY" (yellow), disable launch
+
+**Launch Button:**
+- Disabled state: gray background, "BRIDGE REQUIRED" text
+- Enabled state: cyan background, "LAUNCH" text
+- Click → emit "launch_combat" signal
+
+**Visual Indicators:**
+- ✓ checkmark (green #4AE24A)
+- ✗ X mark (red #E24A4A)
+- ⚠ warning (yellow #E2D44A)
+
+### Acceptance Criteria:
+- [ ] Visual check: Three status boxes visible at bottom (BRIDGE, BUDGET, STATUS)
+- [ ] Visual check: Initially shows "BRIDGE: ✗ MISSING" in red
+- [ ] Interaction check: Place bridge → "BRIDGE: ✓ NOMINAL" turns green
+- [ ] Interaction check: Go over budget → "BUDGET: ⚠ OVER BUDGET" turns red
+- [ ] Visual check: Launch button disabled (gray) when requirements not met
+- [ ] Visual check: Launch button enabled (cyan) when bridge placed + within budget
+- [ ] Interaction check: Click enabled LAUNCH → transitions to combat
+
+### Shortcuts for This Phase:
+- Simple text status (not animated progress bars)
+- Status symbols are text characters (✓ ✗ ⚠) not custom icons
+- Status boxes don't show detailed info on hover (keep simple)
+- Budget doesn't show breakdown (just nominal/over)
+
+---
+
+## Feature 9: Resource Allocation Display
+
+**Tests:** Q4 (Budget trade-offs)
+**Time:** 0.5 hours
+
+### What Player Sees:
+- **Top-right panel** (200×80px, positioned 1700px from left, 20px from top)
+- **Header:** "RESOURCE ALLOCATION" in small gray text (10pt)
+- **Large budget display:** "0 / 20" in white text (28pt, bold)
+- **Visual style:** Dark background, cyan border, centered text
+
+### What Player Does:
+- **See budget at a glance** in prominent position
+- **Track spending** as they place components (number increases)
+- **Know max budget** without checking elsewhere
+
+### How It Works:
+**Budget Tracking:**
+1. current_budget = sum of all placed component costs
+2. max_budget = mission-specific value (20, 25, or 30)
+3. Update display: "%d / %d" % [current_budget, max_budget]
+
+**Color Coding:**
+- If current_budget <= max_budget: white text
+- If current_budget > max_budget: red text (#E24A4A)
+
+**Real-time Update:**
+- Connect to component_placed/removed signals
+- Recalculate current_budget
+- Update label text
+
+### Acceptance Criteria:
+- [ ] Visual check: Resource allocation panel visible top-right
+- [ ] Visual check: Shows "0 / 20" at start (or mission max budget)
+- [ ] Interaction check: Place 2 BP bridge → shows "2 / 20"
+- [ ] Interaction check: Place 3 BP weapon → shows "5 / 20"
+- [ ] Interaction check: Go over budget → text turns red
+- [ ] Manual test: Different missions show different max values (20, 25, 30)
+
+### Shortcuts for This Phase:
+- Simple text display (not progress bar or gauge)
+- Budget doesn't show "remaining" (just current/max)
+- No breakdown by component type
+- Max budget hard-coded per mission (not configurable in UI)
+
+---
+
+## Feature 10: Global Styling & Theme
+
+**Tests:** Q5 (Engineering fantasy)
+**Time:** 1.5 hours
+
+### What Player Sees:
+- **Consistent visual language** across all panels
+- **Dark space aesthetic** - deep navy/black backgrounds
+- **Cyan accent color** for interactive elements, borders, headers
+- **Technical font** (monospace or blueprint-style) for all text
+- **Subtle animations** - hover effects, value changes
+- **Background texture** - starfield or grid pattern (optional)
+
+### What Player Does:
+- **Feel immersed** in ship design/engineering experience
+- **See cohesive design** - not mismatched UI elements
+- **Experience polish** - smooth transitions, consistent spacing
+
+### How It Works:
+**Godot Theme Resource:**
+1. Create custom theme (.tres file)
+2. Define theme properties:
+   - Default colors: bg (#1A1A1A), border (#4AE2E2), text (#FFFFFF)
+   - Default fonts: monospace for all labels/buttons
+   - Panel StyleBox: dark bg + cyan border (2px)
+   - Button StyleBox: normal/hover/pressed states
+
+**Apply Theme:**
+- Set theme on root Control node (ShipDesigner scene)
+- All child nodes inherit theme properties
+- Override specific nodes as needed
+
+**Animations:**
+- Button hover: scale 1.0 → 1.05, duration 0.1s
+- Value change: scale pulse 1.0 → 1.2 → 1.0, duration 0.3s
+- Panel appear: fade in alpha 0 → 1, duration 0.2s
+
+**Optional Background:**
+- TextureRect with starfield image (low opacity 0.3)
+- Or procedural stars (small white dots, random positions)
+- Z-index: -1 (behind all UI)
+
+### Acceptance Criteria:
+- [ ] Visual check: All panels have consistent dark backgrounds (#1A1A1A)
+- [ ] Visual check: All panels have cyan borders (2px, #4AE2E2)
+- [ ] Visual check: All headers use cyan color (#4AE2E2)
+- [ ] Visual check: All text uses monospace or technical font
+- [ ] Interaction check: Hover any button → smooth scale animation
+- [ ] Visual check: Value changes pulse/highlight briefly
+- [ ] Visual check: Spacing consistent (10px gaps between panels)
+- [ ] Visual check: Background has space/technical aesthetic
+
+### Shortcuts for This Phase:
+- Use Godot's default font (or single free monospace font, not multiple fonts)
+- Simple StyleBoxFlat for panels (not custom textures)
+- Starfield background is optional (solid color acceptable)
+- Animations use simple Tween (not complex shader effects)
+- Theme applied globally (don't create per-component themes)
+
+---
+
+## IMPLEMENTATION ORDER
+
+**Day 1 (4 hours):**
+1. Feature 1: Header & title (1h)
+2. Feature 2: Components panel styling (1.5h)
+3. Feature 9: Resource allocation display (0.5h)
+4. Feature 10: Start global theme setup (1h)
+
+**Day 2 (4 hours):**
+1. Feature 3: Grid layout enhancement (2h)
+2. Feature 4: Performance panel (1.5h)
+3. Feature 5: Inventory panel (1h)
+
+**Day 3 (4 hours):**
+1. Feature 6: Notes section (0.5h)
+2. Feature 7: Specifications panel (1.5h)
+3. Feature 8: Status indicators (1.5h)
+4. Feature 10: Finish theme & polish (0.5h)
+
+**Day 4 (1-2 hours):** Testing, tweaks, responsive layout adjustments
+
+---
+
+## SUCCESS METRICS
+
+After implementation, evaluate:
+
+1. **Visual Clarity:** Can player find information quickly? (Component costs, budget, stats)
+2. **Engineering Fantasy:** Does UI feel like designing a ship blueprint? (Technical aesthetic)
+3. **Information Hierarchy:** Are most important elements most prominent? (Status, budget, launch)
+4. **Consistency:** Do all UI elements feel like part of same design system?
+5. **Polish:** Do interactions feel smooth? (Animations, hover states)
+
+**Target:** User testing shows <3 seconds to find any specific information, 4+/5 on "feels like engineering" question
+
+---
+
+## CURRENT STATE vs FIGMA DESIGN
+
+**Existing Elements (Keep & Restyle):**
+- Grid system (7×7 or 8×6 depending on hull)
+- Component placement interaction
+- Budget tracking
+- Power routing visualization
+- Launch button with validation
+- Combat transition
+
+**New Elements (Add from Figma):**
+- Header with "VESSEL DESIGN BLUEPRINT" title
+- Styled components panel with cards
+- Instructions panel above grid
+- Clear button for grid
+- Performance stats panel (real-time)
+- Inventory counts panel
+- Notes/tips section
+- Specifications panel for selected component
+- Bottom status bar with three indicators
+- Resource allocation prominent display
+- Global theme & styling
+
+**Elements in Game but NOT in Figma (Preserve):**
+- Power routing lines/indicators
+- Hull selection (different screen, not shown in Figma)
+- Mission-specific budget values
+- Room type colors/icons
+- Any existing tooltips or help text
+
+---
+
+## FUTURE ENHANCEMENTS (Out of Scope)
+
+- ❌ Animated background (moving stars, parallax layers)
+- ❌ Component preview in grid (ghost placement before click)
+- ❌ Undo/redo system for component placement
+- ❌ Save/load ship designs to library
+- ❌ Design templates/presets
+- ❌ Export ship design as image
+- ❌ Comparison view (current design vs previous)
+- ❌ Design validation checklist (more detailed than status bar)
+
+These defer to post-MVP polish or full game features.
+
+---
+
 **END OF MVP ROADMAP**
