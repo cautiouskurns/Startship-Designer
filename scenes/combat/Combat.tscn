@@ -279,8 +279,8 @@ text = "RETURN TO MENU"
 
 [node name="CombatLog" type="ScrollContainer" parent="."]
 layout_mode = 0
-offset_left = 1589.0
-offset_top = 782.0
+offset_left = 1406.0
+offset_top = 780.0
 offset_right = 1889.0
 offset_bottom = 1050.0
 script = ExtResource("3")

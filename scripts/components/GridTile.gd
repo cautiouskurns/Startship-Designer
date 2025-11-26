@@ -173,13 +173,14 @@ func set_powered_state(powered: bool):
 	if not occupying_room:
 		return
 
+	# Update Room instance's power state (calls Room.set_powered() for proper visual update)
+	if occupying_room:
+		occupying_room.set_powered(powered)
+
 	if powered:
-		# Powered: full opacity room background, full opacity Room node (if anchor)
+		# Powered: full opacity room background
 		if room_background:
 			room_background.modulate = Color(1, 1, 1, 1)
-
-		if is_anchor and occupying_room:
-			occupying_room.modulate = Color(1, 1, 1, 1)
 
 		# Remove unpowered overlay if it exists
 		if unpowered_overlay:
@@ -187,12 +188,9 @@ func set_powered_state(powered: bool):
 			unpowered_overlay.queue_free()
 			unpowered_overlay = null
 	else:
-		# Unpowered: dim background and Room node + gray overlay
+		# Unpowered: dim background + gray overlay
 		if room_background:
 			room_background.modulate = Color(1, 1, 1, 0.5)
-
-		if is_anchor and occupying_room:
-			occupying_room.modulate = Color(1, 1, 1, 0.5)
 
 		# Create gray overlay if it doesn't exist
 		if not unpowered_overlay:

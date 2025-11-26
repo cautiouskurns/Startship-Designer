@@ -23,6 +23,9 @@ var current_hull: HullType = HullType.CRUISER
 ## Template to load when entering designer (set by HullSelect, cleared after load)
 var template_to_load = null
 
+## Template to restore after combat defeat (set before launching combat, cleared after load)
+var redesign_template = null
+
 ## Hull type definitions (Phase 10.4 - shaped hulls)
 ## grid_shape: 'X' = valid tile, '.' = empty space
 ## Ships taper from LEFT (wide engine side) to RIGHT (narrow weapon/bridge side)

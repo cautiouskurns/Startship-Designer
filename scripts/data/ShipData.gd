@@ -91,8 +91,9 @@ func destroy_room_instance(room_id: int):
 	# Remove from room_instances dictionary
 	room_instances.erase(room_id)
 
-## Calculate power grid based on reactor positions (Phase 10.2 - multi-tile room support)
-func calculate_power_grid():
+## Calculate power grid based on reactor positions and relay coverage (Phase 10.2 - multi-tile room support)
+## secondary_grid: Optional SecondaryGrid with relay connections for relay coverage calculation
+func calculate_power_grid(secondary_grid = null):
 	# Initialize power_grid with same dimensions as grid
 	power_grid.clear()
 	for y in range(grid.size()):
@@ -104,7 +105,7 @@ func calculate_power_grid():
 	# Phase 10.2: Track which room instances are powered (not individual tiles)
 	var powered_room_ids = {}  # Dictionary of room_id -> true for powered rooms
 
-	# First pass: Determine which room instances should be powered
+	# First pass: Determine which room instances should be powered by reactors
 	for y in range(grid.size()):
 		for x in range(grid[y].size()):
 			var room_type = grid[y][x]
@@ -147,6 +148,67 @@ func calculate_power_grid():
 							# Fallback for old single-tile system
 							power_grid[y][x] = true
 						break
+
+	# Relay coverage pass: Power rooms within 3-tile radius of powered relays
+	if secondary_grid and not room_instances.is_empty():
+		const RELAY_COVERAGE_RADIUS = 3.0
+
+		# Find all relays with valid powered connections
+		for room_id in room_instances:
+			var room_data = room_instances[room_id]
+			if room_data["type"] != RoomData.RoomType.RELAY:
+				continue
+
+			# Check if relay has a valid powered connection
+			var connection = secondary_grid.get_connection(room_id)
+			if connection.is_empty() or not connection.get("is_powered", false):
+				continue
+
+			# Calculate relay center (2×2 relay, center is average of all tiles)
+			var relay_tiles: Array = room_data["tiles"]
+			if relay_tiles.is_empty():
+				continue
+
+			var relay_center_x = 0.0
+			var relay_center_y = 0.0
+			for tile_pos in relay_tiles:
+				relay_center_x += tile_pos.x
+				relay_center_y += tile_pos.y
+			relay_center_x /= relay_tiles.size()
+			relay_center_y /= relay_tiles.size()
+
+			# Power all rooms within RELAY_COVERAGE_RADIUS tiles of relay center
+			for check_room_id in room_instances:
+				var check_room_data = room_instances[check_room_id]
+				var check_room_type = check_room_data["type"]
+
+				# Skip if already powered, or if it's EMPTY, BRIDGE, REACTOR (self-powered)
+				if check_room_id in powered_room_ids:
+					continue
+				if check_room_type == RoomData.RoomType.EMPTY or check_room_type == RoomData.RoomType.BRIDGE or check_room_type == RoomData.RoomType.REACTOR:
+					continue
+
+				# Calculate distance from relay center to room center
+				var room_tiles: Array = check_room_data["tiles"]
+				if room_tiles.is_empty():
+					continue
+
+				var room_center_x = 0.0
+				var room_center_y = 0.0
+				for tile_pos in room_tiles:
+					room_center_x += tile_pos.x
+					room_center_y += tile_pos.y
+				room_center_x /= room_tiles.size()
+				room_center_y /= room_tiles.size()
+
+				# Check distance (Euclidean distance from centers)
+				var dx = room_center_x - relay_center_x
+				var dy = room_center_y - relay_center_y
+				var distance = sqrt(dx * dx + dy * dy)
+
+				# Power room if within coverage radius
+				if distance <= RELAY_COVERAGE_RADIUS:
+					powered_room_ids[check_room_id] = true
 
 	# Second pass: Apply power to all tiles belonging to powered room instances
 	for y in range(grid.size()):
@@ -198,7 +260,8 @@ func recalculate_power():
 	calculate_power_grid()
 
 ## Create ShipData from ShipDesigner's grid_tiles and placed_rooms arrays (Phase 10.4 - sparse grids for shaped hulls)
-static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = [], grid_width: int = 8, grid_height: int = 6) -> ShipData:
+## secondary_grid: Optional SecondaryGrid with relay connections for relay coverage calculation
+static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = [], grid_width: int = 8, grid_height: int = 6, secondary_grid = null) -> ShipData:
 	var room_grid = []
 	var room_id_grid_data = []
 
@@ -245,8 +308,8 @@ static func from_designer_grid(grid_tiles: Array, placed_rooms: Array = [], grid
 	ship.max_hp = hull_hp
 	ship.current_hp = hull_hp
 
-	# Calculate power grid
-	ship.calculate_power_grid()
+	# Calculate power grid with relay coverage
+	ship.calculate_power_grid(secondary_grid)
 
 	return ship
 

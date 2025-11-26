@@ -178,6 +178,17 @@ func _ready():
 		else:
 			push_error("Failed to auto-load template")
 
+	# Check if returning from combat defeat for redesign
+	if GameState.redesign_template:
+		var template = GameState.redesign_template
+		GameState.redesign_template = null  # Clear after loading
+		# Apply template to restore design
+		var success = template.apply_to_designer(self)
+		if success:
+			print("Restored design for redesign")
+		else:
+			push_error("Failed to restore redesign template")
+
 ## Calculate current budget from all placed rooms (Phase 7.1 - count room instances, not tiles)
 func calculate_current_budget() -> int:
 	var total = 0
@@ -235,8 +246,8 @@ func _update_ship_status():
 
 ## Update ship stats panel (Phase 10.9)
 func _update_ship_stats():
-	# Create temporary ShipData to calculate stats (Feature 1.1 - use main_grid)
-	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
+	# Create temporary ShipData to calculate stats (Feature 1.1 - use main_grid, Feature 2.4 - pass secondary_grid for relay power)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
 
 	# Get hull bonuses
 	var hull_data = GameState.get_current_hull_data()
@@ -290,28 +301,38 @@ func count_bridges() -> int:
 	return count
 
 ## Count number of unpowered rooms (excluding EMPTY and ARMOR)
+## Fixed: Counts room instances, not tiles (multi-tile rooms counted once)
 func count_unpowered_rooms() -> int:
-	# Create temporary ShipData to calculate power grid (Feature 1.1 - use main_grid)
-	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
+	# Create temporary ShipData to calculate power grid (Feature 1.1 - use main_grid, Feature 2.4 - pass secondary_grid for relay power)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
 
 	var unpowered_count = 0
-	for tile in main_grid.get_all_tiles():
-		var room_type = tile.get_room_type()
 
-		# Skip empty tiles and armor (armor doesn't need power)
-		if room_type == RoomData.RoomType.EMPTY or room_type == RoomData.RoomType.ARMOR:
+	# Count unpowered room instances (not tiles)
+	for room in placed_rooms:
+		var room_type = room.room_type
+
+		# Skip armor (armor doesn't need power) and empty
+		if room_type == RoomData.RoomType.ARMOR or room_type == RoomData.RoomType.EMPTY:
 			continue
 
-		# Check if this room is powered
-		if not temp_ship.is_room_powered(tile.grid_x, tile.grid_y):
+		# Check if any tile of this room instance is powered
+		var is_powered = false
+		for tile in room.get_occupied_tiles():
+			if temp_ship.is_room_powered(tile.grid_x, tile.grid_y):
+				is_powered = true
+				break
+
+		# Count as unpowered if no tiles are powered
+		if not is_powered:
 			unpowered_count += 1
 
 	return unpowered_count
 
 ## Count number of active synergies
 func count_synergies() -> int:
-	# Create temporary ShipData to calculate synergies (Feature 1.1 - use main_grid)
-	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
+	# Create temporary ShipData to calculate synergies (Feature 1.1 - use main_grid, Feature 2.4 - pass secondary_grid for relay power)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	var synergy_counts = synergy_bonuses["counts"]
 
@@ -421,15 +442,19 @@ func can_place_room_at(room_type: RoomData.RoomType, x: int, y: int, current_typ
 
 	return true
 
-## Export current ship design as ShipData for combat (Feature 1.1 - use main_grid)
+## Export current ship design as ShipData for combat (Feature 1.1 - use main_grid, Feature 2.4 - pass secondary_grid for relay power)
 func export_ship_data() -> ShipData:
 	# HP is calculated based on armor count in ShipData
-	return ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
+	return ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
 
-## Update power states for all tiles based on reactor positions (Feature 1.1 - use main_grid for data)
+## Update power states for all tiles based on reactor positions (Feature 1.1 - use main_grid for data, Feature 2.4 - pass secondary_grid for relay power)
 func update_all_power_states():
-	# Create temporary ShipData to calculate power grid
-	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
+	# Feature 2.4: Update relay powered states FIRST (before calculating power grid)
+	# This ensures relay connections have is_powered=true when calculate_power_grid checks them
+	secondary_grid.update_all_powered_states(main_grid, placed_rooms)
+
+	# Create temporary ShipData to calculate power grid (with relay coverage now working)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
 
 	# Update visual power state for each tile
 	for tile in main_grid.get_all_tiles():
@@ -446,9 +471,6 @@ func update_all_power_states():
 	# Update power lines visual (keep ship_grid for visual operations)
 	ship_grid.draw_power_lines(temp_ship)
 
-	# Feature 2.4: Update relay powered states based on connection validity
-	secondary_grid.update_all_powered_states(main_grid, placed_rooms)
-
 	# Update relay room visuals based on powered state
 	print("Feature 2.4 DEBUG: Updating relay visuals")
 	for room in placed_rooms:
@@ -462,7 +484,7 @@ func update_all_power_states():
 	if power_overlay_enabled:
 		ship_grid.draw_routing_lines(secondary_grid)
 
-## Update synergy indicators based on room adjacencies (Feature 1.1 - use main_grid)
+## Update synergy indicators based on room adjacencies (Feature 1.1 - use main_grid, Feature 2.4 - pass secondary_grid for relay power)
 func update_synergies():
 	# Clear existing synergy indicators
 	for child in synergy_container.get_children():
@@ -526,7 +548,7 @@ func update_synergies():
 				created_synergies[synergy_key] = true
 
 	# Update synergy guide panel with counts
-	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
 	var synergy_bonuses = temp_ship.calculate_synergy_bonuses()
 	synergy_guide_panel.update_synergy_counts(synergy_bonuses["counts"])
 
@@ -1093,6 +1115,10 @@ func _on_launch_pressed():
 	# Emit signal
 	emit_signal("launch_pressed")
 
+	# Save current design for redesign restoration after combat defeat
+	var current_template = ShipTemplate.from_ship_designer(self, "Redesign")
+	GameState.redesign_template = current_template
+
 	# Export player ship data
 	var player_ship = export_ship_data()
 
@@ -1335,13 +1361,13 @@ func _try_place_room_for_template(x: int, y: int, room_type: RoomData.RoomType) 
 
 	return true
 
-## Get positions adjacent to powered rooms (Phase 10.5 - for power-aware placement)
+## Get positions adjacent to powered rooms (Phase 10.5 - for power-aware placement, Feature 2.4 - pass secondary_grid for relay power)
 ## Returns array of Vector2i positions that would be powered (Feature 1.1 - use main_grid)
 func _get_powered_positions() -> Array:
 	var powered_positions = []
 
 	# Create temp ship to check power
-	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height)
+	var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
 
 	# Check all grid positions
 	for y in range(main_grid.grid_height):

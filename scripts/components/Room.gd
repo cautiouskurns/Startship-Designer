@@ -76,11 +76,13 @@ func _update_powered_visual():
 			print("  Stopping pulse animation (unpowered)")
 			_stop_pulse_animation()
 	else:
-		# Standard power visual for other rooms (opacity-based)
+		# Standard power visual for other rooms
 		if is_powered:
-			modulate.a = 1.0  # Full opacity
+			# Powered: Full brightness (bright color)
+			modulate = Color(1, 1, 1, 1)
 		else:
-			modulate.a = 0.5  # 50% opacity when unpowered
+			# Unpowered: Dimmed (50% opacity)
+			modulate = Color(1, 1, 1, 0.5)
 
 ## Start pulse animation for powered relays (Feature 2.4)
 func _start_pulse_animation():

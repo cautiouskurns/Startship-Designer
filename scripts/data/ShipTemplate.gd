@@ -148,12 +148,16 @@ func apply_to_designer(designer: Node) -> bool:
 			push_warning("Could not place %s at (%d, %d) from template" % [RoomData.get_label(room_type), anchor.x, anchor.y])
 			# Continue trying to place other rooms
 
+	# Auto-route all relays (must happen before power states are calculated)
+	designer._auto_route_all_relays()
+
 	# Update all displays
 	designer._update_budget_display()
 	designer.update_all_power_states()
 	designer.update_palette_counts()
 	designer.update_palette_availability()
 	designer._update_ship_status()
+	designer._update_ship_stats()
 	designer.update_synergies()
 
 	return true
@@ -186,6 +190,11 @@ static func _place_room_manually(designer: Node, anchor_x: int, anchor_y: int, r
 
 	# Add to placed rooms tracking array
 	designer.placed_rooms.append(room)
+
+	# Connect relay hover signals for coverage visualization
+	if room_type == RoomData.RoomType.RELAY:
+		room.relay_hovered.connect(designer._on_relay_hovered)
+		room.relay_unhovered.connect(designer._on_relay_unhovered)
 
 	# Update budget
 	designer.current_budget = designer.calculate_current_budget()
