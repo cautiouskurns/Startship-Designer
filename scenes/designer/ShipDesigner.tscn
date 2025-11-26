@@ -126,6 +126,33 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_overlay_off")
 text = "OVERLAY: OFF"
 
+[node name="HullTypeDropdown" type="OptionButton" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -1832.0
+offset_top = 451.0
+offset_right = -1652.0
+offset_bottom = 501.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 16
+
+[node name="HullOverlayToggle" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -1847.0
+offset_top = 371.0
+offset_right = -1692.0
+offset_bottom = 421.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_overlay_off")
+text = "SHOW HULL"
+
 [node name="ShipStatsPanel" parent="." instance=ExtResource("7_ship_stats")]
 layout_mode = 0
 offset_left = 1618.0
@@ -211,9 +238,9 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -90.0
+offset_left = -320.0
 offset_top = -75.0
-offset_right = 90.0
+offset_right = -140.0
 offset_bottom = -25.0
 grow_horizontal = 2
 grow_vertical = 0
@@ -270,24 +297,9 @@ text = "+3"
 
 [node name="TemplateNameDialog" parent="." instance=ExtResource("5_template_name")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
 [node name="TemplateListPanel" parent="." instance=ExtResource("6_template_list")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
 [node name="EnemySetupPanel" parent="." instance=ExtResource("9_enemy_setup")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2

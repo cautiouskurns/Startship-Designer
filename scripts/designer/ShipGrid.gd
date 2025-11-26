@@ -25,6 +25,9 @@ var main_grid: MainGrid = null
 ## Feature 2.3: Routing lines container (created dynamically)
 var routing_lines_container: Node2D = null
 
+## Hull overlay container (rendered under grid tiles)
+var hull_overlay_container: Node2D = null
+
 ## Preload GridTile scene
 var grid_tile_scene = preload("res://scenes/components/GridTile.tscn")
 
@@ -65,6 +68,15 @@ func initialize(width: int, height: int, hull_shape: Array = []):
 		routing_lines_container.name = "RoutingLinesContainer"
 		routing_lines_container.z_index = 0  # Same level as coverage circles (visible above grid)
 		add_child(routing_lines_container)
+
+	# Create hull overlay container if it doesn't exist
+	if not hull_overlay_container:
+		hull_overlay_container = Node2D.new()
+		hull_overlay_container.name = "HullOverlayContainer"
+		hull_overlay_container.z_index = 0  # Same as grid, but render first (behind tiles and components)
+		add_child(hull_overlay_container)
+		# Move to first position to render behind everything else
+		move_child(hull_overlay_container, 0)
 
 	grid_initialized = true
 	_create_grid()
@@ -358,4 +370,62 @@ func clear_routing_lines():
 	if not routing_lines_container:
 		return
 	for child in routing_lines_container.get_children():
+		child.queue_free()
+
+## Draw hull overlay from hull shape (array of tile positions)
+## Renders semi-transparent outline behind placed components
+func draw_hull_overlay(hull_shape: Array):
+	# Clear existing overlay
+	clear_hull_overlay()
+
+	# Skip if shape is empty (NONE hull type)
+	if hull_shape.is_empty():
+		return
+
+	# Get visual config from HullData
+	var fill_color = HullData.overlay_config["fill_color"]
+	var border_color = HullData.overlay_config["border_color"]
+	var border_width = HullData.overlay_config["border_width"]
+
+	# Create individual tile rectangles for each position in hull shape
+	var tiles_drawn = 0
+	for tile_pos in hull_shape:
+		var tile_x = tile_pos[0]
+		var tile_y = tile_pos[1]
+
+		# Check if tile position is within grid bounds
+		if tile_x < 0 or tile_x >= GRID_WIDTH or tile_y < 0 or tile_y >= GRID_HEIGHT:
+			continue
+
+		var tile_center = get_tile_center(tile_x, tile_y)
+		var half_size = TILE_SIZE / 2.0
+
+		# Create filled rectangle for this tile
+		var tile_rect = Polygon2D.new()
+		var rect_points = PackedVector2Array([
+			tile_center + Vector2(-half_size, -half_size),  # Top-left
+			tile_center + Vector2(half_size, -half_size),   # Top-right
+			tile_center + Vector2(half_size, half_size),    # Bottom-right
+			tile_center + Vector2(-half_size, half_size)    # Bottom-left
+		])
+		tile_rect.polygon = rect_points
+		tile_rect.color = fill_color
+		hull_overlay_container.add_child(tile_rect)
+
+		# Create border for this tile
+		var tile_border = Line2D.new()
+		tile_border.default_color = border_color
+		tile_border.width = border_width
+		tile_border.closed = true
+		for point in rect_points:
+			tile_border.add_point(point)
+		hull_overlay_container.add_child(tile_border)
+
+		tiles_drawn += 1
+
+## Clear hull overlay display
+func clear_hull_overlay():
+	if not hull_overlay_container:
+		return
+	for child in hull_overlay_container.get_children():
 		child.queue_free()

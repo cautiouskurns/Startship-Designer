@@ -101,6 +101,12 @@ var pan_speed: float = 10.0  # Pixels per frame when holding WASD
 var power_overlay_enabled: bool = false
 @onready var power_overlay_button: Button = $PowerOverlayButton
 
+## Hull overlay state
+var current_hull_type: HullData.HullType = HullData.HullType.NONE
+var hull_overlay_visible: bool = false
+@onready var hull_type_dropdown: OptionButton = $HullTypeDropdown
+@onready var hull_overlay_toggle: Button = $HullOverlayToggle
+
 func _ready():
 	# Load mission budget from GameState
 	max_budget = GameState.get_mission_budget(GameState.current_mission)
@@ -151,6 +157,13 @@ func _ready():
 	power_overlay_button.pressed.connect(_on_power_overlay_toggled)
 	power_overlay_button.mouse_entered.connect(_on_button_hover_start.bind(power_overlay_button))
 	power_overlay_button.mouse_exited.connect(_on_button_hover_end.bind(power_overlay_button))
+
+	# Initialize hull overlay controls
+	_initialize_hull_overlay_controls()
+	hull_type_dropdown.item_selected.connect(_on_hull_type_selected)
+	hull_overlay_toggle.pressed.connect(_on_hull_overlay_toggled)
+	hull_overlay_toggle.mouse_entered.connect(_on_button_hover_start.bind(hull_overlay_toggle))
+	hull_overlay_toggle.mouse_exited.connect(_on_button_hover_end.bind(hull_overlay_toggle))
 
 	# Connect room palette signals
 	room_palette.room_type_selected.connect(_on_room_type_selected)
@@ -1726,3 +1739,56 @@ func _on_enemy_setup_pressed():
 	AudioManager.play_button_click()
 
 	enemy_setup_panel.show_panel()
+
+## Initialize hull overlay dropdown with all hull types
+func _initialize_hull_overlay_controls():
+	# Clear existing items
+	hull_type_dropdown.clear()
+
+	# Add all hull types to dropdown
+	for hull_type in [HullData.HullType.NONE, HullData.HullType.FRIGATE, HullData.HullType.CORVETTE,
+					  HullData.HullType.DESTROYER, HullData.HullType.CRUISER, HullData.HullType.BATTLESHIP]:
+		hull_type_dropdown.add_item(HullData.get_label(hull_type))
+
+	# Set default to NONE
+	hull_type_dropdown.selected = 0
+	current_hull_type = HullData.HullType.NONE
+
+## Handle hull type dropdown selection
+func _on_hull_type_selected(index: int):
+	# Map dropdown index to HullType enum
+	current_hull_type = index as HullData.HullType
+
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	# Update hull overlay if visible
+	if hull_overlay_visible:
+		var hull_shape = HullData.get_shape(current_hull_type)
+		ship_grid.draw_hull_overlay(hull_shape)
+
+## Handle hull overlay toggle button
+func _on_hull_overlay_toggled():
+	hull_overlay_visible = !hull_overlay_visible
+
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	# Update button appearance and text
+	if hull_overlay_visible:
+		hull_overlay_toggle.text = "HIDE HULL"
+		hull_overlay_toggle.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
+		var style = hull_overlay_toggle.get_theme_stylebox("normal")
+		if style is StyleBoxFlat:
+			style.bg_color = Color(0.29, 0.89, 0.89)  # Cyan to match hull color
+		# Show hull overlay
+		var hull_shape = HullData.get_shape(current_hull_type)
+		ship_grid.draw_hull_overlay(hull_shape)
+	else:
+		hull_overlay_toggle.text = "SHOW HULL"
+		hull_overlay_toggle.add_theme_stylebox_override("normal", get_theme_stylebox("normal", "Button").duplicate())
+		var style = hull_overlay_toggle.get_theme_stylebox("normal")
+		if style is StyleBoxFlat:
+			style.bg_color = Color(0.3, 0.3, 0.3)  # Gray (off state)
+		# Clear hull overlay
+		ship_grid.clear_hull_overlay()
