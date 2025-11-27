@@ -55,6 +55,64 @@ func resize_to_tile():
 		custom_minimum_size = room_size
 		size = room_size
 
+		# Position icon in the center of the multi-tile room
+		_position_icon()
+
+## Position icon centered across multi-tile room (only visible on anchor tile)
+func _position_icon():
+	# Get Icon node if it exists
+	var icon_node = get_node_or_null("Icon")
+	if not icon_node:
+		return
+
+	# Only show icon on anchor tile (first tile of multi-tile rooms)
+	if not get_parent() or not get_parent() is GridTile:
+		return
+
+	var parent_tile = get_parent() as GridTile
+	var is_anchor = (occupied_tiles.size() > 0 and occupied_tiles[0] == parent_tile)
+
+	# Hide icon on non-anchor tiles
+	if not is_anchor:
+		icon_node.visible = false
+		return
+
+	icon_node.visible = true
+
+	# Calculate the center of the multi-tile room
+	if occupied_tiles.size() <= 1:
+		# Single tile room - icon already centered via anchors
+		return
+
+	# Calculate bounding box of all tiles
+	var min_x = 999999
+	var max_x = -999999
+	var min_y = 999999
+	var max_y = -999999
+
+	for tile in occupied_tiles:
+		if tile.grid_x < min_x:
+			min_x = tile.grid_x
+		if tile.grid_x > max_x:
+			max_x = tile.grid_x
+		if tile.grid_y < min_y:
+			min_y = tile.grid_y
+		if tile.grid_y > max_y:
+			max_y = tile.grid_y
+
+	# Calculate room dimensions in tiles
+	var room_width_tiles = max_x - min_x + 1
+	var room_height_tiles = max_y - min_y + 1
+
+	# Calculate pixel offset from anchor tile to room center
+	var tile_size = parent_tile.size
+	var center_offset_x = (room_width_tiles - 1) * tile_size.x * 0.5
+	var center_offset_y = (room_height_tiles - 1) * tile_size.y * 0.5
+
+	# Adjust icon position to center across entire room
+	# Icon is anchored at 0.5,0.5 so we offset by the center displacement
+	icon_node.position = Vector2(center_offset_x, center_offset_y)
+
 ## Set powered state and update visual
 func set_powered(powered: bool):
 	is_powered = powered
@@ -107,6 +165,8 @@ func _stop_pulse_animation():
 func add_occupied_tile(tile: GridTile):
 	if not tile in occupied_tiles:
 		occupied_tiles.append(tile)
+	# Update icon position after adding tile
+	call_deferred("_position_icon")
 
 ## Get all tiles occupied by this room (Phase 7.1)
 func get_occupied_tiles() -> Array[GridTile]:

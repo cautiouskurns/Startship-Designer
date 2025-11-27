@@ -63,6 +63,10 @@ var is_paused: bool = false
 ## Speed control (2.0 = 0.5x speed by default)
 var speed_multiplier: float = BalanceConstants.COMBAT_SPEED_DEFAULT  # 4.0 = 0.25x, 2.0 = 0.5x, 1.0 = 1x, 0.5 = 2x
 
+## Battle replay data (Feature: State Capture & Replay)
+var battle_result: BattleResult = null
+var current_turn_events: Array[String] = []
+
 ## Zoom controls
 var current_zoom: float = 1.0
 const ZOOM_MIN: float = BalanceConstants.COMBAT_ZOOM_MIN
@@ -131,6 +135,11 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	player_data = player_ship
 	current_mission = mission_index
 	print("DEBUG Combat.start_combat: player_data set, mission: ", mission_index)
+
+	# Initialize battle replay data (Feature: State Capture & Replay)
+	battle_result = BattleResult.new(mission_index)
+	current_turn_events.clear()
+	print("DEBUG: Battle replay initialized for mission ", mission_index)
 
 	# Reset zoom and pan to default
 	current_zoom = 1.0
@@ -418,6 +427,8 @@ func _execute_turn():
 	var defender_name = "ENEMY" if is_player_attacking else "PLAYER"
 	if combat_log:
 		combat_log.add_turn_start(turn_count, is_player_turn)
+	# Track event for replay
+	current_turn_events.append("--- Turn %d: %s ---" % [turn_count, attacker_name])
 
 	# Wait to see turn indicator
 	await get_tree().create_timer(0.5 * speed_multiplier).timeout
@@ -441,6 +452,8 @@ func _execute_turn():
 	if combat_log and primary_target_id != -1:
 		var target_type = RoomData.get_label(defender.room_instances[primary_target_id]["type"])
 		combat_log.add_targeting(attacker_name, target_type, defender_name)
+		# Track event for replay
+		current_turn_events.append("%s targets %s's %s" % [attacker_name, defender_name, target_type])
 
 	# Phase 10.6: Fire weapons with visual effects (muzzle flashes, projectiles, impacts)
 	# Feature 1 MVP: Pass primary target for targeting line visual
@@ -453,6 +466,12 @@ func _execute_turn():
 	# Log attack
 	if combat_log:
 		combat_log.add_attack(attacker_name, weapons, damage, shield_absorption, net_damage)
+	# Track events for replay
+	current_turn_events.append("%s attacks with %d weapon(s)" % [attacker_name, weapons])
+	if shield_absorption > 0:
+		current_turn_events.append("  Damage: %d (-%d shields) = %d" % [damage, shield_absorption, net_damage])
+	else:
+		current_turn_events.append("  Damage: %d (no shields!)" % damage)
 
 	# Apply damage to HP
 	defender.current_hp = max(0, defender.current_hp - net_damage)
@@ -460,6 +479,8 @@ func _execute_turn():
 	# Log HP remaining
 	if combat_log:
 		combat_log.add_hp_remaining(defender_name, defender.current_hp, defender.max_hp)
+	# Track event for replay
+	current_turn_events.append("  %s HP: %d / %d" % [defender_name, defender.current_hp, defender.max_hp])
 
 	# Update health display
 	if is_player_attacking:
@@ -495,6 +516,9 @@ func _execute_turn():
 
 	# Wait a moment to see final state
 	await get_tree().create_timer(0.3 * speed_multiplier).timeout
+
+	# Capture state at end of turn (Feature: State Capture & Replay)
+	_capture_turn_snapshot()
 
 ## Determine which ship shoots first based on engine count (returns detailed data)
 func _determine_initiative_detailed() -> Dictionary:
@@ -859,6 +883,8 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 				# Weapon resisted destruction, try another room
 				if combat_log:
 					combat_log.add_durability_resist(RoomData.get_label(room_type), defender_name)
+				# Track event for replay
+				current_turn_events.append("  %s's %s resisted destruction! (Durability synergy)" % [defender_name, RoomData.get_label(room_type)])
 				active_room_ids.remove_at(index)
 				continue
 
@@ -869,6 +895,8 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			# Log destruction
 			if combat_log:
 				combat_log.add_room_destroyed(RoomData.get_label(room_type), defender_name)
+			# Track event for replay
+			current_turn_events.append("  %s's %s destroyed!" % [defender_name, RoomData.get_label(room_type)])
 
 			# Play explosion sound
 			AudioManager.play_explosion()
@@ -915,6 +943,8 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			# Log destruction
 			if combat_log:
 				combat_log.add_room_destroyed(RoomData.get_label(room_type), defender_name)
+			# Track event for replay
+			current_turn_events.append("  %s's %s destroyed!" % [defender_name, RoomData.get_label(room_type)])
 
 			# Play explosion sound
 			AudioManager.play_explosion()
@@ -956,6 +986,8 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 	if reactor_destroyed:
 		if combat_log:
 			combat_log.add_reactor_destroyed(defender_name)
+		# Track event for replay
+		current_turn_events.append("  %s's REACTOR destroyed! Power grid recalculated." % defender_name)
 		# Play reactor powerdown sound
 		AudioManager.play_reactor_powerdown()
 		defender.recalculate_power()
@@ -987,6 +1019,12 @@ func _update_turn_indicator(player_turn: bool):
 
 ## Show combat end screen
 func _show_combat_end(winner: String):
+	# Finalize battle result (Feature: State Capture & Replay)
+	if battle_result:
+		battle_result.player_won = (winner == "player")
+		print("DEBUG: Battle complete - ", battle_result.get_summary())
+		print("DEBUG: Total events captured: ", battle_result.get_total_events())
+
 	# Log victory/defeat
 	if combat_log:
 		combat_log.add_victory(winner)
@@ -1020,6 +1058,28 @@ func _show_combat_end(winner: String):
 		_flash_ship(player_ship_display, Color(0.89, 0.29, 0.29))  # Red
 		_flash_ship(enemy_ship_display, Color(0.29, 0.89, 0.29))   # Green
 		result_label.text = "DEFEAT"
+
+		# Add "View Replay" button (Feature: State Capture & Replay) - disabled for now
+		var replay_button = Button.new()
+		replay_button.text = "VIEW REPLAY"
+		replay_button.custom_minimum_size = Vector2(150, 50)
+		replay_button.disabled = true  # Disabled until replay viewer is implemented
+
+		# Position at bottom-right of result overlay
+		replay_button.position = Vector2(1280 - 150 - 20, 720 - 50 - 20)  # 20px margin from edges
+
+		# Style the button
+		var style_normal = StyleBoxFlat.new()
+		style_normal.bg_color = Color(0.2, 0.2, 0.2, 0.8)  # Dark gray, semi-transparent
+		style_normal.border_color = Color(0.5, 0.5, 0.5, 1.0)
+		style_normal.border_width_left = 2
+		style_normal.border_width_right = 2
+		style_normal.border_width_top = 2
+		style_normal.border_width_bottom = 2
+		replay_button.add_theme_stylebox_override("normal", style_normal)
+
+		# Add to result overlay
+		result_overlay.add_child(replay_button)
 
 		# Show result overlay
 		result_overlay.visible = true
@@ -1140,6 +1200,54 @@ func _apply_pan(delta: Vector2) -> void:
 
 	# Apply to ship battle area position
 	ship_battle_area.position = pan_offset
+
+## Capture current combat state at end of turn (Feature: State Capture & Replay)
+func _capture_turn_snapshot():
+	if not battle_result:
+		return  # Safety check
+
+	var snapshot = TurnSnapshot.new(turn_count)
+
+	# Capture player state
+	snapshot.player_hull_hp = player_data.current_hp
+	snapshot.player_active_room_ids = _get_active_room_ids(player_data)
+	snapshot.player_powered_room_ids = _get_powered_room_ids(player_data)
+
+	# Capture enemy state
+	snapshot.enemy_hull_hp = enemy_data.current_hp
+	snapshot.enemy_active_room_ids = _get_active_room_ids(enemy_data)
+	snapshot.enemy_powered_room_ids = _get_powered_room_ids(enemy_data)
+
+	# Capture events from this turn
+	snapshot.events = current_turn_events.duplicate()
+	current_turn_events.clear()
+
+	# Add to battle result
+	battle_result.add_turn_snapshot(snapshot)
+
+	print("DEBUG: Captured state for Turn ", turn_count, " - ", snapshot.get_summary())
+
+## Get list of active room IDs for a ship (Feature: State Capture & Replay)
+func _get_active_room_ids(ship: ShipData) -> Array[int]:
+	var ids: Array[int] = []
+	for room_id in ship.room_instances.keys():
+		ids.append(room_id)
+	return ids
+
+## Get list of powered room IDs for a ship (Feature: State Capture & Replay)
+func _get_powered_room_ids(ship: ShipData) -> Array[int]:
+	var ids: Array[int] = []
+	for room_id in ship.room_instances.keys():
+		var room_data = ship.room_instances[room_id]
+		var is_powered = false
+		# Check if any tile of this room is powered
+		for tile_pos in room_data["tiles"]:
+			if ship.is_room_powered(tile_pos.x, tile_pos.y):
+				is_powered = true
+				break
+		if is_powered:
+			ids.append(room_id)
+	return ids
 
 ## Create enemy ship from template (Phase 10.8 - template system)
 func _create_enemy_from_template(template: ShipTemplate) -> ShipData:
