@@ -170,6 +170,12 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 		var enemy_id = GameState.get_mission_enemy_id(mission_index)
 		enemy_data = ShipData.create_enemy_from_id(enemy_id)
 
+	# Store original ship data for replay viewer (Feature 2: Timeline Bar & Scrubbing)
+	# Must store BEFORE combat modifies them (rooms destroyed, HP changed)
+	GameState.original_player_data = player_data
+	GameState.original_enemy_data = enemy_data
+	print("DEBUG: Stored original ship data in GameState for replay")
+
 	# Set up ship displays
 	print("DEBUG Combat: Setting player_ship_display with grid size: ", player_data.grid.size(), "x", player_data.grid[0].size() if player_data.grid.size() > 0 else 0)
 	print("DEBUG Combat: Player ship has ", player_data.room_instances.size(), " room instances")
@@ -1025,6 +1031,9 @@ func _show_combat_end(winner: String):
 		print("DEBUG: Battle complete - ", battle_result.get_summary())
 		print("DEBUG: Total events captured: ", battle_result.get_total_events())
 
+		# Store in GameState for replay viewer access (Feature 2: Timeline Bar & Scrubbing)
+		GameState.store_battle_result(battle_result)
+
 	# Log victory/defeat
 	if combat_log:
 		combat_log.add_victory(winner)
@@ -1038,18 +1047,76 @@ func _show_combat_end(winner: String):
 		_flash_ship(enemy_ship_display, Color(0.89, 0.29, 0.29))   # Red
 		result_label.text = "VICTORY"
 
-		# Wait for flash to complete
-		await get_tree().create_timer(0.5).timeout
-
-		# Handle victory based on mission
+		# Unlock next mission if not final mission
 		if current_mission < 2:
-			# Unlock next mission
 			GameState.unlock_mission(current_mission + 1)
 
-			# Return to Mission Select
-			get_tree().change_scene_to_file("res://scenes/mission/MissionSelect.tscn")
+		# Add "View Replay" button for all victories (Feature 2: Timeline Bar & Scrubbing)
+		var replay_button = Button.new()
+		replay_button.text = "VIEW REPLAY"
+		replay_button.custom_minimum_size = Vector2(150, 50)
+		replay_button.disabled = false
+
+		# Position at bottom-right of result overlay
+		replay_button.position = Vector2(1280 - 150 - 20, 720 - 50 - 20)
+
+		# Style the button
+		var style_normal = StyleBoxFlat.new()
+		style_normal.bg_color = Color(0.2, 0.2, 0.2, 0.8)
+		style_normal.border_color = Color(0.5, 0.5, 0.5, 1.0)
+		style_normal.border_width_left = 2
+		style_normal.border_width_right = 2
+		style_normal.border_width_top = 2
+		style_normal.border_width_bottom = 2
+		replay_button.add_theme_stylebox_override("normal", style_normal)
+
+		# Connect to replay viewer
+		replay_button.pressed.connect(_on_view_replay_pressed)
+
+		# Connect hover effects
+		replay_button.mouse_entered.connect(_on_button_hover_start.bind(replay_button))
+		replay_button.mouse_exited.connect(_on_button_hover_end.bind(replay_button))
+
+		# Add to result overlay
+		result_overlay.add_child(replay_button)
+		print("DEBUG: VIEW REPLAY button added to result overlay")
+
+		# Add "Continue" button for missions 1-2, or show victory overlay for mission 3
+		if current_mission < 2:
+			# Add Continue button to go to next mission
+			var continue_button = Button.new()
+			continue_button.text = "CONTINUE"
+			continue_button.custom_minimum_size = Vector2(150, 50)
+
+			# Position at bottom-left (opposite of replay button)
+			continue_button.position = Vector2(20, 720 - 50 - 20)
+
+			# Style the button
+			var continue_style = StyleBoxFlat.new()
+			continue_style.bg_color = Color(0.2, 0.6, 0.2, 0.8)  # Green tint for victory
+			continue_style.border_color = Color(0.5, 0.8, 0.5, 1.0)
+			continue_style.border_width_left = 2
+			continue_style.border_width_right = 2
+			continue_style.border_width_top = 2
+			continue_style.border_width_bottom = 2
+			continue_button.add_theme_stylebox_override("normal", continue_style)
+
+			# Connect to mission select
+			continue_button.pressed.connect(_on_continue_to_mission_select)
+
+			# Connect hover effects
+			continue_button.mouse_entered.connect(_on_button_hover_start.bind(continue_button))
+			continue_button.mouse_exited.connect(_on_button_hover_end.bind(continue_button))
+
+			# Add to result overlay
+			result_overlay.add_child(continue_button)
+			print("DEBUG: CONTINUE button added to result overlay")
+
+			# Show result overlay
+			result_overlay.visible = true
+			print("DEBUG: Result overlay made visible (VICTORY - missions 1-2)")
 		else:
-			# Mission 3 complete - show final victory screen
+			# Mission 3 complete - show final victory screen (has its own return button)
 			victory_overlay.visible = true
 	else:
 		# Play death sound
@@ -1059,11 +1126,11 @@ func _show_combat_end(winner: String):
 		_flash_ship(enemy_ship_display, Color(0.29, 0.89, 0.29))   # Green
 		result_label.text = "DEFEAT"
 
-		# Add "View Replay" button (Feature: State Capture & Replay) - disabled for now
+		# Add "View Replay" button (Feature 2: Timeline Bar & Scrubbing)
 		var replay_button = Button.new()
 		replay_button.text = "VIEW REPLAY"
 		replay_button.custom_minimum_size = Vector2(150, 50)
-		replay_button.disabled = true  # Disabled until replay viewer is implemented
+		replay_button.disabled = false  # Enabled now that replay viewer is implemented
 
 		# Position at bottom-right of result overlay
 		replay_button.position = Vector2(1280 - 150 - 20, 720 - 50 - 20)  # 20px margin from edges
@@ -1078,15 +1145,22 @@ func _show_combat_end(winner: String):
 		style_normal.border_width_bottom = 2
 		replay_button.add_theme_stylebox_override("normal", style_normal)
 
+		# Connect to replay viewer
+		replay_button.pressed.connect(_on_view_replay_pressed)
+
+		# Connect hover effects
+		replay_button.mouse_entered.connect(_on_button_hover_start.bind(replay_button))
+		replay_button.mouse_exited.connect(_on_button_hover_end.bind(replay_button))
+
 		# Add to result overlay
 		result_overlay.add_child(replay_button)
+		print("DEBUG: VIEW REPLAY button added to result overlay (DEFEAT)")
 
 		# Show result overlay
 		result_overlay.visible = true
+		print("DEBUG: Result overlay made visible (DEFEAT)")
 
-		# Wait a moment, then return to designer for redesign
-		await get_tree().create_timer(2.0).timeout
-		get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
+		# NOTE: No automatic transition - let user choose between Redesign button and View Replay button
 
 ## Check win condition
 func _check_win_condition() -> String:
@@ -1110,6 +1184,25 @@ func _on_redesign_pressed():
 
 ## Handle victory return button press
 func _on_victory_return_pressed():
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	# Return to Mission Select
+	get_tree().change_scene_to_file("res://scenes/mission/MissionSelect.tscn")
+
+## Handle view replay button press (Feature 2: Timeline Bar & Scrubbing)
+func _on_view_replay_pressed():
+	print("DEBUG: VIEW REPLAY button pressed - transitioning to ReplayViewer scene")
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	# Transition to ReplayViewer scene
+	print("DEBUG: Calling change_scene_to_file for ReplayViewer.tscn")
+	get_tree().change_scene_to_file("res://scenes/combat/ReplayViewer.tscn")
+	print("DEBUG: change_scene_to_file call completed")
+
+## Handle continue to mission select button press (Feature 2: Timeline Bar & Scrubbing)
+func _on_continue_to_mission_select():
 	# Play button click sound
 	AudioManager.play_button_click()
 

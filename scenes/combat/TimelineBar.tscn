@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://timeline_bar"]
+
+[ext_resource type="Script" path="res://scripts/combat/TimelineBar.gd" id="1"]
+
+[node name="TimelineBar" type="Control"]
+custom_minimum_size = Vector2(1800, 50)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1800.0
+offset_bottom = 50.0
+script = ExtResource("1")

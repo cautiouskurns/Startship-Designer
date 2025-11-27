@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cx3fp2r8sjcev"]
+[gd_scene load_steps=9 format=3 uid="uid://cx3fp2r8sjcev"]
 
 [ext_resource type="Script" uid="uid://c6duepdtvkntj" path="res://scripts/combat/Combat.gd" id="1"]
 [ext_resource type="Script" uid="uid://dy1qjw1ce5hly" path="res://scripts/combat/ShipDisplay.gd" id="2"]
@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://dly506ra5y862" path="res://scripts/combat/CombatFX.gd" id="4"]
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="5_ship_stats"]
 [ext_resource type="Texture2D" uid="uid://y1akstmn6odh" path="res://assets/sprites/ui/starfield.png" id="6_starfield"]
-[ext_resource type="Theme" uid="uid://blueprint_theme" path="res://assets/themes/blueprint_theme.tres" id="7_blueprint_theme"]
+[ext_resource type="Theme" path="res://assets/themes/blueprint_theme.tres" id="7_blueprint_theme"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hp_green"]
 bg_color = Color(0.290196, 0.886275, 0.290196, 1)
@@ -213,7 +213,6 @@ offset_bottom = 60.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 18
 text = "100%"
-horizontal_alignment = 0
 vertical_alignment = 1
 
 [node name="ResultOverlay" type="ColorRect" parent="."]

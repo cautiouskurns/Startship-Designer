@@ -29,6 +29,11 @@ var template_to_load = null
 ## Template to restore after combat defeat (set before launching combat, cleared after load)
 var redesign_template = null
 
+## Battle replay data (Feature 2: Timeline Bar & Scrubbing)
+var last_battle_result: BattleResult = null
+var original_player_data: ShipData = null
+var original_enemy_data: ShipData = null
+
 ## Hull type definitions (Phase 10.4 - shaped hulls) - now loaded from JSON
 ## grid_shape: 'X' = valid tile, '.' = empty space
 ## Ships taper from LEFT (wide engine side) to RIGHT (narrow weapon/bridge side)
@@ -272,3 +277,12 @@ func set_hull(hull_type: HullType):
 func get_hull_name(hull_type: HullType) -> String:
 	var hull_data = get_hull_data(hull_type)
 	return hull_data.get("name", "UNKNOWN")
+
+## Store battle result for replay viewing (Feature 2: Timeline Bar & Scrubbing)
+func store_battle_result(result: BattleResult):
+	last_battle_result = result
+	print("DEBUG: Battle result stored in GameState - ", result.get_summary())
+
+## Get last battle result (Feature 2: Timeline Bar & Scrubbing)
+func get_battle_result() -> BattleResult:
+	return last_battle_result
