@@ -183,6 +183,31 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	print("DEBUG Combat: Setting enemy_ship_display with grid size: ", enemy_data.grid.size(), "x", enemy_data.grid[0].size() if enemy_data.grid.size() > 0 else 0)
 	enemy_ship_display.set_ship_data(enemy_data)
 
+	# DEBUG: Add visible borders to containers to see layout
+	var player_container = player_ship_display.get_parent()
+	var enemy_container = enemy_ship_display.get_parent()
+
+	print("DEBUG: Player container size: ", player_container.size)
+	print("DEBUG: Enemy container size: ", enemy_container.size)
+	print("DEBUG: Player container global position: ", player_container.global_position)
+	print("DEBUG: Enemy container global position: ", enemy_container.global_position)
+
+	var player_border = ColorRect.new()
+	player_border.color = Color(0, 1, 0, 0.3)  # Green semi-transparent
+	player_border.anchor_right = 1.0
+	player_border.anchor_bottom = 1.0
+	player_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	player_container.add_child(player_border)
+	player_container.move_child(player_border, 0)  # Send to back
+
+	var enemy_border = ColorRect.new()
+	enemy_border.color = Color(1, 0, 0, 0.3)  # Red semi-transparent
+	enemy_border.anchor_right = 1.0
+	enemy_border.anchor_bottom = 1.0
+	enemy_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	enemy_container.add_child(enemy_border)
+	enemy_container.move_child(enemy_border, 0)  # Send to back
+
 	# Position ships to face each other at the center with dynamic scaling
 	var player_grid_width = player_ship_display.GRID_WIDTH
 	var player_grid_height = player_ship_display.GRID_HEIGHT
@@ -218,16 +243,36 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 
 	# Find max visual height to align centers vertically
 	var max_visual_height = max(player_visual_height, enemy_visual_height)
-	var base_y = (container_height - max_visual_height) / 2.0
+	# Position ships in the center-to-lower area of the container (add 150px offset down)
+	var base_y = (container_height - max_visual_height) / 2.0 + 250.0
 
 	# Offset to align ship centers vertically
 	var player_y_offset = (max_visual_height - player_visual_height) / 2.0
 	var enemy_y_offset = (max_visual_height - enemy_visual_height) / 2.0
 
-	# Position horizontally: player ship on right side of left container, enemy on right side of right container
-	var player_x = container_width - player_visual_width - 50  # 50px gap from center
-	# Enemy is flipped (negative scale), so position at RIGHT edge (it draws backwards to the left)
-	var enemy_x = container_width - 50  # Position at right edge, ship draws leftward
+	# Position ships horizontally to align under their respective health bars
+	# Screen: 1920x1080
+	# ShipBattleArea: centered at (960, 540), spans x: 360-1560 (when fully laid out)
+	# PlayerContainer: x: 0-600 in container coords, but global x: 360-960 after layout
+	# EnemyContainer: x: 600-1200 in container coords, but global x: 960-1560 after layout
+	# Player HP bar: global x: 348-648, center at 498
+	# Enemy HP bar: global x: 1261-1561, center at 1411
+
+	# During _ready(), containers haven't been laid out yet, so their global_position is (0,0) and (600,0)
+	# But after layout, ShipBattleArea will offset them by +360 pixels
+	# So we need to position ships accounting for final positions:
+
+	# Player ship: HP bar center at 498, container will be at 360-960
+	# So ship should be at 498-360=138 in container, but containers report (0,0) now
+	# Actually, let's position relative to container centers instead
+
+	# Player HP bar center: 498, container center will be at 660 (360+300)
+	# Ship offset from container center: 498-660 = -162
+	var player_x = 300 - 162  # 138
+
+	# Enemy HP bar center: 1411, container center will be at 1260 (960+300)
+	# Ship offset from container center: 1411-1260 = 151
+	var enemy_x = 300 + 151  # 451
 
 	# Apply positions
 	player_ship_display.position = Vector2(player_x, base_y + player_y_offset)
@@ -236,6 +281,10 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	print("DEBUG Combat scaling: Player grid=%dx%d, Enemy grid=%dx%d, Scale=%.2f" % [player_grid_width, player_grid_height, enemy_grid_width, enemy_grid_height, uniform_scale])
 	print("DEBUG Combat positions: Player ShipDisplay pos=", player_ship_display.position, ", Enemy ShipDisplay pos=", enemy_ship_display.position)
 	print("DEBUG Combat containers: Player container global_pos=", player_ship_display.get_parent().global_position, ", Enemy container global_pos=", enemy_ship_display.get_parent().global_position)
+	print("DEBUG Player ship scale: ", player_ship_display.scale)
+	print("DEBUG Enemy ship scale: ", enemy_ship_display.scale)
+	print("DEBUG Player ship global position: ", player_ship_display.global_position)
+	print("DEBUG Enemy ship global position: ", enemy_ship_display.global_position)
 
 	# Update power visuals (Phase 10.9 - show powered/unpowered rooms)
 	print("DEBUG: Player powered weapons: ", player_data.count_powered_room_type(RoomData.RoomType.WEAPON))
