@@ -671,3 +671,17 @@ func get_weapon_grid_positions() -> Array:
 				weapon_positions.append(Vector2i(x, y))
 
 	return weapon_positions
+
+## Get grid positions of only POWERED weapons (for combat visual effects)
+## Returns array of Vector2i positions (one per powered weapon room tile)
+func get_powered_weapon_grid_positions() -> Array:
+	var weapon_positions = []
+
+	for y in range(grid.size()):
+		for x in range(grid[y].size()):
+			if grid[y][x] == RoomData.RoomType.WEAPON:
+				# Only include if this weapon position is powered
+				if is_room_powered(x, y):
+					weapon_positions.append(Vector2i(x, y))
+
+	return weapon_positions

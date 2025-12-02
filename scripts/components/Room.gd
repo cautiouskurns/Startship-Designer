@@ -79,9 +79,15 @@ func _position_icon():
 
 	icon_node.visible = true
 
+	# Get tile size for calculations
+	var tile_size = parent_tile.size
+	var icon_size = icon_node.size
+
 	# Calculate the center of the multi-tile room
 	if occupied_tiles.size() <= 1:
-		# Single tile room - icon already centered via anchors
+		# Single tile room - center icon within the tile
+		# Icon is 32x32, tile is typically 64x64, so offset by (tile_size - icon_size) / 2
+		icon_node.position = (tile_size - icon_size) * 0.5
 		return
 
 	# Calculate bounding box of all tiles
@@ -104,14 +110,17 @@ func _position_icon():
 	var room_width_tiles = max_x - min_x + 1
 	var room_height_tiles = max_y - min_y + 1
 
-	# Calculate pixel offset from anchor tile to room center
-	var tile_size = parent_tile.size
-	var center_offset_x = (room_width_tiles - 1) * tile_size.x * 0.5
-	var center_offset_y = (room_height_tiles - 1) * tile_size.y * 0.5
+	# Calculate the center of the entire multi-tile room in pixels
+	# relative to the anchor tile's top-left corner
+	var room_center_x = (room_width_tiles * tile_size.x) * 0.5
+	var room_center_y = (room_height_tiles * tile_size.y) * 0.5
 
-	# Adjust icon position to center across entire room
-	# Icon is anchored at 0.5,0.5 so we offset by the center displacement
-	icon_node.position = Vector2(center_offset_x, center_offset_y)
+	# Position the icon so its center aligns with the room's center
+	# Icon is top-left anchored, so subtract half icon size to center it
+	icon_node.position = Vector2(room_center_x, room_center_y) - (icon_size * 0.5)
+
+	# Debug output
+	print("Room type: ", RoomData.get_label(room_type), " | Tiles: ", room_width_tiles, "x", room_height_tiles, " | Tile size: ", tile_size, " | Room center: ", Vector2(room_center_x, room_center_y), " | Icon pos: ", icon_node.position)
 
 ## Set powered state and update visual
 func set_powered(powered: bool):

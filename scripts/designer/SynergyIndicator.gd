@@ -39,6 +39,15 @@ func setup(tile_a: GridTile, tile_b: GridTile, synergy: RoomData.SynergyType):
 	var tile_b_center = tile_b.position + tile_center_offset
 	position = (tile_a_center + tile_b_center) / 2.0
 
+	# Rotate based on connection direction
+	# If tiles are vertically adjacent (same x, different y), rotate 90 degrees
+	if tile_a.grid_x == tile_b.grid_x:
+		# Vertical connection
+		rotation_degrees = 90
+	else:
+		# Horizontal connection (default orientation)
+		rotation_degrees = 0
+
 ## Start the pulsing animation
 func _start_pulse_animation():
 	var tween = create_tween()

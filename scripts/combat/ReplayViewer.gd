@@ -51,8 +51,8 @@ func _ready():
 	# Connect back button
 	back_button.pressed.connect(_on_back_pressed)
 
-	# Display initial state (Turn 0)
-	_update_displays_for_turn(0)
+	# Display initial state (Turn 0) - deferred to allow layout to complete
+	_update_displays_for_turn.call_deferred(0)
 
 ## Handle turn change from timeline scrubbing
 func _on_turn_changed(turn: int):
@@ -74,8 +74,14 @@ func _update_displays_for_turn(turn: int):
 	var enemy_ship = _reconstruct_ship_data_from_snapshot(snapshot, false)
 
 	# Update ship displays
+	print("DEBUG ReplayViewer: Player ship grid size: ", player_ship.grid.size(), "x", player_ship.grid[0].size() if player_ship.grid.size() > 0 else 0)
+	print("DEBUG ReplayViewer: Enemy ship grid size: ", enemy_ship.grid.size(), "x", enemy_ship.grid[0].size() if enemy_ship.grid.size() > 0 else 0)
+
 	player_ship_display.set_ship_data(player_ship)
 	enemy_ship_display.set_ship_data(enemy_ship)
+
+	# Position ships properly (deferred to allow layout to complete)
+	_position_ships.call_deferred()
 
 	# Update power visuals
 	player_ship_display.update_power_visuals(player_ship)
@@ -90,6 +96,53 @@ func _update_displays_for_turn(turn: int):
 
 	# Display events for this turn
 	_display_turn_events(turn)
+
+## Position ships after layout pass (same logic as Combat.gd)
+func _position_ships():
+	var player_grid_width = player_ship_display.GRID_WIDTH
+	var player_grid_height = player_ship_display.GRID_HEIGHT
+	var enemy_grid_width = enemy_ship_display.GRID_WIDTH
+	var enemy_grid_height = enemy_ship_display.GRID_HEIGHT
+	var tile_size = 96.0  # ShipDisplay.TILE_SIZE
+	var container_height = 600.0
+	var container_width = 600.0
+	var margin = 50.0
+
+	# Calculate scale
+	var max_container_size = container_width - margin * 2
+	var player_max_dimension = max(player_grid_width * tile_size, player_grid_height * tile_size)
+	var enemy_max_dimension = max(enemy_grid_width * tile_size, enemy_grid_height * tile_size)
+	var player_scale = min(1.0, max_container_size / player_max_dimension) if player_max_dimension > 0 else 0.6
+	var enemy_scale = min(1.0, max_container_size / enemy_max_dimension) if enemy_max_dimension > 0 else 0.6
+	var uniform_scale = min(player_scale, enemy_scale, 0.6)
+
+	# Apply scale
+	player_ship_display.scale = Vector2(uniform_scale, uniform_scale)
+	enemy_ship_display.scale = Vector2(-uniform_scale, uniform_scale)
+
+	# Calculate positions
+	var player_visual_height = player_grid_height * tile_size * uniform_scale
+	var enemy_visual_height = enemy_grid_height * tile_size * uniform_scale
+	var max_visual_height = max(player_visual_height, enemy_visual_height)
+	var base_y = (container_height - max_visual_height) / 2.0
+	var player_y_offset = (max_visual_height - player_visual_height) / 2.0
+	var enemy_y_offset = (max_visual_height - enemy_visual_height) / 2.0
+
+	# Position horizontally (same as Combat.gd)
+	var player_x = 300 - 162  # 138
+	var enemy_x = 300 + 151  # 451
+
+	# Apply positions
+	player_ship_display.position = Vector2(player_x, base_y + player_y_offset)
+	enemy_ship_display.position = Vector2(enemy_x, base_y + enemy_y_offset)
+
+	print("DEBUG ReplayViewer scaling: Player grid=%dx%d, Enemy grid=%dx%d, Scale=%.2f" % [player_grid_width, player_grid_height, enemy_grid_width, enemy_grid_height, uniform_scale])
+	print("DEBUG ReplayViewer positions: Player ShipDisplay pos=", player_ship_display.position, ", Enemy ShipDisplay pos=", enemy_ship_display.position)
+	print("DEBUG ReplayViewer containers: Player container global_pos=", player_ship_display.get_parent().global_position, ", Enemy container global_pos=", enemy_ship_display.get_parent().global_position)
+	print("DEBUG Player ship scale: ", player_ship_display.scale)
+	print("DEBUG Enemy ship scale: ", enemy_ship_display.scale)
+	print("DEBUG Player ship global position: ", player_ship_display.global_position)
+	print("DEBUG Enemy ship global position: ", enemy_ship_display.global_position)
 
 ## Reconstruct ShipData from TurnSnapshot by applying deltas to original data
 func _reconstruct_ship_data_from_snapshot(snapshot: TurnSnapshot, is_player: bool) -> ShipData:
