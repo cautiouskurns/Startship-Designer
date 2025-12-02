@@ -66,6 +66,8 @@ var speed_multiplier: float = BalanceConstants.COMBAT_SPEED_DEFAULT  # 4.0 = 0.2
 ## Battle replay data (Feature: State Capture & Replay)
 var battle_result: BattleResult = null
 var current_turn_events: Array[String] = []
+var current_turn_weapon_actions: Array[Dictionary] = []
+var current_turn_destruction_actions: Array[Dictionary] = []
 
 ## Zoom controls
 var current_zoom: float = 1.0
@@ -139,6 +141,8 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	# Initialize battle replay data (Feature: State Capture & Replay)
 	battle_result = BattleResult.new(mission_index)
 	current_turn_events.clear()
+	current_turn_weapon_actions.clear()
+	current_turn_destruction_actions.clear()
 	print("DEBUG: Battle replay initialized for mission ", mission_index)
 
 	# Reset zoom and pan to default
@@ -659,6 +663,9 @@ func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker
 	if weapon_positions.is_empty():
 		return  # No weapons to fire
 
+	# Determine attacker name for replay action
+	var attacker_name = "player" if attacker == player_data else "enemy"
+
 	# Convert weapon grid positions to world positions
 	var weapon_world_positions = []
 	for grid_pos in weapon_positions:
@@ -684,6 +691,22 @@ func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker
 
 		# Get world position of target center - THIS is where projectiles should go
 		target_position = defender_display.grid_to_world_position(int(target_center_x), int(target_center_y))
+
+	# Determine weapon type
+	var use_lasers = (attacker == player_data)
+
+	# Capture weapon fire action for replay (Feature: Visual Replay Actions)
+	var weapon_fire_action = {
+		"attacker": attacker_name,
+		"weapon_positions": weapon_positions.duplicate(),
+		"target_position": target_position,
+		"target_room_id": target_room_id,
+		"damage": damage,
+		"shield_absorption": shield_absorption,
+		"use_lasers": use_lasers
+	}
+	current_turn_weapon_actions.append(weapon_fire_action)
+	print("DEBUG: Captured weapon fire action - attacker=%s, weapons=%d, target_pos=%s" % [attacker_name, weapon_positions.size(), target_position])
 
 	# Feature 1 MVP: Draw targeting line with arrow to specific target
 	var targeting_line: Line2D = null
@@ -739,9 +762,6 @@ func _fire_weapons_with_effects(attacker: ShipData, defender: ShipData, attacker
 				# Return to normal
 				room_container.modulate = Color(1.0, 1.0, 1.0, 1.0)  # Normal color
 				await get_tree().create_timer(0.05 * speed_multiplier).timeout
-
-	# Determine weapon type based on mission/ship (player uses lasers, enemy uses torpedos for variety)
-	var use_lasers = (attacker == player_data)
 
 	# Play laser fire sound
 	AudioManager.play_laser_fire()
@@ -959,6 +979,18 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			# Destroy entire room instance (data)
 			defender.destroy_room_instance(room_id)
 
+			# Capture room destruction action for replay (Feature: Visual Replay Actions)
+			var owner_name = "player" if defender == player_data else "enemy"
+			var destruction_action = {
+				"owner": owner_name,
+				"room_id": room_id,
+				"room_type": room_type,
+				"tiles": room_data["tiles"].duplicate(),
+				"is_reactor": room_type == RoomData.RoomType.REACTOR
+			}
+			current_turn_destruction_actions.append(destruction_action)
+			print("DEBUG: Captured room destruction action - owner=%s, room_type=%s, room_id=%d" % [owner_name, RoomData.get_label(room_type), room_id])
+
 			# Phase 7.4: Destroy entire shaped room visual with all tiles simultaneously
 			var first_tile = room_data["tiles"][0]
 			print("DEBUG Combat: Destroying room_id=", room_id, ", type=", RoomData.get_label(room_type), ", tiles=", room_data["tiles"].size())
@@ -1003,6 +1035,17 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 
 			# Play explosion sound
 			AudioManager.play_explosion()
+
+			# Capture room destruction action for replay (Feature: Visual Replay Actions - fallback path)
+			var owner_name = "player" if defender == player_data else "enemy"
+			var destruction_action = {
+				"owner": owner_name,
+				"room_id": -1,  # No room ID for single-tile fallback
+				"room_type": room_type,
+				"tiles": [pos],  # Single tile
+				"is_reactor": room_type == RoomData.RoomType.REACTOR
+			}
+			current_turn_destruction_actions.append(destruction_action)
 
 			defender.destroy_room_at(pos.x, pos.y)
 			await defender_display.destroy_room_visual(pos.x, pos.y, speed_multiplier)
@@ -1363,6 +1406,12 @@ func _capture_turn_snapshot():
 	# Capture events from this turn
 	snapshot.events = current_turn_events.duplicate()
 	current_turn_events.clear()
+
+	# Capture action data for replay (Feature: Visual Replay Actions)
+	snapshot.weapon_fire_actions = current_turn_weapon_actions.duplicate(true)  # Deep copy
+	snapshot.room_destruction_actions = current_turn_destruction_actions.duplicate(true)  # Deep copy
+	current_turn_weapon_actions.clear()
+	current_turn_destruction_actions.clear()
 
 	# Add to battle result
 	battle_result.add_turn_snapshot(snapshot)

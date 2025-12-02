@@ -12,12 +12,20 @@ extends Control
 @onready var enemy_health_label: Label = $EnemyHealthLabel
 @onready var events_log: RichTextLabel = $EventsPanel/EventsLog
 @onready var back_button: Button = $BackButton
+@onready var combat_fx: CombatFX = $CombatFX
 
 ## Battle data
 var battle_result: BattleResult = null
 var original_player_data: ShipData = null
 var original_enemy_data: ShipData = null
 var current_turn: int = 0
+
+## Reconstructed ship data for current turn (for action playback)
+var player_data: ShipData = null
+var enemy_data: ShipData = null
+
+## Speed control for action playback
+var speed_multiplier: float = 1.0
 
 func _ready():
 	print("DEBUG ReplayViewer: _ready() called - scene is loading")
@@ -57,7 +65,7 @@ func _ready():
 ## Handle turn change from timeline scrubbing
 func _on_turn_changed(turn: int):
 	current_turn = turn
-	_update_displays_for_turn(turn)
+	await _update_displays_for_turn(turn)
 
 ## Update all displays for a specific turn
 func _update_displays_for_turn(turn: int):
@@ -69,23 +77,23 @@ func _update_displays_for_turn(turn: int):
 
 	print("DEBUG ReplayViewer: Displaying turn ", turn, " - ", snapshot.get_summary())
 
-	# Reconstruct ship data from snapshot
-	var player_ship = _reconstruct_ship_data_from_snapshot(snapshot, true)
-	var enemy_ship = _reconstruct_ship_data_from_snapshot(snapshot, false)
+	# Reconstruct ship data from snapshot and store as instance variables
+	player_data = _reconstruct_ship_data_from_snapshot(snapshot, true)
+	enemy_data = _reconstruct_ship_data_from_snapshot(snapshot, false)
 
 	# Update ship displays
-	print("DEBUG ReplayViewer: Player ship grid size: ", player_ship.grid.size(), "x", player_ship.grid[0].size() if player_ship.grid.size() > 0 else 0)
-	print("DEBUG ReplayViewer: Enemy ship grid size: ", enemy_ship.grid.size(), "x", enemy_ship.grid[0].size() if enemy_ship.grid.size() > 0 else 0)
+	print("DEBUG ReplayViewer: Player ship grid size: ", player_data.grid.size(), "x", player_data.grid[0].size() if player_data.grid.size() > 0 else 0)
+	print("DEBUG ReplayViewer: Enemy ship grid size: ", enemy_data.grid.size(), "x", enemy_data.grid[0].size() if enemy_data.grid.size() > 0 else 0)
 
-	player_ship_display.set_ship_data(player_ship)
-	enemy_ship_display.set_ship_data(enemy_ship)
+	player_ship_display.set_ship_data(player_data)
+	enemy_ship_display.set_ship_data(enemy_data)
 
 	# Position ships properly (deferred to allow layout to complete)
 	_position_ships.call_deferred()
 
 	# Update power visuals
-	player_ship_display.update_power_visuals(player_ship)
-	enemy_ship_display.update_power_visuals(enemy_ship)
+	player_ship_display.update_power_visuals(player_data)
+	enemy_ship_display.update_power_visuals(enemy_data)
 
 	# Update turn indicator
 	turn_indicator.text = "TURN %d / %d" % [turn + 1, battle_result.total_turns]  # 1-indexed for display
@@ -96,6 +104,9 @@ func _update_displays_for_turn(turn: int):
 
 	# Display events for this turn
 	_display_turn_events(turn)
+
+	# Play visual actions for this turn (Feature: Visual Replay Actions)
+	await _play_turn_actions(snapshot)
 
 ## Position ships after layout pass (same logic as Combat.gd)
 func _position_ships():
@@ -251,3 +262,119 @@ func _on_back_pressed():
 func _return_to_combat():
 	# Return to combat scene (or designer if combat has ended)
 	get_tree().change_scene_to_file("res://scenes/combat/Combat.tscn")
+
+## Get current speed multiplier (for CombatFX to access)
+func _get_speed_multiplier_value() -> float:
+	return speed_multiplier
+
+## Play back all actions from a turn snapshot (Feature: Visual Replay Actions)
+func _play_turn_actions(snapshot: TurnSnapshot):
+	# Play weapon fire actions
+	for action in snapshot.weapon_fire_actions:
+		await _play_weapon_fire_action(action)
+
+	# Play room destruction actions
+	for action in snapshot.room_destruction_actions:
+		await _play_room_destruction_action(action)
+
+## Play back a single weapon fire action
+func _play_weapon_fire_action(action: Dictionary):
+	# Get attacker and defender displays
+	var attacker_display: ShipDisplay
+	var defender_display: ShipDisplay
+
+	if action["attacker"] == "player":
+		attacker_display = player_ship_display
+		defender_display = enemy_ship_display
+	else:
+		attacker_display = enemy_ship_display
+		defender_display = player_ship_display
+
+	# Get weapon grid positions
+	var weapon_positions: Array = action["weapon_positions"]
+	if weapon_positions.is_empty():
+		return
+
+	# Convert grid positions to world positions
+	var weapon_world_positions = []
+	for grid_pos in weapon_positions:
+		var world_pos = attacker_display.grid_to_world_position(grid_pos.x, grid_pos.y)
+		weapon_world_positions.append(world_pos)
+
+	# Get target position
+	var target_position: Vector2 = action["target_position"]
+	var use_lasers: bool = action["use_lasers"]
+	var damage: int = action["damage"]
+	var shield_absorption: int = action["shield_absorption"]
+
+	# Play laser fire sound
+	AudioManager.play_laser_fire()
+
+	# Fire all weapons simultaneously
+	for weapon_pos in weapon_world_positions:
+		# Spawn muzzle flash
+		if combat_fx:
+			combat_fx.spawn_muzzle_flash(weapon_pos, 0.1)
+
+		# Small delay between muzzle flash and projectile
+		await get_tree().create_timer(0.05 * speed_multiplier).timeout
+
+		# Fire projectile
+		if combat_fx:
+			if use_lasers:
+				combat_fx.spawn_laser_beam(weapon_pos, target_position, 0.3)
+			else:
+				combat_fx.spawn_torpedo(weapon_pos, target_position, 0.5)
+
+	# Wait for projectiles to reach target
+	var projectile_travel_time = 0.3 if use_lasers else 0.5
+	await get_tree().create_timer(projectile_travel_time * speed_multiplier).timeout
+
+	# Spawn impacts
+	if combat_fx:
+		if shield_absorption > 0:
+			combat_fx.spawn_shield_impact(target_position, 60.0, 0.4)
+
+		if damage - shield_absorption > 0:
+			combat_fx.spawn_hull_impact(target_position, 30, 0.5)
+
+			if damage - shield_absorption > 20:
+				combat_fx.spawn_screen_shake(5.0, 0.2)
+
+	# Wait for impacts to complete
+	await get_tree().create_timer(0.3 * speed_multiplier).timeout
+
+## Play back a single room destruction action
+func _play_room_destruction_action(action: Dictionary):
+	# Get the ship display
+	var ship_display: ShipDisplay
+
+	if action["owner"] == "player":
+		ship_display = player_ship_display
+	else:
+		ship_display = enemy_ship_display
+
+	var room_type: int = action["room_type"]
+	var tiles: Array = action["tiles"]
+	var room_id: int = action["room_id"]
+
+	# Play explosion sound
+	AudioManager.play_explosion()
+
+	# Destroy room visual
+	var first_tile = tiles[0]
+	await ship_display.destroy_room_visual(
+		first_tile.x, first_tile.y, speed_multiplier, tiles, room_id
+	)
+
+	# Small delay between destructions
+	await get_tree().create_timer(0.1 * speed_multiplier).timeout
+
+	# If reactor destroyed, update power visuals
+	if action["is_reactor"]:
+		# Note: The ship data already has the correct power state from the snapshot
+		# We just need to update the visuals to match
+		if action["owner"] == "player":
+			player_ship_display.update_power_visuals(player_data)
+		else:
+			enemy_ship_display.update_power_visuals(enemy_data)
