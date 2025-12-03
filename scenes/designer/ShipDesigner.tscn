@@ -4,12 +4,12 @@
 [ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
 [ext_resource type="PackedScene" uid="uid://gbexenfull3j" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://p7hx2grevdey" path="res://scenes/designer/components/SpecificationsPanel.tscn" id="2_specifications"]
-[ext_resource type="PackedScene" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
+[ext_resource type="PackedScene" uid="uid://bh06bckasjnjq" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
 [ext_resource type="PackedScene" uid="uid://walih11idf0w" path="res://scenes/designer/components/SynergyGuidePanel.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://b3vn8y4qxc7h2" path="res://scenes/designer/components/TemplateNameDialog.tscn" id="5_template_name"]
 [ext_resource type="PackedScene" uid="uid://cc7qm3y5r8vph" path="res://scenes/designer/components/TemplateListPanel.tscn" id="6_template_list"]
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="7_ship_stats"]
-[ext_resource type="PackedScene" path="res://scenes/mission/EnemySetupPanel.tscn" id="9_enemy_setup"]
+[ext_resource type="PackedScene" uid="uid://h4cfuumnaovx" path="res://scenes/mission/EnemySetupPanel.tscn" id="9_enemy_setup"]
 [ext_resource type="Theme" path="res://assets/themes/blueprint_theme.tres" id="10_blueprint_theme"]
 [ext_resource type="Texture2D" uid="uid://det0ehgyqq2qp" path="res://assets/sprites/ui/save.png" id="11_icon_save"]
 [ext_resource type="Texture2D" uid="uid://3mhepptrw5ex" path="res://assets/sprites/ui/load.png" id="12_icon_load"]
@@ -572,9 +572,9 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -328.0
-offset_top = -413.0
+offset_top = -457.0
 offset_right = -28.0
-offset_bottom = -213.0
+offset_bottom = -151.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -881,11 +881,11 @@ custom_minimum_size = Vector2(50, 0)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
 theme_override_font_sizes/font_size = 10
-text = "THEME"
+text = "HULL"
 vertical_alignment = 1
 
 [node name="ThemeDropdown" type="OptionButton" parent="BottomMenuBar/MenuBarContainer/ThemeSection"]
-custom_minimum_size = Vector2(120, 32)
+custom_minimum_size = Vector2(140, 32)
 layout_mode = 2
 size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
@@ -893,9 +893,19 @@ theme_override_font_sizes/font_size = 11
 theme_override_styles/normal = SubResource("StyleBoxFlat_menu_button_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_menu_button_hover")
 selected = 0
-item_count = 1
-popup/item_0/text = "BLUEPRINT"
+item_count = 6
+popup/item_0/text = "NO HULL"
 popup/item_0/id = 0
+popup/item_1/text = "FRIGATE"
+popup/item_1/id = 1
+popup/item_2/text = "CORVETTE"
+popup/item_2/id = 2
+popup/item_3/text = "DESTROYER"
+popup/item_3/id = 3
+popup/item_4/text = "CRUISER"
+popup/item_4/id = 4
+popup/item_5/text = "BATTLESHIP"
+popup/item_5/id = 5
 
 [node name="Separator4" type="ColorRect" parent="BottomMenuBar/MenuBarContainer"]
 custom_minimum_size = Vector2(1, 32)

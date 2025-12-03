@@ -120,8 +120,8 @@ func _on_back_pressed():
 	# Play button click sound
 	AudioManager.play_button_click()
 
-	# For now, just exit
-	get_tree().quit()
+	# Return to main menu
+	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
 
 ## Button hover start - scale up
 func _on_button_hover_start(button: Button):

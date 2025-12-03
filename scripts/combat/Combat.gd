@@ -149,7 +149,8 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	current_zoom = 1.0
 	pan_offset = Vector2.ZERO
 	ship_battle_area.scale = Vector2(1.0, 1.0)
-	ship_battle_area.position = Vector2.ZERO
+	# Don't reset position - let scene anchors/offsets handle it
+	# ship_battle_area.position is used for WASD panning offset only
 	zoom_level_label.text = "100%"
 	zoom_in_button.disabled = false
 	zoom_out_button.disabled = false
@@ -175,10 +176,10 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 		enemy_data = ShipData.create_enemy_from_id(enemy_id)
 
 	# Store original ship data for replay viewer (Feature 2: Timeline Bar & Scrubbing)
-	# Must store BEFORE combat modifies them (rooms destroyed, HP changed)
-	GameState.original_player_data = player_data
-	GameState.original_enemy_data = enemy_data
-	print("DEBUG: Stored original ship data in GameState for replay")
+	# Must store DEEP COPIES so combat doesn't modify the originals
+	GameState.original_player_data = player_data.duplicate_deep()
+	GameState.original_enemy_data = enemy_data.duplicate_deep()
+	print("DEBUG: Stored original ship data in GameState for replay (deep copies)")
 
 	# Set up ship displays
 	print("DEBUG Combat: Setting player_ship_display with grid size: ", player_data.grid.size(), "x", player_data.grid[0].size() if player_data.grid.size() > 0 else 0)
@@ -186,31 +187,6 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	player_ship_display.set_ship_data(player_data)
 	print("DEBUG Combat: Setting enemy_ship_display with grid size: ", enemy_data.grid.size(), "x", enemy_data.grid[0].size() if enemy_data.grid.size() > 0 else 0)
 	enemy_ship_display.set_ship_data(enemy_data)
-
-	# DEBUG: Add visible borders to containers to see layout
-	var player_container = player_ship_display.get_parent()
-	var enemy_container = enemy_ship_display.get_parent()
-
-	print("DEBUG: Player container size: ", player_container.size)
-	print("DEBUG: Enemy container size: ", enemy_container.size)
-	print("DEBUG: Player container global position: ", player_container.global_position)
-	print("DEBUG: Enemy container global position: ", enemy_container.global_position)
-
-	var player_border = ColorRect.new()
-	player_border.color = Color(0, 1, 0, 0.3)  # Green semi-transparent
-	player_border.anchor_right = 1.0
-	player_border.anchor_bottom = 1.0
-	player_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	player_container.add_child(player_border)
-	player_container.move_child(player_border, 0)  # Send to back
-
-	var enemy_border = ColorRect.new()
-	enemy_border.color = Color(1, 0, 0, 0.3)  # Red semi-transparent
-	enemy_border.anchor_right = 1.0
-	enemy_border.anchor_bottom = 1.0
-	enemy_border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	enemy_container.add_child(enemy_border)
-	enemy_container.move_child(enemy_border, 0)  # Send to back
 
 	# Position ships to face each other at the center with dynamic scaling
 	var player_grid_width = player_ship_display.GRID_WIDTH
@@ -254,33 +230,6 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	var player_y_offset = (max_visual_height - player_visual_height) / 2.0
 	var enemy_y_offset = (max_visual_height - enemy_visual_height) / 2.0
 
-	# Position ships horizontally to align under their respective health bars
-	# Screen: 1920x1080
-	# ShipBattleArea: centered at (960, 540), spans x: 360-1560 (when fully laid out)
-	# PlayerContainer: x: 0-600 in container coords, but global x: 360-960 after layout
-	# EnemyContainer: x: 600-1200 in container coords, but global x: 960-1560 after layout
-	# Player HP bar: global x: 348-648, center at 498
-	# Enemy HP bar: global x: 1261-1561, center at 1411
-
-	# During _ready(), containers haven't been laid out yet, so their global_position is (0,0) and (600,0)
-	# But after layout, ShipBattleArea will offset them by +360 pixels
-	# So we need to position ships accounting for final positions:
-
-	# Player ship: HP bar center at 498, container will be at 360-960
-	# So ship should be at 498-360=138 in container, but containers report (0,0) now
-	# Actually, let's position relative to container centers instead
-
-	# Player HP bar center: 498, container center will be at 660 (360+300)
-	# Ship offset from container center: 498-660 = -162
-	var player_x = 300 - 162  # 138
-
-	# Enemy HP bar center: 1411, container center will be at 1260 (960+300)
-	# Ship offset from container center: 1411-1260 = 151
-	var enemy_x = 300 + 151  # 451
-
-	# Apply positions
-	player_ship_display.position = Vector2(player_x, base_y + player_y_offset)
-	enemy_ship_display.position = Vector2(enemy_x, base_y + enemy_y_offset)
 
 	print("DEBUG Combat scaling: Player grid=%dx%d, Enemy grid=%dx%d, Scale=%.2f" % [player_grid_width, player_grid_height, enemy_grid_width, enemy_grid_height, uniform_scale])
 	print("DEBUG Combat positions: Player ShipDisplay pos=", player_ship_display.position, ", Enemy ShipDisplay pos=", enemy_ship_display.position)
@@ -327,6 +276,9 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 
 	# Set initial turn indicator with visual emphasis
 	_update_turn_indicator(is_player_turn)
+
+	# Capture initial state BEFORE combat starts (Turn 0 = pre-combat state)
+	_capture_initial_snapshot()
 
 	# Show initiative message if hull bonus gave player advantage (Phase 10.3)
 	if is_player_turn and hull_data["bonus_type"] == "initiative":
@@ -1439,6 +1391,31 @@ func _get_powered_room_ids(ship: ShipData) -> Array[int]:
 		if is_powered:
 			ids.append(room_id)
 	return ids
+
+## Capture initial combat state before any turns execute (Feature: State Capture & Replay)
+func _capture_initial_snapshot():
+	if not battle_result:
+		return
+
+	var snapshot = TurnSnapshot.new(0)  # Turn 0 = initial pre-combat state
+
+	# Capture player initial state
+	snapshot.player_hull_hp = player_data.current_hp
+	snapshot.player_active_room_ids = _get_active_room_ids(player_data)
+	snapshot.player_powered_room_ids = _get_powered_room_ids(player_data)
+
+	# Capture enemy initial state
+	snapshot.enemy_hull_hp = enemy_data.current_hp
+	snapshot.enemy_active_room_ids = _get_active_room_ids(enemy_data)
+	snapshot.enemy_powered_room_ids = _get_powered_room_ids(enemy_data)
+
+	# Add initial event
+	snapshot.events.append("Combat Start")
+
+	# Add to battle result
+	battle_result.add_turn_snapshot(snapshot)
+
+	print("DEBUG: Captured initial state - ", snapshot.get_summary())
 
 ## Create enemy ship from template (Phase 10.8 - template system)
 func _create_enemy_from_template(template: ShipTemplate) -> ShipData:

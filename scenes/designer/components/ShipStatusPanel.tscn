@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://ship_status_panel"]
+[gd_scene load_steps=3 format=3 uid="uid://bh06bckasjnjq"]
 
-[ext_resource type="Script" path="res://scripts/designer/ShipStatusPanel.gd" id="1"]
+[ext_resource type="Script" uid="uid://msqcnwwyhudy" path="res://scripts/designer/ShipStatusPanel.gd" id="1"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 1)
@@ -13,7 +13,7 @@ border_color = Color(0.290196, 0.886275, 0.886275, 1)
 [node name="ShipStatusPanel" type="Panel"]
 custom_minimum_size = Vector2(300, 200)
 offset_right = 300.0
-offset_bottom = 200.0
+offset_bottom = 293.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_status")
 script = ExtResource("1")
 

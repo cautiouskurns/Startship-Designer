@@ -257,6 +257,17 @@ func reset_progression():
 	current_mission = 0
 	current_hull = HullType.CRUISER
 
+## Reset entire game state (for new game)
+func reset_game():
+	missions_unlocked = [true, false, false]
+	current_mission = 0
+	current_hull = HullType.CRUISER
+	template_to_load = null
+	redesign_template = null
+	last_battle_result = null
+	original_player_data = null
+	original_enemy_data = null
+
 ## Get hull data for a specific hull type (Phase 10.1)
 func get_hull_data(hull_type: HullType) -> Dictionary:
 	_load_data_from_json()  # Ensure data is loaded

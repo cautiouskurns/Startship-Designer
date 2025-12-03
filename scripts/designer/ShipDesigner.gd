@@ -184,8 +184,13 @@ func _ready():
 	enemy_setup_button_menu.mouse_entered.connect(_on_button_hover_start.bind(enemy_setup_button_menu))
 	enemy_setup_button_menu.mouse_exited.connect(_on_button_hover_end.bind(enemy_setup_button_menu))
 
-	# Initialize theme dropdown with blueprint theme (default)
+	# Initialize hull overlay dropdown to NO HULL (default)
 	theme_dropdown.selected = 0
+
+	# Connect hull overlay dropdown signal
+	theme_dropdown.item_selected.connect(_on_hull_overlay_selected)
+	theme_dropdown.mouse_entered.connect(_on_button_hover_start.bind(theme_dropdown))
+	theme_dropdown.mouse_exited.connect(_on_button_hover_end.bind(theme_dropdown))
 
 	# Connect room palette signals
 	room_palette.room_type_selected.connect(_on_room_type_selected)
@@ -1826,3 +1831,42 @@ func _on_enemy_setup_pressed():
 
 	if enemy_setup_panel:
 		enemy_setup_panel.show_panel()
+
+## Handle hull overlay selection from dropdown
+func _on_hull_overlay_selected(index: int):
+	# Play button click sound
+	AudioManager.play_button_click()
+
+	# Map dropdown index to HullType enum
+	var hull_type: HullData.HullType
+	match index:
+		0:  # NO HULL
+			hull_type = HullData.HullType.NONE
+		1:  # FRIGATE
+			hull_type = HullData.HullType.FRIGATE
+		2:  # CORVETTE
+			hull_type = HullData.HullType.CORVETTE
+		3:  # DESTROYER
+			hull_type = HullData.HullType.DESTROYER
+		4:  # CRUISER
+			hull_type = HullData.HullType.CRUISER
+		5:  # BATTLESHIP
+			hull_type = HullData.HullType.BATTLESHIP
+		_:
+			hull_type = HullData.HullType.NONE
+
+	# Update current hull type
+	current_hull_type = hull_type
+
+	# Show or hide hull overlay based on selection
+	if hull_type == HullData.HullType.NONE:
+		# Hide hull overlay
+		hull_overlay_visible = false
+		ship_grid.clear_hull_overlay()
+	else:
+		# Show hull overlay for selected type
+		hull_overlay_visible = true
+		var hull_shape = HullData.get_shape(hull_type)
+		ship_grid.draw_hull_overlay(hull_shape)
+
+	print("Hull overlay changed to: ", HullData.get_label(hull_type))

@@ -12,6 +12,11 @@ extends Control
 @onready var enemy_health_label: Label = $EnemyHealthLabel
 @onready var events_log: RichTextLabel = $EventsPanel/EventsLog
 @onready var back_button: Button = $BackButton
+@onready var continue_button: Button = $ContinueButton
+@onready var play_button: Button = $PlayButton
+@onready var pause_button: Button = $PauseButton
+@onready var restart_button: Button = $RestartButton
+@onready var end_button: Button = $EndButton
 @onready var combat_fx: CombatFX = $CombatFX
 
 ## Battle data
@@ -26,6 +31,10 @@ var enemy_data: ShipData = null
 
 ## Speed control for action playback
 var speed_multiplier: float = 1.0
+
+## Playback controls
+var is_playing: bool = false
+const PLAYBACK_TURN_DELAY: float = 1.5  # Seconds between turns during auto-play
 
 func _ready():
 	print("DEBUG ReplayViewer: _ready() called - scene is loading")
@@ -58,6 +67,41 @@ func _ready():
 
 	# Connect back button
 	back_button.pressed.connect(_on_back_pressed)
+	back_button.mouse_entered.connect(_on_button_hover_start.bind(back_button))
+	back_button.mouse_exited.connect(_on_button_hover_end.bind(back_button))
+
+	# Connect continue button
+	continue_button.pressed.connect(_on_continue_pressed)
+	continue_button.mouse_entered.connect(_on_button_hover_start.bind(continue_button))
+	continue_button.mouse_exited.connect(_on_button_hover_end.bind(continue_button))
+
+	# Configure continue button based on mission and outcome
+	var current_mission = battle_result.mission_index
+	if current_mission >= 2 or not battle_result.player_won:
+		# Final mission completed or battle lost - hide continue button
+		continue_button.visible = false
+	elif current_mission == 1:
+		# Mission 2 completed - next is the final mission
+		continue_button.text = "FINAL MISSION"
+
+	# Connect playback control buttons
+	play_button.pressed.connect(_on_play_pressed)
+	pause_button.pressed.connect(_on_pause_pressed)
+	restart_button.pressed.connect(_on_restart_pressed)
+	end_button.pressed.connect(_on_end_pressed)
+
+	# Connect hover effects for playback buttons
+	play_button.mouse_entered.connect(_on_button_hover_start.bind(play_button))
+	play_button.mouse_exited.connect(_on_button_hover_end.bind(play_button))
+	pause_button.mouse_entered.connect(_on_button_hover_start.bind(pause_button))
+	pause_button.mouse_exited.connect(_on_button_hover_end.bind(pause_button))
+	restart_button.mouse_entered.connect(_on_button_hover_start.bind(restart_button))
+	restart_button.mouse_exited.connect(_on_button_hover_end.bind(restart_button))
+	end_button.mouse_entered.connect(_on_button_hover_start.bind(end_button))
+	end_button.mouse_exited.connect(_on_button_hover_end.bind(end_button))
+
+	# Initially disable pause button (nothing playing yet)
+	pause_button.disabled = true
 
 	# Display initial state (Turn 0) - deferred to allow layout to complete
 	_update_displays_for_turn.call_deferred(0)
@@ -83,10 +127,24 @@ func _update_displays_for_turn(turn: int):
 
 	# Update ship displays
 	print("DEBUG ReplayViewer: Player ship grid size: ", player_data.grid.size(), "x", player_data.grid[0].size() if player_data.grid.size() > 0 else 0)
+	print("DEBUG ReplayViewer: Player ship room_instances: ", player_data.room_instances.size())
 	print("DEBUG ReplayViewer: Enemy ship grid size: ", enemy_data.grid.size(), "x", enemy_data.grid[0].size() if enemy_data.grid.size() > 0 else 0)
+	print("DEBUG ReplayViewer: Enemy ship room_instances: ", enemy_data.room_instances.size())
+	print("DEBUG ReplayViewer: Enemy ship room_instances keys: ", enemy_data.room_instances.keys())
+
+	# Check if grid has actual rooms
+	var enemy_room_count = 0
+	for y in range(enemy_data.grid.size()):
+		for x in range(enemy_data.grid[y].size()):
+			if enemy_data.grid[y][x] != 0:  # RoomData.RoomType.EMPTY
+				enemy_room_count += 1
+	print("DEBUG ReplayViewer: Enemy ship non-empty tiles in grid: ", enemy_room_count)
 
 	player_ship_display.set_ship_data(player_data)
+	print("DEBUG ReplayViewer: Player ship children after set_ship_data: ", player_ship_display.get_child_count())
+
 	enemy_ship_display.set_ship_data(enemy_data)
+	print("DEBUG ReplayViewer: Enemy ship children after set_ship_data: ", enemy_ship_display.get_child_count())
 
 	# Position ships properly (deferred to allow layout to complete)
 	_position_ships.call_deferred()
@@ -110,6 +168,10 @@ func _update_displays_for_turn(turn: int):
 
 ## Position ships after layout pass (same logic as Combat.gd)
 func _position_ships():
+	print("DEBUG ReplayViewer: _position_ships() CALLED")
+	print("DEBUG ReplayViewer: enemy_ship_display exists in _position_ships: ", enemy_ship_display != null)
+	print("DEBUG ReplayViewer: enemy_ship_display visible in _position_ships: ", enemy_ship_display.visible if enemy_ship_display else "null")
+
 	var player_grid_width = player_ship_display.GRID_WIDTH
 	var player_grid_height = player_ship_display.GRID_HEIGHT
 	var enemy_grid_width = enemy_ship_display.GRID_WIDTH
@@ -119,6 +181,8 @@ func _position_ships():
 	var container_width = 600.0
 	var margin = 50.0
 
+	print("DEBUG ReplayViewer: enemy GRID_WIDTH = ", enemy_grid_width, ", GRID_HEIGHT = ", enemy_grid_height)
+
 	# Calculate scale
 	var max_container_size = container_width - margin * 2
 	var player_max_dimension = max(player_grid_width * tile_size, player_grid_height * tile_size)
@@ -127,25 +191,17 @@ func _position_ships():
 	var enemy_scale = min(1.0, max_container_size / enemy_max_dimension) if enemy_max_dimension > 0 else 0.6
 	var uniform_scale = min(player_scale, enemy_scale, 0.6)
 
+	print("DEBUG ReplayViewer: uniform_scale = ", uniform_scale)
+
 	# Apply scale
 	player_ship_display.scale = Vector2(uniform_scale, uniform_scale)
-	enemy_ship_display.scale = Vector2(-uniform_scale, uniform_scale)
+	# Don't flip enemy - just use positive scale
+	enemy_ship_display.scale = Vector2(uniform_scale, uniform_scale)
 
-	# Calculate positions
-	var player_visual_height = player_grid_height * tile_size * uniform_scale
-	var enemy_visual_height = enemy_grid_height * tile_size * uniform_scale
-	var max_visual_height = max(player_visual_height, enemy_visual_height)
-	var base_y = (container_height - max_visual_height) / 2.0
-	var player_y_offset = (max_visual_height - player_visual_height) / 2.0
-	var enemy_y_offset = (max_visual_height - enemy_visual_height) / 2.0
+	print("DEBUG ReplayViewer: After setting scale - enemy_ship_display.scale = ", enemy_ship_display.scale)
 
-	# Position horizontally (same as Combat.gd)
-	var player_x = 300 - 162  # 138
-	var enemy_x = 300 + 151  # 451
-
-	# Apply positions
-	player_ship_display.position = Vector2(player_x, base_y + player_y_offset)
-	enemy_ship_display.position = Vector2(enemy_x, base_y + enemy_y_offset)
+	# Don't manually set positions - let scene anchors/offsets handle it (same as Combat.gd)
+	# Positions come from scene file: PlayerShipDisplay at (298, -4), EnemyShipDisplay at (300, 0)
 
 	print("DEBUG ReplayViewer scaling: Player grid=%dx%d, Enemy grid=%dx%d, Scale=%.2f" % [player_grid_width, player_grid_height, enemy_grid_width, enemy_grid_height, uniform_scale])
 	print("DEBUG ReplayViewer positions: Player ShipDisplay pos=", player_ship_display.position, ", Enemy ShipDisplay pos=", enemy_ship_display.position)
@@ -256,7 +312,14 @@ func _display_turn_events(turn: int):
 
 ## Handle back button press
 func _on_back_pressed():
+	AudioManager.play_button_click()
 	_return_to_combat()
+
+## Handle continue button press
+func _on_continue_pressed():
+	AudioManager.play_button_click()
+	# Go to mission select to choose next mission
+	get_tree().change_scene_to_file("res://scenes/mission/MissionSelect.tscn")
 
 ## Return to combat scene
 func _return_to_combat():
@@ -378,3 +441,94 @@ func _play_room_destruction_action(action: Dictionary):
 			player_ship_display.update_power_visuals(player_data)
 		else:
 			enemy_ship_display.update_power_visuals(enemy_data)
+
+## Handle play button press
+func _on_play_pressed():
+	AudioManager.play_button_click()
+
+	if is_playing:
+		return  # Already playing
+
+	is_playing = true
+
+	# Update button states
+	play_button.disabled = true
+	pause_button.disabled = false
+
+	# If at the end, restart from beginning
+	if current_turn >= battle_result.total_turns - 1:
+		current_turn = 0
+		timeline_bar.set_current_turn(0)
+		await _update_displays_for_turn(0)
+
+	# Start auto-play coroutine
+	_auto_play_turns()
+
+## Auto-play through all turns (coroutine)
+func _auto_play_turns():
+	while is_playing and current_turn < battle_result.total_turns - 1:
+		# Wait for delay before advancing to next turn
+		await get_tree().create_timer(PLAYBACK_TURN_DELAY).timeout
+
+		# Check if still playing (might have been paused during delay)
+		if not is_playing:
+			break
+
+		# Advance to next turn
+		var next_turn = current_turn + 1
+		current_turn = next_turn
+		timeline_bar.set_current_turn(next_turn)
+
+		# Wait for turn display and actions to complete
+		await _update_displays_for_turn(next_turn)
+
+	# Reached the end or was stopped, update button states
+	if is_playing:
+		_stop_playback()
+
+## Handle pause button press
+func _on_pause_pressed():
+	AudioManager.play_button_click()
+	_stop_playback()
+
+## Stop playback (internal helper)
+func _stop_playback():
+	is_playing = false
+
+	# Update button states
+	play_button.disabled = false
+	pause_button.disabled = true
+
+## Handle restart button press
+func _on_restart_pressed():
+	AudioManager.play_button_click()
+
+	# Stop playback if playing
+	if is_playing:
+		_stop_playback()
+
+	# Jump to turn 0
+	timeline_bar.set_current_turn(0)
+
+## Handle end button press
+func _on_end_pressed():
+	AudioManager.play_button_click()
+
+	# Stop playback if playing
+	if is_playing:
+		_stop_playback()
+
+	# Jump to last turn
+	timeline_bar.set_current_turn(battle_result.total_turns - 1)
+
+## Button hover start - scale up
+func _on_button_hover_start(button: Button):
+	if button.disabled:
+		return
+	var tween = create_tween()
+	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.1)
+
+## Button hover end - scale back
+func _on_button_hover_end(button: Button):
+	var tween = create_tween()
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)

@@ -51,10 +51,11 @@ theme_override_constants/separation = 360
 custom_minimum_size = Vector2(600, 600)
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_vertical = 6
 
 [node name="PlayerShipDisplay" type="Node2D" parent="ShipBattleArea/PlayerShipContainer"]
-position = Vector2(300, 300)
+position = Vector2(299.00003, 5)
+rotation = 0.0013108985
 scale = Vector2(0.6, 0.6)
 script = ExtResource("2")
 
@@ -65,7 +66,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="EnemyShipDisplay" type="Node2D" parent="ShipBattleArea/EnemyShipContainer"]
-position = Vector2(300, 300)
+position = Vector2(300, 0)
 scale = Vector2(0.6, 0.6)
 script = ExtResource("2")
 
@@ -125,9 +126,9 @@ vertical_alignment = 1
 [node name="EnemyStatsPanel" parent="." instance=ExtResource("5_ship_stats")]
 layout_mode = 0
 offset_left = 1615.0
-offset_top = 22.0
-offset_right = 1895.0
-offset_bottom = 322.0
+offset_top = 21.0
+offset_right = 1955.0
+offset_bottom = 321.0
 
 [node name="TurnIndicator" type="Label" parent="."]
 layout_mode = 1

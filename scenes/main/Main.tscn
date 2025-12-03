@@ -1,11 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://bxxsnydrqjyb7"]
 
-[ext_resource type="PackedScene" uid="uid://bh4cmg1gk2fmf" path="res://scenes/designer/ShipDesigner.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://c0qk8r2v3x7yb" path="res://scenes/ui/MainMenu.tscn" id="1"]
 
 [node name="Main" type="Node"]
 
-[node name="ShipDesigner" parent="." instance=ExtResource("1")]
-offset_left = -46.0
-offset_top = -51.0
-offset_right = -46.0
-offset_bottom = -51.0
+[node name="MainMenu" parent="." instance=ExtResource("1")]

@@ -685,3 +685,51 @@ func get_powered_weapon_grid_positions() -> Array:
 					weapon_positions.append(Vector2i(x, y))
 
 	return weapon_positions
+
+## Create a deep copy of this ShipData (for replay viewer - preserve original state)
+func duplicate_deep() -> ShipData:
+	var copy = ShipData.new()
+
+	# Deep copy grid
+	copy.grid = []
+	for y in range(grid.size()):
+		var row = []
+		for x in range(grid[y].size()):
+			row.append(grid[y][x])
+		copy.grid.append(row)
+
+	# Deep copy power_grid
+	copy.power_grid = []
+	for y in range(power_grid.size()):
+		var power_row = []
+		for x in range(power_grid[y].size()):
+			power_row.append(power_grid[y][x])
+		copy.power_grid.append(power_row)
+
+	# Deep copy room_id_grid
+	copy.room_id_grid = []
+	for y in range(room_id_grid.size()):
+		var id_row = []
+		for x in range(room_id_grid[y].size()):
+			id_row.append(room_id_grid[y][x])
+		copy.room_id_grid.append(id_row)
+
+	# Deep copy room_instances
+	copy.room_instances = {}
+	for room_id in room_instances.keys():
+		var room_data = room_instances[room_id]
+		var tiles_copy = []
+		for tile_pos in room_data["tiles"]:
+			tiles_copy.append(Vector2i(tile_pos.x, tile_pos.y))
+
+		copy.room_instances[room_id] = {
+			"type": room_data["type"],
+			"tiles": tiles_copy
+		}
+
+	# Copy simple properties
+	copy.max_hp = max_hp
+	copy.current_hp = current_hp
+	copy.targeting_priority = targeting_priority
+
+	return copy
