@@ -46,6 +46,9 @@ func _ready():
 		mouse_entered.connect(_on_relay_mouse_entered)
 		mouse_exited.connect(_on_relay_mouse_exited)
 
+	# Update ID label with room type abbreviation
+	_update_id_label()
+
 ## Resize to match parent tile (called after adding to tree)
 func resize_to_tile():
 	# Get parent (GridTile) size and subtract margin
@@ -55,8 +58,113 @@ func resize_to_tile():
 		custom_minimum_size = room_size
 		size = room_size
 
+		# Resize background outline to cover entire multi-tile component
+		_resize_background_outline()
+
 		# Position icon in the center of the multi-tile room
 		_position_icon()
+
+## Resize background outline to encompass entire multi-tile component
+func _resize_background_outline():
+	# Get Background panel node if it exists
+	var background = get_node_or_null("Background")
+	if not background:
+		return
+
+	# Make sure background doesn't block mouse input
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Get parent tile for size calculations
+	if not get_parent() or not get_parent() is GridTile:
+		# Default single tile sizing
+		background.position = Vector2.ZERO
+		background.size = size
+		background.visible = true
+		return
+
+	var parent_tile = get_parent() as GridTile
+	var tile_size = parent_tile.size
+
+	# Check if this is a multi-tile room
+	if occupied_tiles.size() <= 1:
+		# Single tile room - show background at tile size
+		background.position = Vector2.ZERO
+		background.size = tile_size  # No margin - fill entire tile
+		background.visible = true
+		return
+
+	# Multi-tile room - only show background on anchor tile
+	var is_anchor = (occupied_tiles[0] == parent_tile)
+
+	# Hide background on non-anchor tiles
+	if not is_anchor:
+		background.visible = false
+		return
+
+	# Anchor tile - show and size background to cover all tiles
+	background.visible = true
+
+	# Calculate bounding box of all tiles
+	var min_x = 999999
+	var max_x = -999999
+	var min_y = 999999
+	var max_y = -999999
+
+	for tile in occupied_tiles:
+		if tile.grid_x < min_x:
+			min_x = tile.grid_x
+		if tile.grid_x > max_x:
+			max_x = tile.grid_x
+		if tile.grid_y < min_y:
+			min_y = tile.grid_y
+		if tile.grid_y > max_y:
+			max_y = tile.grid_y
+
+	# Calculate room dimensions in tiles
+	var room_width_tiles = max_x - min_x + 1
+	var room_height_tiles = max_y - min_y + 1
+
+	# Calculate total size in pixels (no margin - fill completely)
+	var total_width = room_width_tiles * tile_size.x
+	var total_height = room_height_tiles * tile_size.y
+
+	# Position background at top-left
+	background.position = Vector2.ZERO
+
+	# Resize background to cover all tiles without gaps
+	background.size = Vector2(total_width, total_height)
+
+## Update ID label text with room type abbreviation (technical schematic styling)
+func _update_id_label():
+	# Get IDLabel node if it exists
+	var id_label = get_node_or_null("IDLabel")
+	if not id_label:
+		return
+
+	# Get room type abbreviation
+	var abbreviation = ""
+	match room_type:
+		RoomData.RoomType.BRIDGE:
+			abbreviation = "BRI"
+		RoomData.RoomType.WEAPON:
+			abbreviation = "WEA"
+		RoomData.RoomType.SHIELD:
+			abbreviation = "SHI"
+		RoomData.RoomType.ENGINE:
+			abbreviation = "ENG"
+		RoomData.RoomType.REACTOR:
+			abbreviation = "REA"
+		RoomData.RoomType.ARMOR:
+			abbreviation = "ARM"
+		RoomData.RoomType.CONDUIT:
+			abbreviation = "CON"
+		RoomData.RoomType.RELAY:
+			abbreviation = "REL"
+		_:
+			abbreviation = "???"
+
+	# Format as ABBR (e.g., WEA, SHI, etc.)
+	id_label.text = "%s" % abbreviation
 
 ## Position icon centered across multi-tile room (only visible on anchor tile)
 func _position_icon():
@@ -174,7 +282,8 @@ func _stop_pulse_animation():
 func add_occupied_tile(tile: GridTile):
 	if not tile in occupied_tiles:
 		occupied_tiles.append(tile)
-	# Update icon position after adding tile
+	# Update background outline and icon position after adding tile
+	call_deferred("_resize_background_outline")
 	call_deferred("_position_icon")
 
 ## Get all tiles occupied by this room (Phase 7.1)

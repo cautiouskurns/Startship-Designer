@@ -107,12 +107,13 @@ func set_occupying_room(room: Room, anchor: bool = false) -> void:
 	# This makes T-shapes and complex shapes display correctly
 	if not room_background:
 		room_background = ColorRect.new()
-		var bg_size = size - Vector2(1, 1)  # 0.5px margin on each side for barely visible gap
-		room_background.size = bg_size
-		room_background.position = Vector2(0.5, 0.5)
+		room_background.size = size  # No margin - fill entire tile
+		room_background.position = Vector2.ZERO
 		room_background.z_index = 0  # Behind Room node and flash overlay
 		room_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		room_background.color = RoomData.get_color(room.room_type)
+		# Use room color with subtle opacity for technical schematic style
+		var room_color = RoomData.get_color(room.room_type)
+		room_background.color = Color(room_color.r, room_color.g, room_color.b, 0.20)  # 20% opacity for visible color
 		add_child(room_background)
 
 	if anchor:
@@ -178,9 +179,9 @@ func set_powered_state(powered: bool):
 		occupying_room.set_powered(powered)
 
 	if powered:
-		# Powered: full opacity room background
+		# Powered: keep low opacity for technical schematic style
 		if room_background:
-			room_background.modulate = Color(1, 1, 1, 1)
+			room_background.modulate = Color(1, 1, 1, 1)  # Don't dim, but color already at 2% alpha
 
 		# Remove unpowered overlay if it exists
 		if unpowered_overlay:
@@ -188,9 +189,9 @@ func set_powered_state(powered: bool):
 			unpowered_overlay.queue_free()
 			unpowered_overlay = null
 	else:
-		# Unpowered: dim background + gray overlay
+		# Unpowered: further dim the already-transparent background
 		if room_background:
-			room_background.modulate = Color(1, 1, 1, 0.5)
+			room_background.modulate = Color(1, 1, 1, 0.3)  # Dim the 2% alpha even more
 
 		# Create gray overlay if it doesn't exist
 		if not unpowered_overlay:

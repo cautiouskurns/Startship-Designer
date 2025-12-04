@@ -55,7 +55,7 @@ const DESIGNER_ZOOM_MAX: float = 3.0
 const DESIGNER_ZOOM_STEP: float = 0.1
 const DESIGNER_PAN_SPEED: float = 10.0  # Pixels per frame when panning with WASD
 const DESIGNER_TILE_SIZE: int = 25  # Size of each grid tile in pixels
-const DESIGNER_TILE_SPACING: int = 2  # Gap between tiles in pixels
+const DESIGNER_TILE_SPACING: int = 1  # Gap between tiles in pixels
 
 ## ============================================================================
 ## DISPLAY CONSTANTS
