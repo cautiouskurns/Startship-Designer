@@ -2,7 +2,7 @@
 
 **Living document. Update when systems change significantly.**
 
-**Last Updated:** December 2024
+**Last Updated:** December 4, 2024
 **Version:** 0.1 MVP
 
 ---
@@ -880,6 +880,287 @@ Close replay → Return to designer → Redesign with better reactor protection
 
 ---
 
+## System 8: Crew Barks System
+
+### Overview
+
+The Crew Barks system provides atmospheric feedback during combat through short, context-aware voice lines from anonymous crew members. When the player's ship takes damage, loses systems, or crosses HP thresholds, crew members "bark" reactive statements displayed in a top-right radio chatter box. This creates immersion, helps players understand combat events, and adds personality without complex crew management.
+
+Barks are brief (3-7 words), professional military tone, and contextually filtered based on what's happening in combat. The system uses a priority queue with cooldowns to prevent spam, and barks never repeat within the same battle.
+
+### Architecture (Three Phases)
+
+**Phase 1.1: Triggering System**
+- Event detection via combat signals (component destroyed, HP thresholds)
+- Priority queue with 2-second cooldowns between barks
+- Repetition prevention (used barks tracked per battle)
+- Autoload singleton (`CrewBarkSystem`) manages global state
+
+**Phase 1.2: Bark Content & Selection**
+- Database of 58+ barks across 5 categories
+- Context-aware filtering by component type, HP level, battle state
+- Fallback to generic barks when specific ones exhausted
+- Role assignment (Engineering, Tactical, Operations, Medical, Command)
+
+**Phase 1.3: UI Presentation**
+- RadioChatterBox panel in top-right corner (400×80px)
+- Fade-in (0.3s) → Display (3s) → Fade-out (0.5s) animation
+- Integration with CombatLog for persistent history
+- Professional sci-fi styling (cyan borders, semi-transparent dark background)
+
+### BarkData Structure
+
+```gdscript
+class_name BarkData
+
+enum CrewRole {
+    ENGINEERING,   # Reactor, power, systems
+    TACTICAL,      # Weapons, targeting, damage
+    OPERATIONS,    # Shields, engines, general status
+    MEDICAL,       # Casualties, hull integrity
+    COMMAND        # Victory/defeat, morale
+}
+
+enum BarkPriority {
+    LOW,           # General updates, minor events
+    MEDIUM,        # Significant events (component loss)
+    HIGH,          # Critical events (HP < 25%, reactor destroyed)
+    CRITICAL       # Victory/defeat, imminent destruction
+}
+
+enum BarkCategory {
+    DAMAGE_REPORT,    # Component-specific destruction
+    TACTICAL_UPDATE,  # Enemy status, combat flow
+    SYSTEM_STATUS,    # Power grid, unpowered rooms
+    CREW_STRESS,      # HP thresholds, morale
+    VICTORY_DEFEAT    # Battle outcome
+}
+
+var text: String              # "Weapons offline!"
+var role: CrewRole            # ENGINEERING
+var priority: BarkPriority    # HIGH
+var category: BarkCategory    # DAMAGE_REPORT
+var audio_file: String        # (Optional) "weapon_destroyed_01.ogg"
+```
+
+### Bark Database Categories
+
+**1. Damage Reports (14 barks)**
+- Component-specific destruction events
+- Reactor: "Main reactor offline!", "Power core critical!"
+- Weapons: "Weapons offline!", "Primary batteries destroyed!"
+- Shields: "Shields are down!", "Shield generators failing!"
+- Engines: "Engine damage reported!", "Propulsion failing!"
+- Generic: "Hull breach detected!", "Direct hit!"
+
+**2. Tactical Updates (12 barks)**
+- Enemy damage state and combat flow
+- Heavy damage dealt: "Target's shields failing!", "Enemy taking critical damage!"
+- Light damage dealt: "Enemy hit!", "Shields holding!"
+- Taking damage: "We're taking heavy fire!", "Hull integrity at risk!"
+
+**3. System Status (7 barks)**
+- Power-related events
+- Unpowered rooms: "Unpowered sections detected!", "Power grid compromised!"
+- Reactor loss: "We've lost main power!", "Auxiliary power only!"
+
+**4. Crew Stress (15 barks)**
+- HP threshold-based warnings
+- 75% HP: "Hull integrity compromised!", "We're taking damage!"
+- 50% HP: "We can't take much more!", "Hull failing!"
+- 25% HP: "Critical damage!", "We're not gonna make it!"
+
+**5. Victory/Defeat (10 barks)**
+- Battle outcome reactions
+- Victory: "Target destroyed!", "Enemy neutralized!", "That's a kill!"
+- Defeat: "Hull integrity failing!", "We're breaking apart!", "Abandon ship!"
+
+### Context-Aware Selection
+
+**Component Matching:**
+```gdscript
+# When weapon destroyed, select bark where component == WEAPON
+for bark_dict in BarkDatabase.DAMAGE_REPORTS:
+    if bark_dict["component"] == RoomData.RoomType.WEAPON:
+        if not CrewBarkSystem.used_barks.has(bark_dict["text"]):
+            eligible_barks.append(bark_dict)
+
+# If no specific barks available, fall back to generic
+if eligible_barks.is_empty():
+    for bark_dict in BarkDatabase.DAMAGE_REPORTS:
+        if bark_dict["component"] == null:  # Generic
+            eligible_barks.append(bark_dict)
+```
+
+**HP Threshold Matching:**
+```gdscript
+# When HP crosses 50%, select barks tagged with hp_threshold == 50
+for bark_dict in BarkDatabase.CREW_STRESS:
+    if bark_dict.get("hp_threshold") == 50:
+        if not CrewBarkSystem.used_barks.has(bark_dict["text"]):
+            eligible_barks.append(bark_dict)
+```
+
+**Priority Queue:**
+- Barks sorted by priority (CRITICAL > HIGH > MEDIUM > LOW)
+- If queue full (max 5 barks), lowest priority dropped
+- Cooldown timer (2s) prevents rapid-fire barks
+- Queue processes automatically as cooldowns expire
+
+### RadioChatterBox UI Component
+
+**Visual Design:**
+- **Position:** Top-right corner (1500, 343) in combat scene
+- **Size:** 400×80 pixels (custom_minimum_size)
+- **Background:** Dark semi-transparent (#0F1419 at 90% opacity)
+- **Border:** 2px cyan (#4AE2E2) with 4px corner radius
+- **Shadow:** 2px dark shadow for depth
+
+**Layout Structure:**
+```
+Panel (400×80)
+└─ MarginContainer (10px margins)
+   └─ HBoxContainer (5px separation)
+      ├─ RoleLabel (18pt cyan, outlined)
+      │  └─ "[ENGINEERING]"
+      └─ BarkLabel (20pt white, outlined, autowrap)
+         └─ "Weapons offline!"
+```
+
+**Animation Sequence:**
+1. **Fade In (0.3s):** Modulate alpha 0 → 1, ease out
+2. **Display (3.0s):** Hold at full opacity
+3. **Fade Out (0.5s):** Modulate alpha 1 → 0, ease in
+4. **Complete:** Hide panel, process next bark in queue
+
+**Queue Management:**
+- If bark arrives while displaying → append to bark_queue
+- When display completes → check queue, display next if available
+- Clear queue on battle end (don't carry over to next mission)
+
+### Combat Integration
+
+**Signal Flow:**
+```
+Combat.gd emits signals:
+  ├─ component_destroyed(ship: String, component_type: RoomType)
+  ├─ hp_threshold_crossed(ship: String, threshold: int, current_hp: int)
+  ├─ battle_started()
+  └─ battle_ended(victory: bool)
+         ↓
+CrewBarkSystem (autoload) receives signals:
+  - Filters for player ship only (ship == "player")
+  - Calls BarkSelector to find appropriate bark
+  - Queues bark with priority sorting
+  - Emits bark_triggered(bark: BarkData) signal
+         ↓
+RadioChatterBox receives bark_triggered:
+  - Displays bark with fade animation
+  - Adds to CombatLog for persistent history
+  - Processes queue when animation completes
+```
+
+**CombatLog Integration:**
+```gdscript
+func add_bark_entry(turn: int, role: String, bark_text: String):
+    var label = Label.new()
+    label.text = "Turn %d ◈ [%s] \"%s\"" % [turn, role, bark_text]
+    label.add_theme_color_override("font_color", Color(0.46, 0.91, 0.91))  # Light cyan
+
+    var margin = MarginContainer.new()
+    margin.add_theme_constant_override("margin_left", 10)
+    margin.add_child(label)
+
+    log_container.add_child(margin)
+    scroll_to_bottom.call_deferred()
+```
+
+### Triggering Events
+
+**Component Destroyed:**
+- Fires when combat deals 20+ damage and destroys a room
+- Only triggers for player ship (not enemy)
+- Selects bark matching component type (weapon, shield, reactor, etc.)
+- Priority: HIGH (significant event)
+
+**HP Threshold Crossed:**
+- 75% HP: "Hull integrity compromised!" (first warning)
+- 50% HP: "We can't take much more!" (urgent)
+- 25% HP: "Critical damage!" (desperate)
+- Only triggers once per threshold per battle
+- Priority: HIGH to CRITICAL (escalates with danger)
+
+**Battle Started:**
+- Resets used_barks dictionary (fresh slate for new battle)
+- Clears bark queue (don't carry over from previous fight)
+- No bark displayed (combat starts silently)
+
+**Battle Ended:**
+- Victory: "Target destroyed!", "Enemy neutralized!"
+- Defeat: "We're breaking apart!", "Abandon ship!"
+- Priority: CRITICAL (final moment)
+- Queued bark plays even if battle ended (farewell message)
+
+### Writing Guidelines
+
+**Style Rules:**
+- **Length:** 3-7 words maximum (radio chatter, not speeches)
+- **Tone:** Professional military, urgent but not panicked
+- **Perspective:** Anonymous crew (not named characters)
+- **Content:** Report facts, not advice ("Shields down" not "Activate backup shields")
+- **Variety:** Multiple options per event (randomization prevents repetition)
+
+**Examples:**
+- ✅ "Hull breach detected!" (4 words, factual)
+- ✅ "We're taking heavy fire!" (4 words, urgent)
+- ❌ "Captain, I recommend we target their weapons!" (8 words, advice)
+- ❌ "Oh no, we're doomed!" (4 words, unprofessional panic)
+
+### Implementation Details
+
+**Key Scripts:**
+- `CrewBarkSystem.gd` (autoload): Event detection, priority queue, cooldown management
+- `BarkSelector.gd`: Context-aware bark selection with fallback logic
+- `BarkDatabase.gd`: Static bark definitions (58 barks total)
+- `BarkData.gd`: Data structure for bark properties
+- `RadioChatterBox.gd`: UI component with fade animations
+- `CombatLog.gd`: Persistent bark history display
+
+**Scene Integration:**
+- `Combat.tscn` contains RadioChatterBox Panel node
+- `RadioChatterBox` positioned at (1500, 343) with size (400, 80)
+- `CrewBarkSystem` connects to Combat scene signals in `_ready()`
+
+**Performance:**
+- Barks only trigger for player ship (not enemy)
+- Maximum 5 barks queued at once (excess dropped)
+- 2-second cooldown prevents spam (one bark every 2s minimum)
+- Lightweight text display (no audio in MVP)
+
+### Design Philosophy
+
+**Immersion Without Complexity:**
+- Adds personality without crew management systems
+- Anonymous crew = no names/portraits to design
+- Reactive only = no crew orders or decisions
+
+**Clarity Through Feedback:**
+- Barks reinforce what happened in combat
+- "Weapons offline!" confirms visual of weapon destruction
+- HP warnings alert player to danger state
+
+**Iteration Support:**
+- CombatLog preserves bark history for replay analysis
+- Turn numbers show when events occurred
+- Helps players understand "I lost shields on turn 3 → damage spiked on turn 4"
+
+**Scalability:**
+- Easy to add new barks (just append to database arrays)
+- No complex AI or dialogue trees
+- Audio integration possible (add .ogg files to BarkData)
+
+---
+
 ## System Interactions
 
 ### Power + Combat
@@ -936,6 +1217,24 @@ Close replay → Return to designer → Redesign with better reactor protection
   - Can't load Frigate template on Cruiser → prevents invalid designs
   - Encourages specialized templates per hull type
 
+### Crew Barks + Combat
+- **Reactive feedback:**
+  - Barks triggered by player ship damage (not enemy damage)
+  - "Weapons offline!" confirms weapon destruction visually shown
+  - HP warnings escalate as danger increases (75% → 50% → 25%)
+- **Combat clarity:**
+  - CombatLog preserves bark history with turn numbers
+  - Player can review when critical events occurred
+  - "Turn 5: [ENGINEERING] Main reactor offline!" → explains power loss
+- **Learning from defeats:**
+  - Bark timestamps help identify failure points
+  - "We lost shields on turn 3, then damage spiked on turn 4"
+  - Supports iteration loop (understand why → redesign → test)
+- **Priority system:**
+  - Critical events (reactor destroyed, HP < 25%) trigger HIGH priority barks
+  - Queue ensures important barks not dropped during rapid damage
+  - Victory/defeat barks always play (CRITICAL priority)
+
 ---
 
 ## Design Philosophy
@@ -978,6 +1277,7 @@ Close replay → Return to designer → Redesign with better reactor protection
 - Template save/load
 - Combat replay & timeline scrubbing
 - Intelligent enemy AI (3 targeting strategies)
+- Crew barks system (58 barks, context-aware, UI presentation)
 
 ### In Progress 🔲
 - Tutorial system (guided first mission)
