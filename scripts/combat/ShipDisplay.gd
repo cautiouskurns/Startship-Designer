@@ -78,28 +78,31 @@ func _render_ship_instances():
 		room_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(room_container)
 
-		# Create ColorRect background at each tile position (shows actual shape)
+		# Create ColorRect background at each tile position (20% opacity for technical schematic style)
 		for tile_pos in tiles:
 			var tile_bg = ColorRect.new()
-			tile_bg.color = room_color
+			tile_bg.color = Color(room_color.r, room_color.g, room_color.b, 0.20)  # 20% opacity
 			tile_bg.size = Vector2(TILE_SIZE, TILE_SIZE)
 			tile_bg.position = Vector2(tile_pos.x * TILE_SIZE, tile_pos.y * TILE_SIZE)
+			tile_bg.z_index = 0  # Behind room outline
 			tile_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			room_container.add_child(tile_bg)
 
-		# Add label at the first (anchor) tile
+		# Instantiate Room scene at anchor tile for outline and ID pip
 		if tiles.size() > 0:
 			var anchor_tile = tiles[0]
-			var label = Label.new()
-			label.text = RoomData.get_label(room_type)
-			label.add_theme_font_size_override("font_size", 10)
-			label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
-			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			label.size = Vector2(TILE_SIZE, TILE_SIZE)
-			label.position = Vector2(anchor_tile.x * TILE_SIZE, anchor_tile.y * TILE_SIZE)
-			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			room_container.add_child(label)
+			var room_scene = room_scenes.get(room_type)
+			if room_scene:
+				var room_instance = room_scene.instantiate()
+				room_instance.position = Vector2(anchor_tile.x * TILE_SIZE, anchor_tile.y * TILE_SIZE)
+				room_instance.z_index = 1  # In front of background
+				room_instance.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+				# Set room data for proper multi-tile outline sizing
+				if room_instance.has_method("set_room_data"):
+					room_instance.set_room_data(room_type, tiles, Vector2(TILE_SIZE, TILE_SIZE))
+
+				room_container.add_child(room_instance)
 
 		# Track container by room_id
 		room_instance_nodes[room_id] = room_container
@@ -115,11 +118,22 @@ func _render_ship_legacy():
 			if room_type == RoomData.RoomType.EMPTY:
 				continue
 
-			# Create room sprite
+			# Create 20% opacity background (technical schematic style)
+			var room_color = RoomData.get_color(room_type)
+			var bg = ColorRect.new()
+			bg.color = Color(room_color.r, room_color.g, room_color.b, 0.20)  # 20% opacity
+			bg.size = Vector2(TILE_SIZE, TILE_SIZE)
+			bg.position = Vector2(x * TILE_SIZE, y * TILE_SIZE)
+			bg.z_index = 0  # Behind room
+			bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(bg)
+
+			# Create room sprite (outline and ID pip)
 			var room_scene = room_scenes.get(room_type)
 			if room_scene:
 				var room = room_scene.instantiate()
 				room.position = Vector2(x * TILE_SIZE, y * TILE_SIZE)
+				room.z_index = 1  # In front of background
 
 				# Disable mouse input (combat ships aren't interactive)
 				if room is Control:

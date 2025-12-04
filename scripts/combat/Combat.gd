@@ -146,12 +146,12 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	print("DEBUG: Battle replay initialized for mission ", mission_index)
 
 	# Reset zoom and pan to default
-	current_zoom = 1.0
+	current_zoom = 1.5  # Start zoomed in for better component visibility
 	pan_offset = Vector2.ZERO
-	ship_battle_area.scale = Vector2(1.0, 1.0)
+	ship_battle_area.scale = Vector2(1.5, 1.5)  # Match starting zoom
 	# Don't reset position - let scene anchors/offsets handle it
 	# ship_battle_area.position is used for WASD panning offset only
-	zoom_level_label.text = "100%"
+	zoom_level_label.text = "150%"  # Match starting zoom
 	zoom_in_button.disabled = false
 	zoom_out_button.disabled = false
 

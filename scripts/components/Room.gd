@@ -19,6 +19,12 @@ var cost: int:
 ## Array of GridTiles this room occupies (Phase 7.1 - multi-tile rooms)
 var occupied_tiles: Array[GridTile] = []
 
+## Array of tile positions for combat rendering (Vector2i positions, not GridTile instances)
+var combat_tile_positions: Array = []
+
+## Tile size for combat rendering (set when used in combat)
+var combat_tile_size: Vector2 = Vector2(96, 96)
+
 ## Unique room instance ID for tracking in combat (Phase 7.1)
 var room_id: int = 0
 
@@ -74,7 +80,12 @@ func _resize_background_outline():
 	# Make sure background doesn't block mouse input
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Get parent tile for size calculations
+	# Combat context: Use combat_tile_positions if available
+	if not combat_tile_positions.is_empty():
+		_resize_background_combat()
+		return
+
+	# Designer context: Get parent tile for size calculations
 	if not get_parent() or not get_parent() is GridTile:
 		# Default single tile sizing
 		background.position = Vector2.ZERO
@@ -132,6 +143,50 @@ func _resize_background_outline():
 	background.position = Vector2.ZERO
 
 	# Resize background to cover all tiles without gaps
+	background.size = Vector2(total_width, total_height)
+
+## Resize background outline for combat rendering (uses combat_tile_positions)
+func _resize_background_combat():
+	var background = get_node_or_null("Background")
+	if not background:
+		return
+
+	background.visible = true
+
+	# Single tile room
+	if combat_tile_positions.size() <= 1:
+		background.position = Vector2.ZERO
+		background.size = combat_tile_size
+		return
+
+	# Multi-tile room - calculate bounding box from positions
+	var min_x = 999999
+	var max_x = -999999
+	var min_y = 999999
+	var max_y = -999999
+
+	for tile_pos in combat_tile_positions:
+		if tile_pos.x < min_x:
+			min_x = tile_pos.x
+		if tile_pos.x > max_x:
+			max_x = tile_pos.x
+		if tile_pos.y < min_y:
+			min_y = tile_pos.y
+		if tile_pos.y > max_y:
+			max_y = tile_pos.y
+
+	# Calculate room dimensions in tiles
+	var room_width_tiles = max_x - min_x + 1
+	var room_height_tiles = max_y - min_y + 1
+
+	# Calculate total size in pixels
+	var total_width = room_width_tiles * combat_tile_size.x
+	var total_height = room_height_tiles * combat_tile_size.y
+
+	# Position background at top-left
+	background.position = Vector2.ZERO
+
+	# Resize background to cover all tiles
 	background.size = Vector2(total_width, total_height)
 
 ## Update ID label text with room type abbreviation (technical schematic styling)
@@ -303,3 +358,102 @@ func _on_relay_mouse_entered():
 ## Handle relay mouse exit (Feature 1.3)
 func _on_relay_mouse_exited():
 	emit_signal("relay_unhovered", self)
+
+## Apply combat-specific visual enhancements (thicker borders, larger icons, legible ID pips)
+func _apply_combat_styling():
+	# Get nodes
+	var background = get_node_or_null("Background")
+	var icon = get_node_or_null("Icon")
+	var id_background = get_node_or_null("IDBackground")
+	var id_label = get_node_or_null("IDLabel")
+
+	# Apply thicker borders (2px → 4px)
+	if background:
+		var panel_style = background.get_theme_stylebox("panel")
+		if panel_style is StyleBoxFlat:
+			var combat_style = panel_style.duplicate()
+			combat_style.border_width_left = 10
+			combat_style.border_width_top = 10
+			combat_style.border_width_right = 10
+			combat_style.border_width_bottom = 10
+			background.add_theme_stylebox_override("panel", combat_style)
+
+	# Apply larger icon size (32x32 → 48x48, font 24pt → 36pt, Armor: 16pt → 32pt)
+	if icon:
+		icon.set_size(Vector2(96, 96))
+		icon.custom_minimum_size = Vector2(48, 48)
+		var font_size = 36
+		if room_type == RoomData.RoomType.ARMOR:
+			font_size = 32  # Armor icon uses different size
+		icon.add_theme_font_size_override("font_size", font_size)
+
+	# Reposition ID pips inside borders (offset_left: -22 → -25, offset_top: 2 → 5, etc.)
+	if id_background:
+		id_background.offset_left = -25.0
+		id_background.offset_top = 5.0
+		id_background.offset_right = -6.0
+		id_background.offset_bottom = 15.0
+
+	if id_label:
+		id_label.offset_left = -25.0
+		id_label.offset_top = 5.0
+		id_label.offset_right = -6.0
+		id_label.offset_bottom = 15.0
+		# Larger font size for legibility (8pt → 10pt)
+		id_label.add_theme_font_size_override("font_size", 10)
+
+## Position icon centered in combat (for multi-tile rooms)
+func _position_icon_combat():
+	var icon = get_node_or_null("Icon")
+	if not icon:
+		return
+
+	icon.visible = true
+
+	# Single tile room - center icon within the tile
+	if combat_tile_positions.size() <= 1:
+		var icon_size = icon.size
+		icon.position = (combat_tile_size - icon_size) * 0.5
+		return
+
+	# Multi-tile room - calculate center of entire room
+	var min_x = 999999
+	var max_x = -999999
+	var min_y = 999999
+	var max_y = -999999
+
+	for tile_pos in combat_tile_positions:
+		if tile_pos.x < min_x:
+			min_x = tile_pos.x
+		if tile_pos.x > max_x:
+			max_x = tile_pos.x
+		if tile_pos.y < min_y:
+			min_y = tile_pos.y
+		if tile_pos.y > max_y:
+			max_y = tile_pos.y
+
+	# Calculate room dimensions in tiles
+	var room_width_tiles = max_x - min_x + 1
+	var room_height_tiles = max_y - min_y + 1
+
+	# Calculate the center of the entire multi-tile room in pixels
+	var room_center_x = (room_width_tiles * combat_tile_size.x) * 0.5
+	var room_center_y = (room_height_tiles * combat_tile_size.y) * 0.5
+
+	# Position the icon so its center aligns with the room's center
+	var icon_size = icon.size
+	icon.position = Vector2(room_center_x, room_center_y) - (icon_size * 0.5)
+
+## Set room data for combat display rendering (used by ShipDisplay)
+func set_room_data(type: RoomData.RoomType, tiles: Array, tile_size: Vector2 = Vector2(96, 96)):
+	room_type = type
+	combat_tile_positions = tiles.duplicate()  # Store tile positions as Vector2i
+	combat_tile_size = tile_size
+
+	# Apply combat-specific visual enhancements
+	_apply_combat_styling()
+
+	# Update visuals for combat context
+	_resize_background_outline()  # Update outline for multi-tile shape
+	_update_id_label()  # Update ID text
+	_position_icon_combat()  # Center icon in combat

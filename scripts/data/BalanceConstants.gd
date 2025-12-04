@@ -41,7 +41,7 @@ const RELAY_COVERAGE_RADIUS: float = 3.0  # Radius in tiles for relay coverage
 
 const COMBAT_SPEED_DEFAULT: float = 2.0  # Default speed multiplier (2.0 = 0.5x speed)
 const COMBAT_ZOOM_MIN: float = 0.5
-const COMBAT_ZOOM_MAX: float = 1.5
+const COMBAT_ZOOM_MAX: float = 3.0  # Increased from 1.5 for better close-up view
 const COMBAT_ZOOM_STEP: float = 0.25
 const COMBAT_PAN_SPEED: float = 20.0  # Pixels per frame when panning with WASD
 const COMBAT_PAN_LIMIT: float = 300.0  # Maximum pan offset in pixels
