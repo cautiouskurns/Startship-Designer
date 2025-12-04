@@ -108,3 +108,24 @@ func add_victory(winner: String):
 func clear_log():
 	for child in log_container.get_children():
 		child.queue_free()
+
+## Add bark entry (Crew Barks Phase 1.3)
+func add_bark_entry(turn: int, role: String, bark_text: String):
+	# Create bark entry with special formatting
+	var label = Label.new()
+	label.text = "Turn %d ◈ [%s] \"%s\"" % [turn, role, bark_text]
+	label.add_theme_color_override("font_color", Color(0.46, 0.91, 0.91))  # Light cyan #75E8E8
+	label.add_theme_font_size_override("font_size", 14)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+
+	# Add indentation
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 10)
+	margin.add_child(label)
+
+	log_container.add_child(margin)
+
+	# Auto-scroll to bottom
+	scroll_to_bottom.call_deferred()
+
+	print("[CombatLog] Added bark entry: [%s] '%s'" % [role, bark_text])
