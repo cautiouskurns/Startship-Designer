@@ -60,6 +60,9 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 ## Cost indicator label
 @onready var cost_indicator: Label = $CostIndicator
 
+## Zoom level label
+@onready var zoom_level_label: Label = $ZoomLevelLabel
+
 ## Template UI (Phase 10.8)
 @onready var template_name_dialog = $TemplateNameDialog
 @onready var template_list_panel = $TemplateListPanel
@@ -112,6 +115,9 @@ var max_zoom: float = BalanceConstants.DESIGNER_ZOOM_MAX
 var zoom_step: float = BalanceConstants.DESIGNER_ZOOM_STEP
 var pan_offset: Vector2 = Vector2.ZERO
 var pan_speed: float = BalanceConstants.DESIGNER_PAN_SPEED  # Pixels per frame when holding WASD
+
+## Zoom indicator fade tween
+var zoom_fade_tween: Tween = null
 
 ## Power overlay state (Feature 1.4)
 var power_overlay_enabled: bool = false
@@ -236,6 +242,9 @@ func _ready():
 			print("Restored design for redesign")
 		else:
 			push_error("Failed to restore redesign template")
+
+	# Initialize zoom label as invisible
+	zoom_level_label.modulate.a = 0.0
 
 ## Calculate current budget from all placed rooms (Phase 7.1 - count room instances, not tiles)
 func calculate_current_budget() -> int:
@@ -755,8 +764,28 @@ func _zoom_out():
 
 ## Apply zoom and pan transformation to ship_grid
 func _apply_zoom_and_pan():
+	# Update zoom level display
+	zoom_level_label.text = "%d%%" % int(zoom_level * 100)
+
+	# Show zoom indicator and fade it out after 2 seconds
+	_show_zoom_indicator()
+
 	ship_grid.scale = Vector2(zoom_level, zoom_level)
 	ship_grid.position = Vector2(960, 540) + pan_offset
+
+## Show zoom indicator and fade it out after 2 seconds
+func _show_zoom_indicator() -> void:
+	# Cancel existing fade tween if any
+	if zoom_fade_tween:
+		zoom_fade_tween.kill()
+
+	# Show label at full opacity
+	zoom_level_label.modulate.a = 1.0
+
+	# Create new fade tween: wait 2 seconds, then fade out over 0.5 seconds
+	zoom_fade_tween = create_tween()
+	zoom_fade_tween.tween_interval(2.0)
+	zoom_fade_tween.tween_property(zoom_level_label, "modulate:a", 0.0, 0.5)
 
 ## Handle tile left-click - place selected room type from palette (Phase 7.1/7.3 - shaped rooms with rotation)
 ## Feature 2.1: Conduits use drag-to-place instead of single-click

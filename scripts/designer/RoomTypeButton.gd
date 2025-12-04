@@ -12,6 +12,8 @@ signal rotation_requested(room_type: RoomData.RoomType)  # Phase 7.3
 ## UI elements
 @onready var name_label: Label = $HBoxContainer/MarginContainer/NameLabel
 @onready var size_cost_label: Label = $HBoxContainer/SizeCostLabel
+@onready var preview_panel: Panel = $HBoxContainer/PreviewMargin/PreviewContainer/PreviewPanel
+@onready var preview_icon: Label = $HBoxContainer/PreviewMargin/PreviewContainer/PreviewIcon
 
 ## Tooltip elements
 @onready var tooltip_panel: Panel = $TooltipPanel
@@ -23,14 +25,16 @@ signal rotation_requested(room_type: RoomData.RoomType)  # Phase 7.3
 ## Visual state
 var is_selected: bool = false
 
-## Room scenes for icons (same as ShipDesigner)
-var room_scenes = {
-	RoomData.RoomType.BRIDGE: preload("res://scenes/components/rooms/Bridge.tscn"),
-	RoomData.RoomType.WEAPON: preload("res://scenes/components/rooms/Weapon.tscn"),
-	RoomData.RoomType.SHIELD: preload("res://scenes/components/rooms/Shield.tscn"),
-	RoomData.RoomType.ENGINE: preload("res://scenes/components/rooms/Engine.tscn"),
-	RoomData.RoomType.REACTOR: preload("res://scenes/components/rooms/Reactor.tscn"),
-	RoomData.RoomType.ARMOR: preload("res://scenes/components/rooms/Armor.tscn")
+## Room icons mapping
+static var room_icons = {
+	RoomData.RoomType.BRIDGE: "★",
+	RoomData.RoomType.WEAPON: "▶",
+	RoomData.RoomType.SHIELD: "◆",
+	RoomData.RoomType.ENGINE: "▲",
+	RoomData.RoomType.REACTOR: "⊕",
+	RoomData.RoomType.ARMOR: "■",
+	RoomData.RoomType.CONDUIT: "─",
+	RoomData.RoomType.RELAY: "◈"
 }
 
 ## Tooltip data for each room type
@@ -40,7 +44,9 @@ static var tooltip_data = {
 	RoomData.RoomType.SHIELD: "Defensive system.|Absorbs up to 15 damage per powered shield.",
 	RoomData.RoomType.ENGINE: "Propulsion system.|Higher engine count shoots first (initiative).",
 	RoomData.RoomType.REACTOR: "Power generation.|Powers adjacent rooms (up/down/left/right only).",
-	RoomData.RoomType.ARMOR: "Hull plating.|Adds 20 HP per armor room (doesn't need power)."
+	RoomData.RoomType.ARMOR: "Hull plating.|Adds 20 HP per armor room (doesn't need power).",
+	RoomData.RoomType.CONDUIT: "Power conduit.|Efficient 1×1 power transmission (doesn't need power).",
+	RoomData.RoomType.RELAY: "Power relay.|Extends power grid remotely via pathfinding."
 }
 
 func _ready():
@@ -78,6 +84,33 @@ func update_display():
 
 	# Format as "WxH • XBP"
 	size_cost_label.text = "%d×%d • %dBP" % [size.x, size.y, cost]
+
+	# Update preview panel and icon
+	_update_preview()
+
+## Update preview panel style and icon based on room type
+func _update_preview():
+	if room_type == RoomData.RoomType.EMPTY:
+		return
+
+	# Get room color
+	var room_color = RoomData.get_color(room_type)
+
+	# Create StyleBoxFlat for preview panel (outline only, transparent center)
+	var preview_style = StyleBoxFlat.new()
+	preview_style.bg_color = Color(0, 0, 0, 0)  # Transparent background
+	preview_style.border_width_left = 2
+	preview_style.border_width_top = 2
+	preview_style.border_width_right = 2
+	preview_style.border_width_bottom = 2
+	preview_style.border_color = room_color
+
+	# Apply style to preview panel
+	preview_panel.add_theme_stylebox_override("panel", preview_style)
+
+	# Set icon
+	var icon = room_icons.get(room_type, "?")
+	preview_icon.text = icon
 
 ## Update the count displayed (deprecated - no longer shown in UI)
 func set_count(count: int):

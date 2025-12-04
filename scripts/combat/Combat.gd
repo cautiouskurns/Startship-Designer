@@ -80,6 +80,9 @@ var pan_offset: Vector2 = Vector2.ZERO
 const PAN_SPEED: float = BalanceConstants.COMBAT_PAN_SPEED
 const PAN_LIMIT: float = BalanceConstants.COMBAT_PAN_LIMIT
 
+## Zoom indicator fade tween
+var zoom_fade_tween: Tween = null
+
 func _ready():
 	# Connect buttons
 	redesign_button.pressed.connect(_on_redesign_pressed)
@@ -152,6 +155,7 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	# Don't reset position - let scene anchors/offsets handle it
 	# ship_battle_area.position is used for WASD panning offset only
 	zoom_level_label.text = "150%"  # Match starting zoom
+	zoom_level_label.modulate.a = 0.0  # Start invisible
 	zoom_in_button.disabled = false
 	zoom_out_button.disabled = false
 
@@ -1318,6 +1322,9 @@ func _apply_zoom(new_zoom: float) -> void:
 	# Update zoom level display
 	zoom_level_label.text = "%d%%" % int(current_zoom * 100)
 
+	# Show zoom indicator and fade it out after 2 seconds
+	_show_zoom_indicator()
+
 	# Apply zoom with smooth tween
 	var tween = create_tween()
 	tween.tween_property(ship_battle_area, "scale", Vector2(current_zoom, current_zoom), 0.2)
@@ -1325,6 +1332,20 @@ func _apply_zoom(new_zoom: float) -> void:
 	# Update button states
 	zoom_in_button.disabled = (current_zoom >= ZOOM_MAX)
 	zoom_out_button.disabled = (current_zoom <= ZOOM_MIN)
+
+## Show zoom indicator and fade it out after 2 seconds
+func _show_zoom_indicator() -> void:
+	# Cancel existing fade tween if any
+	if zoom_fade_tween:
+		zoom_fade_tween.kill()
+
+	# Show label at full opacity
+	zoom_level_label.modulate.a = 1.0
+
+	# Create new fade tween: wait 2 seconds, then fade out over 0.5 seconds
+	zoom_fade_tween = create_tween()
+	zoom_fade_tween.tween_interval(2.0)
+	zoom_fade_tween.tween_property(zoom_level_label, "modulate:a", 0.0, 0.5)
 
 ## Apply panning offset (WASD)
 func _apply_pan(delta: Vector2) -> void:
