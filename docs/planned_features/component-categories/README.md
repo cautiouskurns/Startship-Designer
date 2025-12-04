@@ -43,13 +43,13 @@ The Component Category System is a **foundational reorganization** of how compon
 
 Organize components by primary role:
 
-1. **⚡ Power Systems** - Generate, store, distribute power
-2. **🎯 Weapons** - Deal damage to enemies
-3. **🛡️ Defense** - Absorb damage, protect ship
-4. **🚀 Propulsion** - Initiative, speed, maneuverability
-5. **🖥️ Command & Control** - Required systems, sensors, targeting
-6. **🔧 Utility & Support** - Special functions, mission-specific
-7. **🏗️ Structure** - Hull framework, compartments
+1. **⊕ Power Systems** - Generate, store, distribute power
+2. **▶ Weapons** - Deal damage to enemies
+3. **◆ Defense** - Absorb damage, protect ship
+4. **▲ Propulsion** - Initiative, speed, maneuverability
+5. **⭐ Command & Control** - Required systems, sensors, targeting
+6. **◇ Utility & Support** - Special functions, mission-specific
+7. **■ Structure** - Hull framework, compartments
 
 ### 13 Mechanical Tags
 

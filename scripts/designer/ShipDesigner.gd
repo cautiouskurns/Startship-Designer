@@ -838,13 +838,14 @@ func _on_tile_clicked(x: int, y: int):
 		return
 
 	# Create and place the shaped room
-	var room_scene = room_scenes.get(selected_room_type)
+	# Use specific scene if available, otherwise use Bridge.tscn as generic template
+	var room_scene = room_scenes.get(selected_room_type, room_scenes[RoomData.RoomType.BRIDGE])
 	if not room_scene:
 		return
 
 	# Instantiate room
 	var room: Room = room_scene.instantiate()
-	room.room_type = selected_room_type
+	room.room_type = selected_room_type  # Set type (overrides scene default)
 	room.room_id = next_room_id
 	next_room_id += 1
 
@@ -1109,12 +1110,13 @@ func _place_single_conduit(x: int, y: int) -> bool:
 		return false
 
 	# Create and place conduit
-	var conduit_scene = room_scenes.get(RoomData.RoomType.CONDUIT)
+	# Use specific scene if available, otherwise use Bridge.tscn as generic template
+	var conduit_scene = room_scenes.get(RoomData.RoomType.CONDUIT, room_scenes[RoomData.RoomType.BRIDGE])
 	if not conduit_scene:
 		return false
 
 	var conduit: Room = conduit_scene.instantiate()
-	conduit.room_type = RoomData.RoomType.CONDUIT
+	conduit.room_type = RoomData.RoomType.CONDUIT  # Set type (overrides scene default)
 	conduit.room_id = next_room_id
 	next_room_id += 1
 
@@ -1217,9 +1219,12 @@ func update_palette_counts():
 func update_palette_availability():
 	var available_types = []
 
-	# Check each room type
-	for room_type in [RoomData.RoomType.BRIDGE, RoomData.RoomType.WEAPON, RoomData.RoomType.SHIELD,
-					  RoomData.RoomType.ENGINE, RoomData.RoomType.REACTOR, RoomData.RoomType.ARMOR, RoomData.RoomType.CONDUIT, RoomData.RoomType.RELAY]:  # Feature 1.2: Added RELAY
+	# Check ALL room types dynamically (iterate through labels dictionary)
+	for room_type in RoomData.labels.keys():
+		# Skip EMPTY
+		if room_type == RoomData.RoomType.EMPTY:
+			continue
+
 		var can_afford = true
 		var can_place_somewhere = false
 
@@ -1459,12 +1464,13 @@ func _place_room_at(x: int, y: int, room_type: RoomData.RoomType):
 		return
 
 	# Create room instance
-	var room_scene = room_scenes.get(room_type)
+	# Use specific scene if available, otherwise use Bridge.tscn as generic template
+	var room_scene = room_scenes.get(room_type, room_scenes[RoomData.RoomType.BRIDGE])
 	if not room_scene:
 		return
 
 	var room: Room = room_scene.instantiate()
-	room.room_type = room_type
+	room.room_type = room_type  # Set type (overrides scene default)
 	room.room_id = next_room_id
 	next_room_id += 1
 

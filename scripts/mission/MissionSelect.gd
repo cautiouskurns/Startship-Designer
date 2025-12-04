@@ -123,17 +123,17 @@ func _on_back_pressed():
 	# Return to main menu
 	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
 
-## Button hover start - scale up
+## Button hover start - scale up (subtle)
 func _on_button_hover_start(button: Button):
 	if button.disabled:
 		return
 	var tween = create_tween()
-	tween.tween_property(button, "scale", Vector2(1.05, 1.05), 0.1)
+	tween.tween_property(button, "scale", Vector2(1.02, 1.02), 0.15)
 
 ## Button hover end - scale back
 func _on_button_hover_end(button: Button):
 	var tween = create_tween()
-	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.1)
+	tween.tween_property(button, "scale", Vector2(1.0, 1.0), 0.15)
 
 ## DEBUG: Quick start to combat with test ship (Feature 1 MVP)
 func _debug_quick_start():

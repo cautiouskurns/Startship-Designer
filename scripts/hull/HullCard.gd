@@ -27,6 +27,7 @@ func _ready():
 	select_button.pressed.connect(_on_select_pressed)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
+	gui_input.connect(_on_gui_input)
 
 ## Setup card with hull data
 func setup(hull: GameState.HullType):
@@ -81,15 +82,25 @@ func _draw_grid_preview(grid_size: Vector2i):
 			tile.position = Vector2(offset_x + x * tile_size, offset_y + y * tile_size)
 			grid_preview.add_child(tile)
 
+## Handle panel click (makes entire card clickable)
+func _on_gui_input(event: InputEvent):
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_on_select_pressed()
+
 ## Handle select button press
 func _on_select_pressed():
+	AudioManager.play_button_click()
 	emit_signal("hull_selected", hull_type)
 
-## Handle mouse enter - hover effect
+## Handle mouse enter - hover effect (subtle)
 func _on_mouse_entered():
-	# Scale up
+	# Change cursor to indicate clickable
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+	# Scale up (subtle)
 	var tween = create_tween()
-	tween.tween_property(self, "scale", Vector2(1.05, 1.05), 0.1)
+	tween.tween_property(self, "scale", Vector2(1.02, 1.02), 0.15)
 
 	# Glow cyan border
 	style_box.border_width_left = 2
@@ -100,9 +111,12 @@ func _on_mouse_entered():
 
 ## Handle mouse exit - reset
 func _on_mouse_exited():
+	# Reset cursor
+	mouse_default_cursor_shape = Control.CURSOR_ARROW
+
 	# Scale back
 	var tween = create_tween()
-	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
+	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.15)
 
 	# Reset border
 	style_box.border_width_left = 1

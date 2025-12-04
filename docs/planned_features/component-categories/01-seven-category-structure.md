@@ -39,37 +39,37 @@ Categories serve **UI organization** purposes (what players see) while a separat
 
 ### The Seven Categories
 
-**⚡ Power Systems** - Generate, store, and distribute power
+**⊕ Power Systems** - Generate, store, and distribute power
 - Current: Reactor, Relay, Conduit
 - Role: Enable other systems, core puzzle mechanic
 - Trade-off: Power infrastructure vs combat capability
 
-**🎯 Weapons** - Deal damage to enemy ships
+**▶ Weapons** - Deal damage to enemy ships
 - Current: Weapon (energy)
 - Role: Offensive capability
 - Trade-off: Damage output vs power consumption and cost
 
-**🛡️ Defense** - Absorb damage and protect the ship
+**◆ Defense** - Absorb damage and protect the ship
 - Current: Shield, Armor
 - Role: Survivability
 - Trade-off: Shields (regenerating) vs Armor (permanent HP)
 
-**🚀 Propulsion** - Control initiative, speed, and maneuverability
+**▲ Propulsion** - Control initiative, speed, and maneuverability
 - Current: Engine
 - Role: Turn order, future evasion mechanics
 - Trade-off: Shooting first vs other combat stats
 
-**🖥️ Command & Control** - Required systems, sensors, targeting
+**⭐ Command & Control** - Required systems, sensors, targeting
 - Current: Bridge
 - Role: Ship operation enablers
 - Trade-off: Basic (Bridge only) vs enhanced (sensors, computers)
 
-**🔧 Utility & Support** - Special functions, mission-specific modules
+**◇ Utility & Support** - Special functions, mission-specific modules
 - Current: None yet
 - Role: Quality of life, optimization, campaign features
 - Trade-off: Specialized capability vs combat effectiveness
 
-**🏗️ Structure** - Hull framework, compartments, passive systems
+**■ Structure** - Hull framework, compartments, passive systems
 - Current: None yet (Armor could fit here but works better in Defense)
 - Role: Low-cost filler, structural integrity
 - Trade-off: Cheap HP boost vs functional rooms
@@ -79,9 +79,9 @@ Categories serve **UI organization** purposes (what players see) while a separat
 ```
 1. Player opens Ship Designer
 2. System displays component palette with 7 category tabs
-3. Player clicks "⚡ Power" tab
+3. Player clicks "⊕ Power" tab
 4. System shows only Power components (Reactor, Relay, Conduit)
-5. Player clicks "🎯 Weapons" tab
+5. Player clicks "▶ Weapons" tab
 6. System switches view to show only Weapons
 7. Result: Player finds components intuitively by function
 ```
@@ -136,12 +136,12 @@ Categories serve **UI organization** purposes (what players see) while a separat
 ```
 Category Tab Bar (spans full width):
 ┌───────────────────────────────────────────────────┐
-│ [⚡] [🎯] [🛡️] [🚀] [🖥️] [🔧] [🏗️]                │
+│ [⊕] [▶] [◆] [▲] [⭐] [◇] [■]                      │
 └───────────────────────────────────────────────────┘
 
 Category Header:
 ┌───────────────────────────────────────────────────┐
-│ ⚡ POWER SYSTEMS                                   │
+│ ⊕ POWER SYSTEMS                                   │
 │ Generate, store, and distribute power             │
 │ 3 components available                            │
 └───────────────────────────────────────────────────┘
@@ -318,7 +318,7 @@ Feature is complete when:
 
 - **Why 7 categories?**: Not too many (overwhelming), not too few (lacks organization). 7±2 is optimal for human categorization (Miller's Law)
 - **Why flat structure?**: Nested categories (Energy Weapons → Lasers → Pulse Lasers) add complexity for minimal benefit at 40 components
-- **Why emoji icons?**: Universal, no need for custom sprites, clear even at small sizes, instantly recognizable
+- **Why geometric icons?**: Simple symbols that match existing room icons (⊕ for Reactor, ▶ for Weapon, etc.), clear even at small sizes, no emoji rendering issues
 - **Alternative considered**: Functional tags only (no categories). Rejected because pure tag filtering requires too many clicks to find components. Categories provide faster browsing.
 - **Gotcha**: Don't use category as a filter for game logic (use tags instead). Categories are UI-only. Example: Don't check "if component.category == WEAPONS" to calculate damage—check tags or component properties directly.
 

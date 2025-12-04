@@ -10,7 +10,103 @@ enum RoomType {
 	REACTOR,
 	ARMOR,
 	CONDUIT,
-	RELAY  # Feature 1.2: Power relay module (2×2)
+	RELAY,  # Feature 1.2: Power relay module (2×2)
+
+	# WEAPONS - Energy Weapons
+	PHASER_ARRAY,
+	HEAVY_PHASER,
+	PULSE_LASER,
+	BEAM_LANCE,
+	ION_CANNON,
+
+	# WEAPONS - Projectile Weapons
+	TORPEDO_LAUNCHER,
+	MISSILE_POD,
+	RAILGUN,
+	AUTOCANNON,
+
+	# WEAPONS - Defensive Weapons
+	POINT_DEFENSE,
+	FLAK_BATTERY,
+	INTERCEPTOR_BAY,
+
+	# WEAPONS - Specialty
+	EMP_EMITTER,
+	TRACTOR_BEAM,
+
+	# DEFENSE - Shields
+	STANDARD_SHIELD,
+	LIGHT_SHIELD,
+	HEAVY_SHIELD,
+	FAST_RECHARGE_SHIELD,
+	HARDENED_SHIELD,
+
+	# DEFENSE - Armor
+	HULL_PLATING,
+	LIGHT_ARMOR,
+	HEAVY_ARMOR,
+	REACTIVE_ARMOR,
+	ABLATIVE_ARMOR,
+
+	# DEFENSE - Specialty
+	ECM_SUITE,
+	CHAFF_LAUNCHER,
+	DAMAGE_CONTROL,
+
+	# PROPULSION - Main Engines
+	STANDARD_ENGINE,
+	HIGH_THRUST_ENGINE,
+	EFFICIENT_ENGINE,
+	ARMORED_ENGINE,
+
+	# PROPULSION - Maneuvering
+	THRUSTERS,
+	REACTION_CONTROL,
+	COMBAT_THRUSTERS,
+
+	# PROPULSION - FTL Systems
+	JUMP_DRIVE,
+	FAST_SPOOL_DRIVE,
+	EMERGENCY_JUMP,
+	ARMORED_DRIVE,
+
+	# PROPULSION - Specialty
+	AFTERBURNER,
+	GRAVITY_WELL,
+
+	# COMMAND & CONTROL - Command
+	AUXILIARY_CONTROL,
+	COMBAT_INFO_CENTER,
+	FLAG_BRIDGE,
+
+	# COMMAND & CONTROL - Sensors & Targeting
+	SENSOR_ARRAY,
+	ADVANCED_SENSORS,
+	LONG_RANGE_SCANNERS,
+	TARGET_PAINTER,
+
+	# COMMAND & CONTROL - Computer Systems
+	COMPUTER_CORE,
+	TACTICAL_COMPUTER,
+	AI_CORE,
+
+	# COMMAND & CONTROL - Specialty
+	CLOAKING_DEVICE,
+	STEALTH_HULL,
+
+	# STRUCTURE - Hull Components
+	REINFORCED_HULL,
+	LIGHTWEIGHT_FRAME,
+
+	# STRUCTURE - Compartmentalization
+	BULKHEAD,
+	BLAST_DOOR,
+	AIRLOCK,
+
+	# STRUCTURE - Specialty
+	DECOY_MODULE,
+	STEALTH_PLATING,
+	SPACED_ARMOR
 }
 
 ## Flag to track if data has been loaded from JSON
@@ -133,6 +229,82 @@ static func _get_room_type_from_name(name: String):
 		"ARMOR": return RoomType.ARMOR
 		"CONDUIT": return RoomType.CONDUIT
 		"RELAY": return RoomType.RELAY
+		# Energy Weapons
+		"PHASER_ARRAY": return RoomType.PHASER_ARRAY
+		"HEAVY_PHASER": return RoomType.HEAVY_PHASER
+		"PULSE_LASER": return RoomType.PULSE_LASER
+		"BEAM_LANCE": return RoomType.BEAM_LANCE
+		"ION_CANNON": return RoomType.ION_CANNON
+		# Projectile Weapons
+		"TORPEDO_LAUNCHER": return RoomType.TORPEDO_LAUNCHER
+		"MISSILE_POD": return RoomType.MISSILE_POD
+		"RAILGUN": return RoomType.RAILGUN
+		"AUTOCANNON": return RoomType.AUTOCANNON
+		# Defensive Weapons
+		"POINT_DEFENSE": return RoomType.POINT_DEFENSE
+		"FLAK_BATTERY": return RoomType.FLAK_BATTERY
+		"INTERCEPTOR_BAY": return RoomType.INTERCEPTOR_BAY
+		# Specialty Weapons
+		"EMP_EMITTER": return RoomType.EMP_EMITTER
+		"TRACTOR_BEAM": return RoomType.TRACTOR_BEAM
+		# Shields
+		"STANDARD_SHIELD": return RoomType.STANDARD_SHIELD
+		"LIGHT_SHIELD": return RoomType.LIGHT_SHIELD
+		"HEAVY_SHIELD": return RoomType.HEAVY_SHIELD
+		"FAST_RECHARGE_SHIELD": return RoomType.FAST_RECHARGE_SHIELD
+		"HARDENED_SHIELD": return RoomType.HARDENED_SHIELD
+		# Armor
+		"HULL_PLATING": return RoomType.HULL_PLATING
+		"LIGHT_ARMOR": return RoomType.LIGHT_ARMOR
+		"HEAVY_ARMOR": return RoomType.HEAVY_ARMOR
+		"REACTIVE_ARMOR": return RoomType.REACTIVE_ARMOR
+		"ABLATIVE_ARMOR": return RoomType.ABLATIVE_ARMOR
+		# Defense Specialty
+		"ECM_SUITE": return RoomType.ECM_SUITE
+		"CHAFF_LAUNCHER": return RoomType.CHAFF_LAUNCHER
+		"DAMAGE_CONTROL": return RoomType.DAMAGE_CONTROL
+		# Main Engines
+		"STANDARD_ENGINE": return RoomType.STANDARD_ENGINE
+		"HIGH_THRUST_ENGINE": return RoomType.HIGH_THRUST_ENGINE
+		"EFFICIENT_ENGINE": return RoomType.EFFICIENT_ENGINE
+		"ARMORED_ENGINE": return RoomType.ARMORED_ENGINE
+		# Maneuvering
+		"THRUSTERS": return RoomType.THRUSTERS
+		"REACTION_CONTROL": return RoomType.REACTION_CONTROL
+		"COMBAT_THRUSTERS": return RoomType.COMBAT_THRUSTERS
+		# FTL Systems
+		"JUMP_DRIVE": return RoomType.JUMP_DRIVE
+		"FAST_SPOOL_DRIVE": return RoomType.FAST_SPOOL_DRIVE
+		"EMERGENCY_JUMP": return RoomType.EMERGENCY_JUMP
+		"ARMORED_DRIVE": return RoomType.ARMORED_DRIVE
+		# Propulsion Specialty
+		"AFTERBURNER": return RoomType.AFTERBURNER
+		"GRAVITY_WELL": return RoomType.GRAVITY_WELL
+		# Command
+		"AUXILIARY_CONTROL": return RoomType.AUXILIARY_CONTROL
+		"COMBAT_INFO_CENTER": return RoomType.COMBAT_INFO_CENTER
+		"FLAG_BRIDGE": return RoomType.FLAG_BRIDGE
+		# Sensors
+		"SENSOR_ARRAY": return RoomType.SENSOR_ARRAY
+		"ADVANCED_SENSORS": return RoomType.ADVANCED_SENSORS
+		"LONG_RANGE_SCANNERS": return RoomType.LONG_RANGE_SCANNERS
+		"TARGET_PAINTER": return RoomType.TARGET_PAINTER
+		# Computers
+		"COMPUTER_CORE": return RoomType.COMPUTER_CORE
+		"TACTICAL_COMPUTER": return RoomType.TACTICAL_COMPUTER
+		"AI_CORE": return RoomType.AI_CORE
+		# Command Specialty
+		"CLOAKING_DEVICE": return RoomType.CLOAKING_DEVICE
+		"STEALTH_HULL": return RoomType.STEALTH_HULL
+		# Structure
+		"REINFORCED_HULL": return RoomType.REINFORCED_HULL
+		"LIGHTWEIGHT_FRAME": return RoomType.LIGHTWEIGHT_FRAME
+		"BULKHEAD": return RoomType.BULKHEAD
+		"BLAST_DOOR": return RoomType.BLAST_DOOR
+		"AIRLOCK": return RoomType.AIRLOCK
+		"DECOY_MODULE": return RoomType.DECOY_MODULE
+		"STEALTH_PLATING": return RoomType.STEALTH_PLATING
+		"SPACED_ARMOR": return RoomType.SPACED_ARMOR
 		_:
 			push_warning("Unknown room type: %s" % name)
 			return null
@@ -232,6 +404,55 @@ static func get_color(room_type: RoomType) -> Color:
 static func get_label(room_type: RoomType) -> String:
 	_load_data_from_json()  # Ensure data is loaded
 	return labels.get(room_type, "")
+
+## Get category for a room type (Feature 01: Seven-Category Structure)
+## Maps components to their primary functional category
+static func get_category(room_type: RoomType) -> ComponentCategory.Category:
+	match room_type:
+		# POWER SYSTEMS
+		RoomType.REACTOR, RoomType.CONDUIT, RoomType.RELAY:
+			return ComponentCategory.Category.POWER_SYSTEMS
+
+		# WEAPONS - All weapon types
+		RoomType.WEAPON, RoomType.PHASER_ARRAY, RoomType.HEAVY_PHASER, RoomType.PULSE_LASER, \
+		RoomType.BEAM_LANCE, RoomType.ION_CANNON, RoomType.TORPEDO_LAUNCHER, RoomType.MISSILE_POD, \
+		RoomType.RAILGUN, RoomType.AUTOCANNON, RoomType.POINT_DEFENSE, RoomType.FLAK_BATTERY, \
+		RoomType.INTERCEPTOR_BAY, RoomType.EMP_EMITTER, RoomType.TRACTOR_BEAM:
+			return ComponentCategory.Category.WEAPONS
+
+		# DEFENSE - Shields and Armor
+		RoomType.SHIELD, RoomType.STANDARD_SHIELD, RoomType.LIGHT_SHIELD, RoomType.HEAVY_SHIELD, \
+		RoomType.FAST_RECHARGE_SHIELD, RoomType.HARDENED_SHIELD, RoomType.ARMOR, RoomType.HULL_PLATING, \
+		RoomType.LIGHT_ARMOR, RoomType.HEAVY_ARMOR, RoomType.REACTIVE_ARMOR, RoomType.ABLATIVE_ARMOR, \
+		RoomType.ECM_SUITE, RoomType.CHAFF_LAUNCHER, RoomType.DAMAGE_CONTROL:
+			return ComponentCategory.Category.DEFENSE
+
+		# PROPULSION - Engines, Thrusters, FTL, Specialty
+		RoomType.ENGINE, RoomType.STANDARD_ENGINE, RoomType.HIGH_THRUST_ENGINE, RoomType.EFFICIENT_ENGINE, \
+		RoomType.ARMORED_ENGINE, RoomType.THRUSTERS, RoomType.REACTION_CONTROL, RoomType.COMBAT_THRUSTERS, \
+		RoomType.JUMP_DRIVE, RoomType.FAST_SPOOL_DRIVE, RoomType.EMERGENCY_JUMP, RoomType.ARMORED_DRIVE, \
+		RoomType.AFTERBURNER, RoomType.GRAVITY_WELL:
+			return ComponentCategory.Category.PROPULSION
+
+		# COMMAND & CONTROL - Bridge, Sensors, Computers, Specialty
+		RoomType.BRIDGE, RoomType.AUXILIARY_CONTROL, RoomType.COMBAT_INFO_CENTER, RoomType.FLAG_BRIDGE, \
+		RoomType.SENSOR_ARRAY, RoomType.ADVANCED_SENSORS, RoomType.LONG_RANGE_SCANNERS, RoomType.TARGET_PAINTER, \
+		RoomType.COMPUTER_CORE, RoomType.TACTICAL_COMPUTER, RoomType.AI_CORE, \
+		RoomType.CLOAKING_DEVICE, RoomType.STEALTH_HULL:
+			return ComponentCategory.Category.COMMAND_CONTROL
+
+		# STRUCTURE - Hull, Bulkheads, Specialty
+		RoomType.REINFORCED_HULL, RoomType.LIGHTWEIGHT_FRAME, RoomType.BULKHEAD, RoomType.BLAST_DOOR, \
+		RoomType.AIRLOCK, RoomType.DECOY_MODULE, RoomType.STEALTH_PLATING, RoomType.SPACED_ARMOR:
+			return ComponentCategory.Category.STRUCTURE
+
+		# EMPTY - Fallback
+		RoomType.EMPTY:
+			return ComponentCategory.Category.STRUCTURE
+
+		_:
+			# Unknown room type - default to Structure
+			return ComponentCategory.Category.STRUCTURE
 
 ## Synergy type enumeration
 enum SynergyType {

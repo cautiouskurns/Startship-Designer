@@ -199,24 +199,92 @@ func _update_id_label():
 	# Get room type abbreviation
 	var abbreviation = ""
 	match room_type:
-		RoomData.RoomType.BRIDGE:
-			abbreviation = "BRI"
-		RoomData.RoomType.WEAPON:
-			abbreviation = "WEA"
-		RoomData.RoomType.SHIELD:
-			abbreviation = "SHI"
-		RoomData.RoomType.ENGINE:
-			abbreviation = "ENG"
-		RoomData.RoomType.REACTOR:
-			abbreviation = "REA"
-		RoomData.RoomType.ARMOR:
-			abbreviation = "ARM"
-		RoomData.RoomType.CONDUIT:
-			abbreviation = "CON"
-		RoomData.RoomType.RELAY:
-			abbreviation = "REL"
-		_:
-			abbreviation = "???"
+		# Original components
+		RoomData.RoomType.BRIDGE: abbreviation = "BRI"
+		RoomData.RoomType.WEAPON: abbreviation = "WEA"
+		RoomData.RoomType.SHIELD: abbreviation = "SHI"
+		RoomData.RoomType.ENGINE: abbreviation = "ENG"
+		RoomData.RoomType.REACTOR: abbreviation = "REA"
+		RoomData.RoomType.ARMOR: abbreviation = "ARM"
+		RoomData.RoomType.CONDUIT: abbreviation = "CON"
+		RoomData.RoomType.RELAY: abbreviation = "REL"
+		# Energy Weapons
+		RoomData.RoomType.PHASER_ARRAY: abbreviation = "PHA"
+		RoomData.RoomType.HEAVY_PHASER: abbreviation = "HPH"
+		RoomData.RoomType.PULSE_LASER: abbreviation = "PLS"
+		RoomData.RoomType.BEAM_LANCE: abbreviation = "BLN"
+		RoomData.RoomType.ION_CANNON: abbreviation = "ION"
+		# Projectile Weapons
+		RoomData.RoomType.TORPEDO_LAUNCHER: abbreviation = "TOR"
+		RoomData.RoomType.MISSILE_POD: abbreviation = "MIS"
+		RoomData.RoomType.RAILGUN: abbreviation = "RAI"
+		RoomData.RoomType.AUTOCANNON: abbreviation = "ATC"
+		# Defensive Weapons
+		RoomData.RoomType.POINT_DEFENSE: abbreviation = "PDF"
+		RoomData.RoomType.FLAK_BATTERY: abbreviation = "FLK"
+		RoomData.RoomType.INTERCEPTOR_BAY: abbreviation = "INT"
+		# Specialty Weapons
+		RoomData.RoomType.EMP_EMITTER: abbreviation = "EMP"
+		RoomData.RoomType.TRACTOR_BEAM: abbreviation = "TRC"
+		# Shields
+		RoomData.RoomType.STANDARD_SHIELD: abbreviation = "SSH"
+		RoomData.RoomType.LIGHT_SHIELD: abbreviation = "LSH"
+		RoomData.RoomType.HEAVY_SHIELD: abbreviation = "HSH"
+		RoomData.RoomType.FAST_RECHARGE_SHIELD: abbreviation = "FSH"
+		RoomData.RoomType.HARDENED_SHIELD: abbreviation = "RDH"
+		# Armor
+		RoomData.RoomType.HULL_PLATING: abbreviation = "HPL"
+		RoomData.RoomType.LIGHT_ARMOR: abbreviation = "LAR"
+		RoomData.RoomType.HEAVY_ARMOR: abbreviation = "HAR"
+		RoomData.RoomType.REACTIVE_ARMOR: abbreviation = "RAR"
+		RoomData.RoomType.ABLATIVE_ARMOR: abbreviation = "AAR"
+		# Defense Specialty
+		RoomData.RoomType.ECM_SUITE: abbreviation = "ECM"
+		RoomData.RoomType.CHAFF_LAUNCHER: abbreviation = "CHF"
+		RoomData.RoomType.DAMAGE_CONTROL: abbreviation = "DMC"
+		# Main Engines
+		RoomData.RoomType.STANDARD_ENGINE: abbreviation = "SEN"
+		RoomData.RoomType.HIGH_THRUST_ENGINE: abbreviation = "HTE"
+		RoomData.RoomType.EFFICIENT_ENGINE: abbreviation = "EFE"
+		RoomData.RoomType.ARMORED_ENGINE: abbreviation = "ARE"
+		# Maneuvering
+		RoomData.RoomType.THRUSTERS: abbreviation = "THR"
+		RoomData.RoomType.REACTION_CONTROL: abbreviation = "RCS"
+		RoomData.RoomType.COMBAT_THRUSTERS: abbreviation = "CRV"
+		# FTL Systems
+		RoomData.RoomType.JUMP_DRIVE: abbreviation = "JMP"
+		RoomData.RoomType.FAST_SPOOL_DRIVE: abbreviation = "FSJ"
+		RoomData.RoomType.EMERGENCY_JUMP: abbreviation = "EMJ"
+		RoomData.RoomType.ARMORED_DRIVE: abbreviation = "ARD"
+		# Propulsion Specialty
+		RoomData.RoomType.AFTERBURNER: abbreviation = "AFT"
+		RoomData.RoomType.GRAVITY_WELL: abbreviation = "GRV"
+		# Command
+		RoomData.RoomType.AUXILIARY_CONTROL: abbreviation = "AUX"
+		RoomData.RoomType.COMBAT_INFO_CENTER: abbreviation = "CIC"
+		RoomData.RoomType.FLAG_BRIDGE: abbreviation = "FLG"
+		# Sensors
+		RoomData.RoomType.SENSOR_ARRAY: abbreviation = "SEN"
+		RoomData.RoomType.ADVANCED_SENSORS: abbreviation = "ADV"
+		RoomData.RoomType.LONG_RANGE_SCANNERS: abbreviation = "LRS"
+		RoomData.RoomType.TARGET_PAINTER: abbreviation = "TGT"
+		# Computers
+		RoomData.RoomType.COMPUTER_CORE: abbreviation = "CPU"
+		RoomData.RoomType.TACTICAL_COMPUTER: abbreviation = "TAC"
+		RoomData.RoomType.AI_CORE: abbreviation = "AI"
+		# Command Specialty
+		RoomData.RoomType.CLOAKING_DEVICE: abbreviation = "CLK"
+		RoomData.RoomType.STEALTH_HULL: abbreviation = "STL"
+		# Structure
+		RoomData.RoomType.REINFORCED_HULL: abbreviation = "RHU"
+		RoomData.RoomType.LIGHTWEIGHT_FRAME: abbreviation = "LWF"
+		RoomData.RoomType.BULKHEAD: abbreviation = "BHD"
+		RoomData.RoomType.BLAST_DOOR: abbreviation = "BDR"
+		RoomData.RoomType.AIRLOCK: abbreviation = "AIR"
+		RoomData.RoomType.DECOY_MODULE: abbreviation = "DEC"
+		RoomData.RoomType.STEALTH_PLATING: abbreviation = "STP"
+		RoomData.RoomType.SPACED_ARMOR: abbreviation = "SPC"
+		_: abbreviation = "???"
 
 	# Format as ABBR (e.g., WEA, SHI, etc.)
 	id_label.text = "%s" % abbreviation

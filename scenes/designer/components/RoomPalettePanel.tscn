@@ -1,7 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://gbexenfull3j"]
+[gd_scene load_steps=7 format=3 uid="uid://gbexenfull3j"]
 
 [ext_resource type="Script" uid="uid://bp5i0835ou0q1" path="res://scripts/designer/RoomPalettePanel.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/designer/components/RoomTypeButton.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://cscc50740fd8k" path="res://scenes/designer/components/RoomTypeButton.tscn" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_components_panel"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 0.4)
@@ -10,6 +10,23 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.290196, 0.886275, 0.886275, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_active"]
+bg_color = Color(0.290196, 0.886275, 0.886275, 0.3)
+border_width_bottom = 2
+border_color = Color(0.290196, 0.886275, 0.886275, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_inactive"]
+bg_color = Color(0.101961, 0.101961, 0.101961, 0.2)
+border_width_bottom = 1
+border_color = Color(0.290196, 0.886275, 0.886275, 0.3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_category_header"]
+bg_color = Color(0.101961, 0.101961, 0.101961, 0.6)
+border_width_left = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.290196, 0.886275, 0.886275, 0.5)
 
 [node name="RoomPalettePanel" type="Panel"]
 custom_minimum_size = Vector2(340, 600)
@@ -25,24 +42,127 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+[node name="TabsMargin" type="MarginContainer" parent="VBoxContainer"]
 layout_mode = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+
+[node name="CategoryTabBar" type="HBoxContainer" parent="VBoxContainer/TabsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="PowerTab" type="Button" parent="VBoxContainer/TabsMargin/CategoryTabBar"]
+custom_minimum_size = Vector2(42, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_active")
+text = "⊕"
+
+[node name="WeaponsTab" type="Button" parent="VBoxContainer/TabsMargin/CategoryTabBar"]
+custom_minimum_size = Vector2(42, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_inactive")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_active")
+text = "▶"
+
+[node name="DefenseTab" type="Button" parent="VBoxContainer/TabsMargin/CategoryTabBar"]
+custom_minimum_size = Vector2(42, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_inactive")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_active")
+text = "◆"
+
+[node name="PropulsionTab" type="Button" parent="VBoxContainer/TabsMargin/CategoryTabBar"]
+custom_minimum_size = Vector2(42, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_inactive")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_active")
+text = "▲"
+
+[node name="CommandTab" type="Button" parent="VBoxContainer/TabsMargin/CategoryTabBar"]
+custom_minimum_size = Vector2(42, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_inactive")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_active")
+text = "⭐"
+
+[node name="UtilityTab" type="Button" parent="VBoxContainer/TabsMargin/CategoryTabBar"]
+custom_minimum_size = Vector2(42, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_inactive")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_active")
+text = "◇"
+
+[node name="StructureTab" type="Button" parent="VBoxContainer/TabsMargin/CategoryTabBar"]
+custom_minimum_size = Vector2(42, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_tab_inactive")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_tab_active")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tab_active")
+text = "■"
+
+[node name="CategoryHeaderMargin" type="MarginContainer" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 8
+
+[node name="CategoryHeader" type="Panel" parent="VBoxContainer/CategoryHeaderMargin"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_category_header")
+
+[node name="PaddingMargin" type="MarginContainer" parent="VBoxContainer/CategoryHeaderMargin/CategoryHeader"]
+custom_minimum_size = Vector2(0, 70)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -7.0
+offset_bottom = 6.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 8
 
-[node name="HeaderLabel" type="Label" parent="VBoxContainer/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/CategoryHeaderMargin/CategoryHeader/PaddingMargin"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.29, 0.886, 0.886, 1)
-theme_override_font_sizes/font_size = 18
-text = "⊕ COMPONENTS"
+theme_override_constants/separation = 2
+
+[node name="CategoryNameLabel" type="Label" parent="VBoxContainer/CategoryHeaderMargin/CategoryHeader/PaddingMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.886, 0.831, 0.29, 1)
+theme_override_font_sizes/font_size = 16
+text = "⊕ Power Systems"
 vertical_alignment = 1
 
+[node name="CategoryDescLabel" type="Label" parent="VBoxContainer/CategoryHeaderMargin/CategoryHeader/PaddingMargin/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "Generate, store, and distribute power to your ship's systems"
+autowrap_mode = 2
+
 [node name="Spacer1" type="Control" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 10)
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
 [node name="ButtonsMargin" type="MarginContainer" parent="VBoxContainer"]
@@ -51,46 +171,11 @@ size_flags_vertical = 3
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_right = 16
 
-[node name="ButtonsContainer" type="VBoxContainer" parent="VBoxContainer/ButtonsMargin"]
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/ButtonsMargin"]
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="ButtonsContainer" type="VBoxContainer" parent="VBoxContainer/ButtonsMargin/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 8
-
-[node name="BridgeButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 1
-
-[node name="WeaponButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 2
-
-[node name="ShieldButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 3
-
-[node name="EngineButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 4
-
-[node name="ReactorButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 5
-
-[node name="ArmorButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 6
-
-[node name="ConduitButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 7
-
-[node name="RelayButton" parent="VBoxContainer/ButtonsMargin/ButtonsContainer" instance=ExtResource("2")]
-custom_minimum_size = Vector2(240, 50)
-layout_mode = 2
-room_type = 8
