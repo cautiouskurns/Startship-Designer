@@ -1,5 +1,11 @@
 extends Control
 
+## Bark system signals (Crew Barks Phase 1.1)
+signal component_destroyed(ship: String, component_type: RoomData.RoomType)
+signal hp_threshold_crossed(ship: String, threshold: int, current_hp: int)
+signal battle_started()
+signal battle_ended(victory: bool)
+
 ## Ship display nodes
 @onready var player_ship_display: ShipDisplay = $ShipBattleArea/PlayerShipContainer/PlayerShipDisplay
 @onready var enemy_ship_display: ShipDisplay = $ShipBattleArea/EnemyShipContainer/EnemyShipDisplay
@@ -83,6 +89,10 @@ const PAN_LIMIT: float = BalanceConstants.COMBAT_PAN_LIMIT
 ## Zoom indicator fade tween
 var zoom_fade_tween: Tween = null
 
+## HP threshold tracking for bark system (Crew Barks Phase 1.1)
+var player_hp_thresholds_crossed: Dictionary = {75: false, 50: false, 25: false}
+var enemy_hp_thresholds_crossed: Dictionary = {75: false, 50: false, 25: false}
+
 func _ready():
 	# Connect buttons
 	redesign_button.pressed.connect(_on_redesign_pressed)
@@ -147,6 +157,12 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 	current_turn_weapon_actions.clear()
 	current_turn_destruction_actions.clear()
 	print("DEBUG: Battle replay initialized for mission ", mission_index)
+
+	# Connect to CrewBarkSystem and reset state (Crew Barks Phase 1.1)
+	if CrewBarkSystem:
+		CrewBarkSystem.connect_to_combat(self)
+		player_hp_thresholds_crossed = {75: false, 50: false, 25: false}
+		enemy_hp_thresholds_crossed = {75: false, 50: false, 25: false}
 
 	# Reset zoom and pan to default
 	current_zoom = 1.5  # Start zoomed in for better component visibility
@@ -390,6 +406,9 @@ func run_combat_loop():
 	# Wait for message to complete
 	await get_tree().create_timer(1.8 * speed_multiplier).timeout
 
+	# Emit battle_started signal for bark system (Crew Barks Phase 1.1)
+	battle_started.emit()
+
 	# Combat loop
 	while combat_active:
 		# Wait while paused
@@ -489,7 +508,11 @@ func _execute_turn():
 		current_turn_events.append("  Damage: %d (no shields!)" % damage)
 
 	# Apply damage to HP
+	var old_hp = defender.current_hp
 	defender.current_hp = max(0, defender.current_hp - net_damage)
+
+	# Check HP thresholds and emit signal if crossed (Crew Barks Phase 1.1)
+	_check_hp_thresholds(defender_name, defender, old_hp)
 
 	# Log HP remaining
 	if combat_log:
@@ -929,6 +952,11 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 			# Track event for replay
 			current_turn_events.append("  %s's %s destroyed!" % [defender_name, RoomData.get_label(room_type)])
 
+			# Emit component_destroyed signal for bark system (Crew Barks Phase 1.1)
+			# Only emit for player ship
+			if defender_name == "PLAYER":
+				component_destroyed.emit("player", room_type)
+
 			# Play explosion sound
 			AudioManager.play_explosion()
 
@@ -988,6 +1016,11 @@ func _destroy_random_rooms(defender: ShipData, defender_display: ShipDisplay, co
 				combat_log.add_room_destroyed(RoomData.get_label(room_type), defender_name)
 			# Track event for replay
 			current_turn_events.append("  %s's %s destroyed!" % [defender_name, RoomData.get_label(room_type)])
+
+			# Emit component_destroyed signal for bark system (Crew Barks Phase 1.1)
+			# Only emit for player ship
+			if defender_name == "PLAYER":
+				component_destroyed.emit("player", room_type)
 
 			# Play explosion sound
 			AudioManager.play_explosion()
@@ -1071,6 +1104,29 @@ func _update_turn_indicator(player_turn: bool):
 	tween.tween_property(turn_indicator, "scale", Vector2(1.2, 1.2), 0.2)
 	tween.tween_property(turn_indicator, "scale", Vector2(1.0, 1.0), 0.2)
 
+## Check HP thresholds and emit signal if crossed (Crew Barks Phase 1.1)
+func _check_hp_thresholds(ship_name: String, ship_data: ShipData, old_hp: int):
+	var new_hp = ship_data.current_hp
+	var max_hp = ship_data.max_hp
+
+	# Determine which ship to check
+	var thresholds = player_hp_thresholds_crossed if ship_name == "PLAYER" else enemy_hp_thresholds_crossed
+
+	# Check each threshold (75%, 50%, 25%)
+	for threshold in [75, 50, 25]:
+		if thresholds[threshold]:
+			continue  # Already crossed this threshold
+
+		var threshold_hp = int(max_hp * threshold / 100.0)
+
+		# Check if we crossed this threshold (was above, now at or below)
+		if old_hp > threshold_hp and new_hp <= threshold_hp:
+			thresholds[threshold] = true
+			# Emit signal (only for player ship)
+			if ship_name == "PLAYER":
+				hp_threshold_crossed.emit("player", threshold, new_hp)
+				print("[CrewBarkSystem] HP threshold crossed: player at %d%% (HP: %d)" % [threshold, new_hp])
+
 ## Show combat end screen
 func _show_combat_end(winner: String):
 	# Finalize battle result (Feature: State Capture & Replay)
@@ -1081,6 +1137,10 @@ func _show_combat_end(winner: String):
 
 		# Store in GameState for replay viewer access (Feature 2: Timeline Bar & Scrubbing)
 		GameState.store_battle_result(battle_result)
+
+	# Emit battle_ended signal for bark system (Crew Barks Phase 1.1)
+	var player_victory = (winner == "player")
+	battle_ended.emit(player_victory)
 
 	# Log victory/defeat
 	if combat_log:
