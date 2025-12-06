@@ -558,78 +558,119 @@ func _execute_turn():
 	# Capture state at end of turn (Feature: State Capture & Replay)
 	_capture_turn_snapshot()
 
-## Determine which ship shoots first based on engine count (returns detailed data)
+## Determine which ship shoots first based on thrust (returns detailed data)
 func _determine_initiative_detailed() -> Dictionary:
-	var player_engines = player_data.count_powered_room_type(RoomData.RoomType.ENGINE)
-	var enemy_engines = enemy_data.count_powered_room_type(RoomData.RoomType.ENGINE)
+	# Calculate thrust from all powered engines (using individual stats)
+	var player_thrust = 0
+	var player_engine_count = 0
+	for y in range(player_data.grid.size()):
+		for x in range(player_data.grid[y].size()):
+			var room_type = player_data.grid[y][x]
+			var category = RoomData.get_category(room_type)
+			if category == ComponentCategory.Category.PROPULSION and player_data.is_room_powered(x, y):
+				var engine_stats = RoomData.get_stats(room_type)
+				if engine_stats.has("thrust"):
+					player_thrust += engine_stats.get("thrust", 10)
+					player_engine_count += 1
+
+	var enemy_thrust = 0
+	var enemy_engine_count = 0
+	for y in range(enemy_data.grid.size()):
+		for x in range(enemy_data.grid[y].size()):
+			var room_type = enemy_data.grid[y][x]
+			var category = RoomData.get_category(room_type)
+			if category == ComponentCategory.Category.PROPULSION and enemy_data.is_room_powered(x, y):
+				var engine_stats = RoomData.get_stats(room_type)
+				if engine_stats.has("thrust"):
+					enemy_thrust += engine_stats.get("thrust", 10)
+					enemy_engine_count += 1
 
 	# Apply synergy bonuses (Engine+Engine gives +1 initiative)
 	var player_synergies = player_data.calculate_synergy_bonuses()
 	var enemy_synergies = enemy_data.calculate_synergy_bonuses()
 
-	player_engines += player_synergies["counts"][RoomData.SynergyType.INITIATIVE]
-	enemy_engines += enemy_synergies["counts"][RoomData.SynergyType.INITIATIVE]
+	player_thrust += player_synergies["counts"][RoomData.SynergyType.INITIATIVE]
+	enemy_thrust += enemy_synergies["counts"][RoomData.SynergyType.INITIATIVE]
 
 	# Apply hull initiative bonus (Phase 10.1 - Frigate gets +2)
 	var hull_data = GameState.get_current_hull_data()
 	if hull_data["bonus_type"] == "initiative":
-		player_engines += hull_data["bonus_value"]
+		player_thrust += hull_data["bonus_value"]
 
-	# Higher engine count shoots first, player wins ties
+	# Higher thrust shoots first, player wins ties
 	return {
-		"player_first": player_engines >= enemy_engines,
-		"player_engines": player_engines,
-		"enemy_engines": enemy_engines
+		"player_first": player_thrust >= enemy_thrust,
+		"player_engines": player_thrust,  # Return thrust value (for display compatibility)
+		"enemy_engines": enemy_thrust    # Return thrust value (for display compatibility)
 	}
 
-## Calculate damage dealt by attacker
+## Calculate damage dealt by attacker (using individual weapon stats)
 func _calculate_damage(attacker: ShipData) -> int:
-	var weapons = attacker.count_powered_room_type(RoomData.RoomType.WEAPON)
-	var base_damage = weapons * BalanceConstants.DAMAGE_PER_WEAPON
+	var base_damage = 0
+	var synergy_damage = 0
+	var weapons_found = 0
 
 	# Apply synergy bonuses (Weapon+Weapon gives +15% damage per weapon in synergy)
 	var synergies = attacker.calculate_synergy_bonuses()
 	var room_synergies = synergies["room_synergies"]
 
-	# Count how many weapons have FIRE_RATE synergy
-	var weapons_with_synergy = 0
+	# Sum damage from all powered weapons (using individual stats)
 	for y in range(attacker.grid.size()):
 		for x in range(attacker.grid[y].size()):
 			var room_type = attacker.grid[y][x]
-			if room_type == RoomData.RoomType.WEAPON and attacker.is_room_powered(x, y):
+			var category = RoomData.get_category(room_type)
+
+			# Check if this is a weapon and it's powered
+			if category == ComponentCategory.Category.WEAPONS and attacker.is_room_powered(x, y):
+				weapons_found += 1
+				# Get this weapon's individual damage stat
+				var weapon_stats = RoomData.get_stats(room_type)
+				var weapon_damage = weapon_stats.get("damage", 10)  # Default to 10 if missing
+				print("DEBUG Combat: Found weapon at [", x, ",", y, "] type=", RoomData.get_label(room_type), " damage=", weapon_damage, " stats=", weapon_stats)
+				base_damage += weapon_damage
+
+				# Check if this weapon has fire rate synergy
 				var pos = Vector2i(x, y)
 				if pos in room_synergies:
 					if RoomData.SynergyType.FIRE_RATE in room_synergies[pos]:
-						weapons_with_synergy += 1
+						# Synergy adds bonus percentage of this weapon's damage
+						synergy_damage += int(weapon_damage * BalanceConstants.FIRE_RATE_SYNERGY_BONUS)
 
-	# Add synergy bonus damage for each weapon with synergy
-	var synergy_damage = int(weapons_with_synergy * BalanceConstants.DAMAGE_PER_WEAPON * BalanceConstants.FIRE_RATE_SYNERGY_BONUS)
+	print("DEBUG Combat: Total weapons found: ", weapons_found, ", base_damage: ", base_damage, ", synergy_damage: ", synergy_damage)
 	return base_damage + synergy_damage
 
-## Calculate shield absorption for defender
+## Calculate shield absorption for defender (using individual shield stats)
 func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
-	var shields = defender.count_powered_room_type(RoomData.RoomType.SHIELD)
-	var base_absorption = shields * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD
+	var base_absorption = 0
+	var synergy_absorption = 0
 
 	# Apply synergy bonuses (Shield+Reactor gives +20% absorption per shield in synergy)
 	var synergies = defender.calculate_synergy_bonuses()
 	var room_synergies = synergies["room_synergies"]
 
-	# Count how many shields have SHIELD_CAPACITY synergy
-	var shields_with_synergy = 0
+	# Sum absorption from all powered shields (using individual stats)
 	for y in range(defender.grid.size()):
 		for x in range(defender.grid[y].size()):
 			var room_type = defender.grid[y][x]
-			if room_type == RoomData.RoomType.SHIELD and defender.is_room_powered(x, y):
-				var pos = Vector2i(x, y)
-				if pos in room_synergies:
-					if RoomData.SynergyType.SHIELD_CAPACITY in room_synergies[pos]:
-						shields_with_synergy += 1
+			var category = RoomData.get_category(room_type)
 
-	# Add synergy bonus absorption for each shield with synergy
-	var synergy_absorption = int(shields_with_synergy * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD * BalanceConstants.SHIELD_CAPACITY_SYNERGY_BONUS)
+			# Check if this is a shield and it's powered
+			if category == ComponentCategory.Category.DEFENSE and defender.is_room_powered(x, y):
+				var defense_stats = RoomData.get_stats(room_type)
+
+				# Shields have absorption stat (armor has hp_bonus instead)
+				if defense_stats.has("absorption"):
+					var shield_absorption = defense_stats.get("absorption", 15)  # Default to 15 if missing
+					base_absorption += shield_absorption
+
+					# Check if this shield has capacity synergy
+					var pos = Vector2i(x, y)
+					if pos in room_synergies:
+						if RoomData.SynergyType.SHIELD_CAPACITY in room_synergies[pos]:
+							# Synergy adds bonus percentage of this shield's absorption
+							synergy_absorption += int(shield_absorption * BalanceConstants.SHIELD_CAPACITY_SYNERGY_BONUS)
+
 	var total_absorption = base_absorption + synergy_absorption
-
 	return min(damage, total_absorption)
 
 ## Fire weapons with visual effects (Phase 10.6 - lasers, torpedos, shield impacts)

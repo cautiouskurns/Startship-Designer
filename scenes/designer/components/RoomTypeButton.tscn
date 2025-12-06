@@ -124,12 +124,13 @@ one_shot = true
 
 [node name="TooltipPanel" type="Panel" parent="."]
 visible = false
-z_index = 100
-custom_minimum_size = Vector2(250, 0)
+top_level = true
+z_index = 1000
+custom_minimum_size = Vector2(300, 0)
 layout_mode = 0
 offset_left = 260.0
-offset_right = 510.0
-offset_bottom = 100.0
+offset_right = 560.0
+offset_bottom = 200.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_tooltip")
 

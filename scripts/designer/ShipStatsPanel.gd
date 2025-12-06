@@ -42,43 +42,78 @@ func update_stats(ship: ShipData, hull_data: Dictionary = {}):
 	_update_mobility(thrust_data)
 	_update_power(ship)
 
-## Update offense display (simplified)
+## Update offense display (with breakdown)
 func _update_offense(data: Dictionary):
 	if not offense_value:
 		return  # Node not set up yet
 	var damage = data["damage"]
-	offense_value.text = str(damage)
+	var weapons = data["weapons"]
+	var synergy_bonus = data["synergy_bonus"]
+
+	# Show damage with weapon count and synergy bonus if applicable
+	var display_text = str(damage)
+	if weapons > 0:
+		display_text += " (" + str(weapons) + "W"
+		if synergy_bonus > 0:
+			display_text += " +" + str(synergy_bonus)
+		display_text += ")"
+
+	offense_value.text = display_text
 	offense_value.add_theme_color_override("font_color", Color.WHITE)
 
 	# Update progress bar (max 100 for display purposes)
 	if offense_bar:
 		offense_bar.value = min(damage, 100)
 
-## Update defense display (simplified)
+## Update defense display (with breakdown)
 func _update_defense(data: Dictionary):
 	if not defense_value:
 		return  # Node not set up yet
 	var hp = data["hp"]
-	defense_value.text = str(hp)
+	var max_absorption = data["max_absorption"]
+	var shields = data["shields"]
+	var armor = data["armor"]
+
+	# Show HP with shield absorption if present
+	var display_text = str(hp) + " HP"
+	if max_absorption > 0:
+		display_text += " + " + str(max_absorption) + " SH"
+	# Add component counts if present
+	if shields > 0 or armor > 0:
+		display_text += " (" + str(shields) + "S/" + str(armor) + "A)"
+
+	defense_value.text = display_text
 	defense_value.add_theme_color_override("font_color", Color.WHITE)
 
-	# Update progress bar (max 200 for display purposes)
+	# Update progress bar based on total effective HP (hp + absorption)
 	if defense_bar:
-		defense_bar.max_value = 200
-		defense_bar.value = min(hp, 200)
+		defense_bar.max_value = 300
+		var total_defense = hp + max_absorption
+		defense_bar.value = min(total_defense, 300)
 
-## Update mobility display (renamed from thrust, simplified)
+## Update mobility display (with breakdown)
 func _update_mobility(data: Dictionary):
 	if not mobility_value:
 		return  # Node not set up yet
 	var initiative = data["initiative"]
-	mobility_value.text = str(initiative)
+	var engines = data["engines"]
+	var synergy_bonus = data["synergy_bonus"]
+
+	# Show initiative with engine count and synergy bonus if applicable
+	var display_text = str(initiative)
+	if engines > 0:
+		display_text += " (" + str(engines) + "E"
+		if synergy_bonus > 0:
+			display_text += " +" + str(synergy_bonus)
+		display_text += ")"
+
+	mobility_value.text = display_text
 	mobility_value.add_theme_color_override("font_color", Color.WHITE)
 
-	# Update progress bar (max 20 for display purposes)
+	# Update progress bar (max 50 for display purposes - account for higher thrust values)
 	if mobility_bar:
-		mobility_bar.max_value = 20
-		mobility_bar.value = min(initiative, 20)
+		mobility_bar.max_value = 50
+		mobility_bar.value = min(initiative, 50)
 
 ## Update power display (count of powered rooms)
 func _update_power(ship: ShipData):

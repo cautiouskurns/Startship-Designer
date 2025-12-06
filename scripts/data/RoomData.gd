@@ -181,6 +181,10 @@ static func _load_data_from_json():
 			if room_def.has("placement_columns"):
 				placement_columns[room_type] = room_def["placement_columns"]
 
+			# Load component stats
+			if room_def.has("stats"):
+				stats[room_type] = room_def["stats"]
+
 	# Load synergy definitions
 	if data.has("synergies"):
 		var synergies_data = data["synergies"]
@@ -390,6 +394,10 @@ static var placement_columns = {
 	RoomType.RELAY: []         # Any column (Feature 1.2)
 }
 
+## Component stats loaded from JSON (damage, absorption, thrust, etc.)
+## Stores differentiated stats for each component type
+static var stats: Dictionary = {}
+
 ## Get cost for a room type
 static func get_cost(room_type: RoomType) -> int:
 	_load_data_from_json()  # Ensure data is loaded
@@ -404,6 +412,11 @@ static func get_color(room_type: RoomType) -> Color:
 static func get_label(room_type: RoomType) -> String:
 	_load_data_from_json()  # Ensure data is loaded
 	return labels.get(room_type, "")
+
+## Get stats for a room type (damage, absorption, thrust, etc.)
+static func get_stats(room_type: RoomType) -> Dictionary:
+	_load_data_from_json()  # Ensure data is loaded
+	return stats.get(room_type, {})
 
 ## Get category for a room type (Feature 01: Seven-Category Structure)
 ## Maps components to their primary functional category

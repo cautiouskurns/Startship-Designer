@@ -1,4 +1,4 @@
-# Component Metadata & Rich Descriptions
+![alt text](image.png)# Component Metadata & Rich Descriptions
 
 **Status:** 🔴 Planned
 **Priority:** ➡️ Medium (Enhances usability, not blocking)

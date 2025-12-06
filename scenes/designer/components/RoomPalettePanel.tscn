@@ -1,7 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://gbexenfull3j"]
+[gd_scene load_steps=6 format=3 uid="uid://gbexenfull3j"]
 
 [ext_resource type="Script" uid="uid://bp5i0835ou0q1" path="res://scripts/designer/RoomPalettePanel.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://cscc50740fd8k" path="res://scenes/designer/components/RoomTypeButton.tscn" id="2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_components_panel"]
 bg_color = Color(0.101961, 0.101961, 0.101961, 0.4)

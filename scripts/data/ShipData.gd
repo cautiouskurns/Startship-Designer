@@ -175,7 +175,7 @@ func calculate_power_grid(secondary_grid = null):
 							power_grid[y][x] = true
 						break
 
-	# Relay coverage pass: Power rooms within 3-tile radius of powered relays
+	# Relay coverage pass: Power rooms within 4.5-tile radius of powered relays
 	if secondary_grid and not room_instances.is_empty():
 		# Find all relays with valid powered connections
 		for room_id in room_instances:

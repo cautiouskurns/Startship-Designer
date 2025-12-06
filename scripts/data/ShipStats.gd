@@ -6,25 +6,39 @@ class_name ShipStats
 ## Calculate offense statistics from ship data
 ## Returns: {damage: int, weapons: int, synergy_bonus: int, rating: int}
 static func calculate_offense(ship: ShipData) -> Dictionary:
-	var weapons = ship.count_powered_room_type(RoomData.RoomType.WEAPON)
-	var base_damage = weapons * BalanceConstants.DAMAGE_PER_WEAPON
+	var weapons = 0
+	var base_damage = 0
 
-	# Calculate synergy bonuses (matching Combat.gd formula)
+	# Sum damage from all powered weapons (using individual stats)
 	var synergies = ship.calculate_synergy_bonuses()
 	var room_synergies = synergies["room_synergies"]
 
 	var weapons_with_synergy = 0
+	var synergy_bonus_damage = 0
+
 	for y in range(ship.grid.size()):
 		for x in range(ship.grid[y].size()):
 			var room_type = ship.grid[y][x]
-			if room_type == RoomData.RoomType.WEAPON and ship.is_room_powered(x, y):
+			var category = RoomData.get_category(room_type)
+
+			# Check if this is a weapon and it's powered
+			if category == ComponentCategory.Category.WEAPONS and ship.is_room_powered(x, y):
+				weapons += 1
+
+				# Get this weapon's individual damage stat
+				var weapon_stats = RoomData.get_stats(room_type)
+				var weapon_damage = weapon_stats.get("damage", 10)  # Default to 10 if missing
+				base_damage += weapon_damage
+
+				# Check if this weapon has fire rate synergy
 				var pos = Vector2i(x, y)
 				if pos in room_synergies:
 					if RoomData.SynergyType.FIRE_RATE in room_synergies[pos]:
 						weapons_with_synergy += 1
+						# Synergy adds bonus percentage of this weapon's damage
+						synergy_bonus_damage += int(weapon_damage * BalanceConstants.FIRE_RATE_SYNERGY_BONUS)
 
-	var synergy_bonus = int(weapons_with_synergy * BalanceConstants.DAMAGE_PER_WEAPON * BalanceConstants.FIRE_RATE_SYNERGY_BONUS)
-	var total_damage = base_damage + synergy_bonus
+	var total_damage = base_damage + synergy_bonus_damage
 
 	# Calculate rating (0-100 scale)
 	# 0 weapons = 0, 2 weapons = 40, 3 weapons = 60, 5+ weapons = 100
@@ -33,7 +47,7 @@ static func calculate_offense(ship: ShipData) -> Dictionary:
 	return {
 		"damage": total_damage,
 		"weapons": weapons,
-		"synergy_bonus": synergy_bonus,
+		"synergy_bonus": synergy_bonus_damage,
 		"synergized_weapons": weapons_with_synergy,
 		"rating": rating
 	}
@@ -42,29 +56,50 @@ static func calculate_offense(ship: ShipData) -> Dictionary:
 ## hull_bonus: additional HP from hull type (Battleship +20)
 ## Returns: {hp: int, max_absorption: int, shields: int, armor: int, synergy_bonus: int, rating: int}
 static func calculate_defense(ship: ShipData, hull_bonus: int = 0) -> Dictionary:
-	var shields = ship.count_powered_room_type(RoomData.RoomType.SHIELD)
-	var armor = ship.count_room_type(RoomData.RoomType.ARMOR)
-	var hp = ship.max_hp  # Already includes armor bonus
-	var total_hp = hp + hull_bonus
+	var shields = 0
+	var armor = 0
+	var base_absorption = 0
+	var armor_hp_bonus = 0
 
-	# Calculate shield absorption (matching Combat.gd formula)
-	var base_absorption = shields * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD
-
+	# Sum absorption/HP from all powered shields and armor (using individual stats)
 	var synergies = ship.calculate_synergy_bonuses()
 	var room_synergies = synergies["room_synergies"]
 
 	var shields_with_synergy = 0
+	var synergy_bonus = 0
+
 	for y in range(ship.grid.size()):
 		for x in range(ship.grid[y].size()):
 			var room_type = ship.grid[y][x]
-			if room_type == RoomData.RoomType.SHIELD and ship.is_room_powered(x, y):
-				var pos = Vector2i(x, y)
-				if pos in room_synergies:
-					if RoomData.SynergyType.SHIELD_CAPACITY in room_synergies[pos]:
-						shields_with_synergy += 1
+			var category = RoomData.get_category(room_type)
 
-	var synergy_bonus = int(shields_with_synergy * BalanceConstants.SHIELD_ABSORPTION_PER_SHIELD * BalanceConstants.SHIELD_CAPACITY_SYNERGY_BONUS)
+			# Check if this is a shield and it's powered
+			if category == ComponentCategory.Category.DEFENSE and ship.is_room_powered(x, y):
+				var defense_stats = RoomData.get_stats(room_type)
+
+				# Shields have absorption stat
+				if defense_stats.has("absorption"):
+					shields += 1
+					var shield_absorption = defense_stats.get("absorption", 15)  # Default to 15 if missing
+					base_absorption += shield_absorption
+
+					# Check if this shield has capacity synergy
+					var pos = Vector2i(x, y)
+					if pos in room_synergies:
+						if RoomData.SynergyType.SHIELD_CAPACITY in room_synergies[pos]:
+							shields_with_synergy += 1
+							# Synergy adds bonus percentage of this shield's absorption
+							synergy_bonus += int(shield_absorption * BalanceConstants.SHIELD_CAPACITY_SYNERGY_BONUS)
+
+				# Armor has hp_bonus stat
+				if defense_stats.has("hp_bonus"):
+					armor += 1
+					armor_hp_bonus += defense_stats.get("hp_bonus", 20)  # Default to 20 if missing
+
 	var max_absorption = base_absorption + synergy_bonus
+
+	# Calculate total HP: base ship HP + armor bonuses + hull type bonus
+	var total_hp = ship.max_hp + armor_hp_bonus + hull_bonus
 
 	# Calculate rating (0-100 scale)
 	# 40 HP + 0 shields = 30, 80 HP + 2 shields = 60, 120+ HP + 4 shields = 100
@@ -84,13 +119,29 @@ static func calculate_defense(ship: ShipData, hull_bonus: int = 0) -> Dictionary
 ## hull_bonus: additional initiative from hull type (Frigate +2)
 ## Returns: {initiative: int, engines: int, synergy_bonus: int, rating: int}
 static func calculate_thrust(ship: ShipData, hull_bonus: int = 0) -> Dictionary:
-	var engines = ship.count_powered_room_type(RoomData.RoomType.ENGINE)
+	var engines = 0
+	var base_thrust = 0
 
-	# Calculate synergy bonuses (Engine+Engine gives +1 initiative each)
+	# Sum thrust from all powered engines (using individual stats)
 	var synergies = ship.calculate_synergy_bonuses()
 	var synergy_bonus = synergies["counts"][RoomData.SynergyType.INITIATIVE]
 
-	var total_initiative = engines + synergy_bonus + hull_bonus
+	for y in range(ship.grid.size()):
+		for x in range(ship.grid[y].size()):
+			var room_type = ship.grid[y][x]
+			var category = RoomData.get_category(room_type)
+
+			# Check if this is an engine and it's powered
+			if category == ComponentCategory.Category.PROPULSION and ship.is_room_powered(x, y):
+				var engine_stats = RoomData.get_stats(room_type)
+
+				# Engines have thrust stat (initiative contribution)
+				if engine_stats.has("thrust"):
+					engines += 1
+					var engine_thrust = engine_stats.get("thrust", 10)  # Default to 10 if missing
+					base_thrust += engine_thrust
+
+	var total_initiative = base_thrust + synergy_bonus + hull_bonus
 
 	# Calculate rating (0-100 scale)
 	# 0 engines = 0, 1 engine = 33, 2 engines = 66, 3+ engines = 100

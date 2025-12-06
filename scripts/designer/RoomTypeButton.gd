@@ -341,6 +341,14 @@ func _on_mouse_entered_tooltip():
 
 ## Handle tooltip timer timeout - show tooltip
 func _on_tooltip_timeout():
+	# Position tooltip to the right of the button using global coordinates
+	# Since top_level=true, we need to position in global space
+	var button_global_pos = global_position
+	var button_size = size
+
+	# Position to the right of button with small gap
+	tooltip_panel.global_position = button_global_pos + Vector2(button_size.x + 10, 0)
+
 	tooltip_panel.visible = true
 
 ## Handle mouse exiting button - hide tooltip
@@ -371,9 +379,89 @@ func _update_tooltip_text():
 	if parts.size() > 0:
 		tooltip_description_label.text = parts[0]
 
-	# Set stats (second part)
-	if parts.size() > 1:
+	# Set stats - get from JSON data dynamically
+	var stats_text = _generate_stats_text()
+	if stats_text != "":
+		tooltip_stats_label.text = stats_text
+	elif parts.size() > 1:
+		# Fallback to hardcoded text if no stats found
 		tooltip_stats_label.text = parts[1]
+
+## Generate stats text from component data
+func _generate_stats_text() -> String:
+	var stats = RoomData.get_stats(room_type)
+	if stats.is_empty():
+		return ""
+
+	var category = RoomData.get_category(room_type)
+	var lines = []
+
+	# Weapons category
+	if category == ComponentCategory.Category.WEAPONS:
+		if stats.has("damage"):
+			lines.append("Damage: %d" % stats["damage"])
+		if stats.has("fire_rate"):
+			lines.append("Fire Rate: %.1fx" % stats["fire_rate"])
+		if stats.has("range"):
+			lines.append("Range: %s" % stats["range"])
+		if stats.has("attack_type"):
+			lines.append("Type: %s" % stats["attack_type"])
+		if stats.has("special") and stats["special"] != "":
+			lines.append("Special: %s" % stats["special"])
+
+	# Defense category (shields and armor)
+	elif category == ComponentCategory.Category.DEFENSE:
+		if stats.has("absorption"):
+			lines.append("Shield Absorption: %d" % stats["absorption"])
+		if stats.has("recharge_rate"):
+			lines.append("Recharge Rate: %d/turn" % stats["recharge_rate"])
+		if stats.has("capacity"):
+			lines.append("Capacity: %d" % stats["capacity"])
+		if stats.has("hp_bonus"):
+			lines.append("HP Bonus: +%d" % stats["hp_bonus"])
+		if stats.has("damage_reduction"):
+			lines.append("Damage Reduction: %d" % stats["damage_reduction"])
+		if stats.has("evasion_bonus"):
+			lines.append("Evasion: +%d%%" % stats["evasion_bonus"])
+
+	# Propulsion category (engines)
+	elif category == ComponentCategory.Category.PROPULSION:
+		if stats.has("thrust"):
+			lines.append("Thrust: %d" % stats["thrust"])
+		if stats.has("dodge_chance"):
+			lines.append("Dodge: +%d%%" % stats["dodge_chance"])
+		if stats.has("speed"):
+			lines.append("Speed: %d" % stats["speed"])
+		if stats.has("jump_range"):
+			lines.append("Jump Range: %d LY" % stats["jump_range"])
+		if stats.has("spool_time"):
+			lines.append("Spool Time: %d turns" % stats["spool_time"])
+
+	# Command category
+	elif category == ComponentCategory.Category.COMMAND_CONTROL:
+		if stats.has("accuracy_bonus"):
+			lines.append("Accuracy: +%d%%" % stats["accuracy_bonus"])
+		if stats.has("fire_rate_bonus"):
+			lines.append("Fire Rate: +%d%%" % stats["fire_rate_bonus"])
+		if stats.has("damage_bonus"):
+			lines.append("Damage: +%d%%" % stats["damage_bonus"])
+		if stats.has("evasion_bonus"):
+			lines.append("Evasion: +%d%%" % stats["evasion_bonus"])
+		if stats.has("detection_range"):
+			lines.append("Detection: %d" % stats["detection_range"])
+		if stats.has("stealth_rating"):
+			lines.append("Stealth: %d" % stats["stealth_rating"])
+
+	# Structure category
+	elif category == ComponentCategory.Category.STRUCTURE:
+		if stats.has("hp_bonus"):
+			lines.append("HP Bonus: +%d" % stats["hp_bonus"])
+		if stats.has("damage_reduction"):
+			lines.append("Damage Reduction: %d" % stats["damage_reduction"])
+		if stats.has("breach_resistance"):
+			lines.append("Breach Resistance: %d%%" % stats["breach_resistance"])
+
+	return "\n".join(lines)
 
 ## Handle rotation button press (deprecated - rotation UI removed)
 func _on_rotate_button_pressed():

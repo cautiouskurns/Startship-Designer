@@ -12,56 +12,92 @@
       "shape": [2, 2],
       "color": "#4A90E2",
       "label": "⭐ BRIDGE",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "accuracy_bonus": 10,
+        "command_range": 100
+      }
     },
     "WEAPON": {
       "cost": 2,
       "shape": [2, 1],
       "color": "#E24A4A",
       "label": "▶ WEAPON",
-      "placement_columns": [6, 7]
+      "placement_columns": [6, 7],
+      "stats": {
+        "damage": 10,
+        "fire_rate": 1.0,
+        "range": "medium",
+        "attack_type": "single"
+      }
     },
     "SHIELD": {
       "cost": 3,
       "shape": [2, 1],
       "color": "#4AE2E2",
       "label": "◆ SHIELD",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "absorption": 15,
+        "recharge_rate": 3,
+        "capacity": 100
+      }
     },
     "ENGINE": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#E2A04A",
       "label": "▲ ENGINE",
-      "placement_columns": [0, 1]
+      "placement_columns": [0, 1],
+      "stats": {
+        "thrust": 8,
+        "dodge_chance": 5,
+        "speed": 3
+      }
     },
     "REACTOR": {
       "cost": 4,
       "shape": [3, 2],
       "color": "#E2D44A",
       "label": "⊕ REACTOR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "power_output": 4,
+        "efficiency": 100
+      }
     },
     "ARMOR": {
       "cost": 1,
       "shape": [1, 1],
       "color": "#6C6C6C",
       "label": "█ ARMOR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 20,
+        "damage_reduction": 0
+      }
     },
     "CONDUIT": {
       "cost": 1,
       "shape": [1, 1],
       "color": "#FFAA00",
       "label": "─ CONDUIT",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "power_transmission": 100,
+        "efficiency": 95
+      }
     },
     "RELAY": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#FF8800",
       "label": "◈ RELAY",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "power_output": 2,
+        "relay_range": 5
+      }
     },
 
     "PHASER_ARRAY": {
@@ -69,420 +105,741 @@
       "shape": [2, 3],
       "color": "#E24A4A",
       "label": "▷ PHASER ARRAY",
-      "placement_columns": [6, 7]
+      "placement_columns": [6, 7],
+      "stats": {
+        "damage": 15,
+        "fire_rate": 1.5,
+        "range": "medium",
+        "attack_type": "arc",
+        "special": "hits_3_targets"
+      }
     },
     "HEAVY_PHASER": {
       "cost": 5,
       "shape": [3, 4],
       "color": "#D93636",
       "label": "► HEAVY PHASER",
-      "placement_columns": [5, 6, 7]
+      "placement_columns": [5, 6, 7],
+      "stats": {
+        "damage": 30,
+        "fire_rate": 0.8,
+        "range": "long",
+        "attack_type": "single",
+        "special": ""
+      }
     },
     "PULSE_LASER": {
       "cost": 2,
       "shape": [2, 2],
       "color": "#FF5555",
       "label": "➤ PULSE LASER",
-      "placement_columns": [6, 7]
+      "placement_columns": [6, 7],
+      "stats": {
+        "damage": 8,
+        "fire_rate": 2.0,
+        "range": "short",
+        "attack_type": "rapid",
+        "special": ""
+      }
     },
     "BEAM_LANCE": {
       "cost": 4,
       "shape": [2, 4],
       "color": "#E25555",
       "label": "⟩ BEAM LANCE",
-      "placement_columns": [6, 7]
+      "placement_columns": [6, 7],
+      "stats": {
+        "damage": 22,
+        "fire_rate": 1.0,
+        "range": "long",
+        "attack_type": "beam",
+        "special": "precision_20%_crit"
+      }
     },
     "ION_CANNON": {
       "cost": 4,
       "shape": [3, 3],
       "color": "#CC4444",
       "label": "⊳ ION CANNON",
-      "placement_columns": [5, 6, 7]
+      "placement_columns": [5, 6, 7],
+      "stats": {
+        "damage": 18,
+        "fire_rate": 1.0,
+        "range": "medium",
+        "attack_type": "emp",
+        "special": "disable_system"
+      }
     },
     "TORPEDO_LAUNCHER": {
       "cost": 4,
       "shape": [2, 2],
       "color": "#E26B4A",
       "label": "◉ TORPEDO",
-      "placement_columns": [6, 7]
+      "placement_columns": [6, 7],
+      "stats": {
+        "damage": 40,
+        "fire_rate": 0.5,
+        "range": "long",
+        "attack_type": "projectile",
+        "special": "piercing_50%"
+      }
     },
     "MISSILE_POD": {
       "cost": 3,
       "shape": [2, 3],
       "color": "#FF6644",
       "label": "● MISSILE POD",
-      "placement_columns": [6, 7]
+      "placement_columns": [6, 7],
+      "stats": {
+        "damage": 18,
+        "fire_rate": 1.2,
+        "range": "medium",
+        "attack_type": "multi",
+        "special": "volley_3_missiles"
+      }
     },
     "RAILGUN": {
       "cost": 6,
       "shape": [3, 3],
       "color": "#D96633",
       "label": "○ RAILGUN",
-      "placement_columns": [5, 6, 7]
+      "placement_columns": [5, 6, 7],
+      "stats": {
+        "damage": 50,
+        "fire_rate": 0.4,
+        "range": "extreme",
+        "attack_type": "kinetic",
+        "special": "armor_pierce"
+      }
     },
     "AUTOCANNON": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#FF7755",
       "label": "◎ AUTOCANNON",
-      "placement_columns": [6, 7]
+      "placement_columns": [6, 7],
+      "stats": {
+        "damage": 12,
+        "fire_rate": 1.8,
+        "range": "short",
+        "attack_type": "burst",
+        "special": ""
+      }
     },
     "POINT_DEFENSE": {
       "cost": 2,
       "shape": [1, 2],
       "color": "#E28844",
       "label": "◈ POINT DEF",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "damage": 5,
+        "fire_rate": 3.0,
+        "range": "short",
+        "attack_type": "intercept",
+        "special": "missile_defense"
+      }
     },
     "FLAK_BATTERY": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#FF8844",
       "label": "◇ FLAK",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "damage": 10,
+        "fire_rate": 2.0,
+        "range": "short",
+        "attack_type": "area",
+        "special": "anti_fighter"
+      }
     },
     "INTERCEPTOR_BAY": {
       "cost": 5,
       "shape": [3, 3],
       "color": "#D97733",
       "label": "◆ INTERCEPTOR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "damage": 15,
+        "fire_rate": 1.5,
+        "range": "medium",
+        "attack_type": "fighter",
+        "special": "launch_3_fighters"
+      }
     },
     "EMP_EMITTER": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#AA88FF",
       "label": "⚡ EMP",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "damage": 5,
+        "fire_rate": 0.8,
+        "range": "medium",
+        "attack_type": "emp",
+        "special": "system_disable"
+      }
     },
     "TRACTOR_BEAM": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#8866DD",
       "label": "⊗ TRACTOR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "damage": 0,
+        "fire_rate": 1.0,
+        "range": "medium",
+        "attack_type": "utility",
+        "special": "immobilize"
+      }
     },
     "STANDARD_SHIELD": {
       "cost": 5,
       "shape": [3, 3],
       "color": "#4AE2E2",
       "label": "◆ STD SHIELD",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "absorption": 25,
+        "recharge_rate": 3,
+        "capacity": 150
+      }
     },
     "LIGHT_SHIELD": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#55E5E5",
       "label": "◇ LIGHT SHIELD",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "absorption": 18,
+        "recharge_rate": 4,
+        "capacity": 100
+      }
     },
     "HEAVY_SHIELD": {
       "cost": 7,
       "shape": [4, 4],
       "color": "#33CCCC",
       "label": "◈ HEAVY SHIELD",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "absorption": 40,
+        "recharge_rate": 2,
+        "capacity": 250
+      }
     },
     "FAST_RECHARGE_SHIELD": {
       "cost": 5,
       "shape": [3, 3],
       "color": "#66EEEE",
       "label": "❖ FAST SHIELD",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "absorption": 22,
+        "recharge_rate": 6,
+        "capacity": 120
+      }
     },
     "HARDENED_SHIELD": {
       "cost": 5,
       "shape": [3, 3],
       "color": "#44D4D4",
       "label": "◆ HARD SHIELD",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "absorption": 28,
+        "recharge_rate": 2,
+        "capacity": 180,
+        "special": "resist_piercing"
+      }
     },
     "HULL_PLATING": {
       "cost": 1,
       "shape": [1, 1],
       "color": "#6C6C6C",
       "label": "▪ HULL PLATE",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 15,
+        "damage_reduction": 0
+      }
     },
     "LIGHT_ARMOR": {
       "cost": 2,
       "shape": [1, 1],
       "color": "#808080",
       "label": "▫ LIGHT ARMOR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 25,
+        "damage_reduction": 1
+      }
     },
     "HEAVY_ARMOR": {
       "cost": 3,
       "shape": [1, 1],
       "color": "#999999",
       "label": "▬ HEAVY ARMOR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 35,
+        "damage_reduction": 3
+      }
     },
     "REACTIVE_ARMOR": {
       "cost": 2,
       "shape": [1, 1],
       "color": "#888888",
       "label": "▣ REACTIVE",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 22,
+        "damage_reduction": 2,
+        "special": "explode_on_hit"
+      }
     },
     "ABLATIVE_ARMOR": {
       "cost": 2,
       "shape": [1, 1],
       "color": "#777777",
       "label": "▢ ABLATIVE",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 28,
+        "damage_reduction": 1,
+        "special": "degrades"
+      }
     },
     "ECM_SUITE": {
       "cost": 4,
       "shape": [2, 2],
       "color": "#66AADD",
       "label": "⚛ ECM",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "evasion_bonus": 15,
+        "accuracy_reduction": 10
+      }
     },
     "CHAFF_LAUNCHER": {
       "cost": 2,
       "shape": [1, 2],
       "color": "#5599CC",
       "label": "✦ CHAFF",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "evasion_bonus": 10,
+        "missile_defense": 25
+      }
     },
     "DAMAGE_CONTROL": {
       "cost": 4,
       "shape": [2, 2],
       "color": "#77BBEE",
       "label": "⊕ REPAIR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "repair_rate": 5,
+        "hull_restore": 10
+      }
     },
     "STANDARD_ENGINE": {
       "cost": 5,
       "shape": [4, 3],
       "color": "#E2A04A",
       "label": "▲ STD ENGINE",
-      "placement_columns": [0, 1]
+      "placement_columns": [0, 1],
+      "stats": {
+        "thrust": 12,
+        "dodge_chance": 8,
+        "speed": 4
+      }
     },
     "HIGH_THRUST_ENGINE": {
       "cost": 7,
       "shape": [5, 4],
       "color": "#FFB366",
       "label": "▴ HIGH THRUST",
-      "placement_columns": [0, 1]
+      "placement_columns": [0, 1],
+      "stats": {
+        "thrust": 18,
+        "dodge_chance": 6,
+        "speed": 6
+      }
     },
     "EFFICIENT_ENGINE": {
       "cost": 4,
       "shape": [3, 3],
       "color": "#D99033",
       "label": "△ EFFICIENT",
-      "placement_columns": [0, 1, 2]
+      "placement_columns": [0, 1, 2],
+      "stats": {
+        "thrust": 10,
+        "dodge_chance": 10,
+        "speed": 3,
+        "power_cost": -1
+      }
     },
     "ARMORED_ENGINE": {
       "cost": 6,
       "shape": [4, 4],
       "color": "#CC8822",
       "label": "▲ ARMORED",
-      "placement_columns": [0, 1]
+      "placement_columns": [0, 1],
+      "stats": {
+        "thrust": 14,
+        "dodge_chance": 5,
+        "speed": 4,
+        "hp_bonus": 50
+      }
     },
     "THRUSTERS": {
       "cost": 2,
       "shape": [1, 2],
       "color": "#FFB855",
       "label": "▴ THRUSTER",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "thrust": 4,
+        "dodge_chance": 12,
+        "speed": 2
+      }
     },
     "REACTION_CONTROL": {
       "cost": 1,
       "shape": [1, 1],
       "color": "#EEAA44",
       "label": "▵ RCS",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "thrust": 2,
+        "dodge_chance": 8,
+        "speed": 1
+      }
     },
     "COMBAT_THRUSTERS": {
       "cost": 3,
       "shape": [2, 2],
       "color": "#FFCC66",
       "label": "▴ COMBAT RCS",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "thrust": 6,
+        "dodge_chance": 15,
+        "speed": 3
+      }
     },
     "JUMP_DRIVE": {
       "cost": 6,
       "shape": [3, 3],
       "color": "#AA66FF",
       "label": "◉ JUMP",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "jump_range": 10,
+        "spool_time": 3
+      }
     },
     "FAST_SPOOL_DRIVE": {
       "cost": 7,
       "shape": [3, 3],
       "color": "#BB77FF",
       "label": "◎ FAST JUMP",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "jump_range": 10,
+        "spool_time": 1
+      }
     },
     "EMERGENCY_JUMP": {
       "cost": 5,
       "shape": [2, 2],
       "color": "#9955EE",
       "label": "○ EMERG JUMP",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "jump_range": 5,
+        "spool_time": 0,
+        "special": "instant_escape"
+      }
     },
     "ARMORED_DRIVE": {
       "cost": 8,
       "shape": [4, 4],
       "color": "#8844DD",
       "label": "● ARM DRIVE",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "jump_range": 12,
+        "spool_time": 3,
+        "hp_bonus": 80
+      }
     },
     "AFTERBURNER": {
       "cost": 4,
       "shape": [2, 2],
       "color": "#FF9933",
       "label": "⚡ AFTERBURN",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "thrust_boost": 50,
+        "duration": 2,
+        "cooldown": 3
+      }
     },
     "GRAVITY_WELL": {
       "cost": 5,
       "shape": [3, 3],
       "color": "#6644AA",
       "label": "⊗ GRAV WELL",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "disable_jump": true,
+        "range": 8,
+        "slow_enemy": 30
+      }
     },
     "AUXILIARY_CONTROL": {
       "cost": 4,
       "shape": [2, 2],
       "color": "#5599EE",
       "label": "☆ AUX CTRL",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "accuracy_bonus": 8,
+        "command_range": 80,
+        "backup_bridge": true
+      }
     },
     "COMBAT_INFO_CENTER": {
       "cost": 6,
       "shape": [3, 3],
       "color": "#4488DD",
       "label": "★ CIC",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "accuracy_bonus": 15,
+        "tactical_bonus": 20,
+        "fire_coordination": 10
+      }
     },
     "FLAG_BRIDGE": {
       "cost": 8,
       "shape": [5, 4],
       "color": "#3377CC",
       "label": "✦ FLAG BRIDGE",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "accuracy_bonus": 20,
+        "command_range": 150,
+        "fleet_coordination": 25
+      }
     },
     "SENSOR_ARRAY": {
       "cost": 4,
       "shape": [2, 3],
       "color": "#66AAEE",
       "label": "◉ SENSORS",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "detection_range": 12,
+        "accuracy_bonus": 5,
+        "reveal_stealth": 50
+      }
     },
     "ADVANCED_SENSORS": {
       "cost": 6,
       "shape": [3, 3],
       "color": "#5599DD",
       "label": "◎ ADV SENSORS",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "detection_range": 18,
+        "accuracy_bonus": 8,
+        "reveal_stealth": 75
+      }
     },
     "LONG_RANGE_SCANNERS": {
       "cost": 4,
       "shape": [2, 2],
       "color": "#77BBFF",
       "label": "⊙ LR SCAN",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "detection_range": 25,
+        "accuracy_bonus": 3,
+        "reveal_stealth": 30
+      }
     },
     "TARGET_PAINTER": {
       "cost": 3,
       "shape": [1, 2],
       "color": "#88CCFF",
       "label": "⊕ PAINTER",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "accuracy_bonus": 12,
+        "crit_chance": 10,
+        "target_lock": true
+      }
     },
     "COMPUTER_CORE": {
       "cost": 5,
       "shape": [3, 3],
       "color": "#4499EE",
       "label": "■ COMPUTER",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "system_efficiency": 15,
+        "fire_rate_bonus": 10,
+        "power_efficiency": 5
+      }
     },
     "TACTICAL_COMPUTER": {
       "cost": 6,
       "shape": [3, 3],
       "color": "#3388DD",
       "label": "▣ TACTICAL",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "accuracy_bonus": 15,
+        "fire_rate_bonus": 15,
+        "damage_bonus": 10
+      }
     },
     "AI_CORE": {
       "cost": 8,
       "shape": [4, 4],
       "color": "#2277CC",
       "label": "◆ AI CORE",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "accuracy_bonus": 25,
+        "fire_rate_bonus": 20,
+        "evasion_bonus": 15,
+        "automate_systems": true
+      }
     },
     "CLOAKING_DEVICE": {
       "cost": 7,
       "shape": [3, 3],
       "color": "#6633AA",
       "label": "◇ CLOAK",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "stealth_rating": 90,
+        "evasion_bonus": 50,
+        "detection_reduction": 75
+      }
     },
     "STEALTH_HULL": {
       "cost": 4,
       "shape": [2, 2],
       "color": "#7744BB",
       "label": "◈ STEALTH",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "stealth_rating": 40,
+        "evasion_bonus": 15,
+        "detection_reduction": 30
+      }
     },
     "REINFORCED_HULL": {
       "cost": 2,
       "shape": [1, 1],
       "color": "#888888",
       "label": "□ REIN HULL",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 30,
+        "structural_integrity": 20
+      }
     },
     "LIGHTWEIGHT_FRAME": {
       "cost": 1,
       "shape": [1, 1],
       "color": "#AAAAAA",
       "label": "▢ LITE FRAME",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 10,
+        "speed_bonus": 5,
+        "dodge_bonus": 3
+      }
     },
     "BULKHEAD": {
       "cost": 1,
       "shape": [1, 1],
       "color": "#777777",
       "label": "▬ BULKHEAD",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 18,
+        "damage_containment": 25
+      }
     },
     "BLAST_DOOR": {
       "cost": 2,
       "shape": [1, 1],
       "color": "#666666",
       "label": "▣ BLAST DOOR",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 25,
+        "damage_containment": 50,
+        "breach_protection": 30
+      }
     },
     "AIRLOCK": {
       "cost": 1,
       "shape": [1, 1],
       "color": "#999999",
       "label": "○ AIRLOCK",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 12,
+        "boarding_defense": 20
+      }
     },
     "DECOY_MODULE": {
       "cost": 2,
       "shape": [1, 1],
       "color": "#BBBBBB",
       "label": "◎ DECOY",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "evasion_bonus": 15,
+        "decoy_generation": 3,
+        "missile_redirect": 40
+      }
     },
     "STEALTH_PLATING": {
       "cost": 2,
       "shape": [1, 1],
       "color": "#555555",
       "label": "▪ STEALTH",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 15,
+        "stealth_rating": 25,
+        "detection_reduction": 20
+      }
     },
     "SPACED_ARMOR": {
       "cost": 2,
       "shape": [2, 1],
       "color": "#888888",
       "label": "▬ SPACED",
-      "placement_columns": []
+      "placement_columns": [],
+      "stats": {
+        "hp_bonus": 28,
+        "damage_reduction": 2,
+        "special": "anti_projectile"
+      }
     }
   },
   "synergies": {

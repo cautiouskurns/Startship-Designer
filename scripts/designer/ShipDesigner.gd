@@ -745,8 +745,14 @@ func _unhandled_input(event: InputEvent):
 
 	# Keyboard input
 	if event is InputEventKey and event.pressed and not event.echo:
+		# ESC key to deselect current room
+		if event.keycode == KEY_ESCAPE:
+			if selected_room_type != RoomData.RoomType.EMPTY:
+				_deselect_room()
+				get_viewport().set_input_as_handled()
+
 		# R key to rotate selected room
-		if event.keycode == KEY_R:
+		elif event.keycode == KEY_R:
 			# Only rotate if a room is selected (not EMPTY)
 			if selected_room_type != RoomData.RoomType.EMPTY:
 				rotate_selected_room()
@@ -949,6 +955,26 @@ func _on_room_type_selected(room_type: RoomData.RoomType):
 	update_palette_availability()
 	# Update specifications panel with selected room type
 	specifications_panel.update_specifications(room_type)
+
+## Deselect currently selected room (ESC key functionality)
+func _deselect_room():
+	# Clear selection
+	selected_room_type = RoomData.RoomType.EMPTY
+
+	# Reset rotation
+	current_rotation = 0
+
+	# Update palette to show no selection
+	room_palette.clear_selection()
+
+	# Clear specifications panel
+	specifications_panel.update_specifications(RoomData.RoomType.EMPTY)
+
+	# Clear any hover previews if hovering
+	if hovered_tile:
+		_on_tile_unhovered(hovered_tile)
+
+	print("Component selection cleared")
 
 ## Handle tile hover - show preview (Phase 7.2/7.3 - per-tile mixed preview states with rotation)
 ## Feature 2.1: Update drag line when dragging conduits

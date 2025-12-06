@@ -55,6 +55,9 @@ func _ready():
 	# Update ID label with room type abbreviation
 	_update_id_label()
 
+	# Update icon from room label
+	_update_icon()
+
 ## Resize to match parent tile (called after adding to tree)
 func resize_to_tile():
 	# Get parent (GridTile) size and subtract margin
@@ -288,6 +291,26 @@ func _update_id_label():
 
 	# Format as ABBR (e.g., WEA, SHI, etc.)
 	id_label.text = "%s" % abbreviation
+
+## Update icon text from room label (extracts icon character from label)
+func _update_icon():
+	# Get Icon node if it exists
+	var icon_node = get_node_or_null("Icon")
+	if not icon_node:
+		return
+
+	# Get room label from RoomData (format: "ICON NAME", e.g., "► HEAVY PHASER")
+	var label = RoomData.get_label(room_type)
+	if label.is_empty():
+		icon_node.text = "★"  # Default fallback icon
+		return
+
+	# Extract icon (first character before space)
+	var parts = label.split(" ", false, 1)
+	if parts.size() > 0:
+		icon_node.text = parts[0]  # First part is the icon
+	else:
+		icon_node.text = "★"  # Fallback if split fails
 
 ## Position icon centered across multi-tile room (only visible on anchor tile)
 func _position_icon():
@@ -524,4 +547,5 @@ func set_room_data(type: RoomData.RoomType, tiles: Array, tile_size: Vector2 = V
 	# Update visuals for combat context
 	_resize_background_outline()  # Update outline for multi-tile shape
 	_update_id_label()  # Update ID text
+	_update_icon()  # Update icon from room label
 	_position_icon_combat()  # Center icon in combat

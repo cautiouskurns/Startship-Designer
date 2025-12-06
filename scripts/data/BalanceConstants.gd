@@ -33,7 +33,7 @@ const DURABILITY_SYNERGY_RESISTANCE_CHANCE: float = 0.25  # 25% chance weapon re
 ## POWER SYSTEM CONSTANTS
 ## ============================================================================
 
-const RELAY_COVERAGE_RADIUS: float = 3.0  # Radius in tiles for relay coverage
+const RELAY_COVERAGE_RADIUS: float = 4.5  # Radius in tiles for relay coverage (accounts for large multi-tile components)
 
 ## ============================================================================
 ## COMBAT UI CONSTANTS
