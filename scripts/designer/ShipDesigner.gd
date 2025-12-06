@@ -51,6 +51,9 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 ## Ship status panel
 @onready var ship_status_panel: ShipStatusPanel = $ShipStatusPanel
 
+## Mission requirements panel
+@onready var mission_requirements_panel: MissionRequirementsPanel = $MissionRequirementsPanel
+
 ## Ship stats panel (Phase 10.9)
 @onready var ship_stats_panel: ShipStatsPanel = $ShipStatsPanel
 

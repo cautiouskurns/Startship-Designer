@@ -53,7 +53,7 @@ const COMBAT_PAN_LIMIT: float = 300.0  # Maximum pan offset in pixels
 const DESIGNER_ZOOM_MIN: float = 0.5
 const DESIGNER_ZOOM_MAX: float = 3.0
 const DESIGNER_ZOOM_STEP: float = 0.1
-const DESIGNER_PAN_SPEED: float = 10.0  # Pixels per frame when panning with WASD
+const DESIGNER_PAN_SPEED: float = 5.0  # Pixels per frame when panning with WASD
 const DESIGNER_TILE_SIZE: int = 25  # Size of each grid tile in pixels
 const DESIGNER_TILE_SPACING: int = 1  # Gap between tiles in pixels
 

@@ -1,10 +1,11 @@
-[gd_scene load_steps=37 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=38 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
 [ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
 [ext_resource type="PackedScene" uid="uid://gbexenfull3j" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://p7hx2grevdey" path="res://scenes/designer/components/SpecificationsPanel.tscn" id="2_specifications"]
 [ext_resource type="PackedScene" uid="uid://bh06bckasjnjq" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/designer/components/MissionRequirementsPanel.tscn" id="3_mission"]
 [ext_resource type="PackedScene" uid="uid://walih11idf0w" path="res://scenes/designer/components/SynergyGuidePanel.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://b3vn8y4qxc7h2" path="res://scenes/designer/components/TemplateNameDialog.tscn" id="5_template_name"]
 [ext_resource type="PackedScene" uid="uid://cc7qm3y5r8vph" path="res://scenes/designer/components/TemplateListPanel.tscn" id="6_template_list"]
@@ -564,14 +565,24 @@ text = "⚠ STANDBY"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ShipStatusPanel" parent="." instance=ExtResource("3")]
-custom_minimum_size = Vector2(280, 260)
+[node name="MissionRequirementsPanel" parent="." instance=ExtResource("3_mission")]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 1583.0
-offset_top = -319.0
+offset_top = -529.0
+offset_right = 1898.0
+offset_bottom = -272.0
+grow_vertical = 0
+
+[node name="ShipStatusPanel" parent="." instance=ExtResource("3")]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 1583.0
+offset_top = -259.0
 offset_right = 1898.0
 offset_bottom = -59.0
 grow_vertical = 0

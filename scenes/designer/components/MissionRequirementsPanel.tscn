@@ -1,0 +1,106 @@
+[gd_scene load_steps=3 format=3 uid="uid://c8yqm3v1lapxh"]
+
+[ext_resource type="Script" path="res://scripts/designer/MissionRequirementsPanel.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mission"]
+bg_color = Color(0.101961, 0.101961, 0.101961, 0.4)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.290196, 0.886275, 0.886275, 1)
+
+[node name="MissionRequirementsPanel" type="Panel"]
+custom_minimum_size = Vector2(280, 200)
+offset_right = 280.0
+offset_bottom = 200.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_mission")
+script = ExtResource("1")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="Content" type="VBoxContainer" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 18
+text = "📋 MISSION BRIEF"
+
+[node name="Separator1" type="Control" parent="VBoxContainer/MarginContainer/Content"]
+visible = false
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+
+[node name="MissionTitleLabel" type="Label" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "MISSION 1"
+
+[node name="ObjectiveSection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ObjectiveLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/ObjectiveSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "OBJECTIVE"
+
+[node name="ObjectiveValue" type="Label" parent="VBoxContainer/MarginContainer/Content/ObjectiveSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "Eliminate enemy vessel"
+autowrap_mode = 3
+
+[node name="EnemySection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EnemyLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/EnemySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "ENEMY"
+
+[node name="EnemyValue" type="Label" parent="VBoxContainer/MarginContainer/Content/EnemySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.886, 0.290, 0.290, 1)
+theme_override_font_sizes/font_size = 14
+text = "Unknown enemy configuration"
+autowrap_mode = 3
+
+[node name="RecommendationSection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RecommendationLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/RecommendationSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "RECOMMENDATION"
+
+[node name="RecommendationValue" type="Label" parent="VBoxContainer/MarginContainer/Content/RecommendationSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 14
+text = "Balanced loadout recommended"
+autowrap_mode = 3

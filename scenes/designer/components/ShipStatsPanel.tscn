@@ -51,152 +51,160 @@ stretch_mode = 5
 [node name="HeaderLabel" type="Label" parent="VBoxContainer/MarginContainer/HeaderContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.29, 0.886, 0.886, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 14
 text = "PERFORMANCE"
 vertical_alignment = 1
 
-[node name="ContentMargin" type="MarginContainer" parent="VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="ContentMargin" type="MarginContainer" parent="VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="ContentContainer" type="VBoxContainer" parent="VBoxContainer/ContentMargin"]
+[node name="ContentContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="OffenseRow" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="OffenseRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="OffenseHeader" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer/OffenseRow"]
+[node name="OffenseHeader" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/OffenseRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="OffenseIcon" type="TextureRect" parent="VBoxContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader"]
+[node name="OffenseIcon" type="TextureRect" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader"]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 texture = ExtResource("2_offense")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="OffenseLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader"]
+[node name="OffenseLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.886, 0.29, 0.29, 1)
 theme_override_font_sizes/font_size = 12
 text = "OFFENSE"
 
-[node name="OffenseValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader"]
+[node name="OffenseValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "0"
 
-[node name="OffenseBar" type="ProgressBar" parent="VBoxContainer/ContentMargin/ContentContainer/OffenseRow"]
+[node name="OffenseBar" type="ProgressBar" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/OffenseRow"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 max_value = 100.0
 show_percentage = false
 
-[node name="DefenseRow" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="DefenseRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="DefenseHeader" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer/DefenseRow"]
+[node name="DefenseHeader" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DefenseRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="DefenseIcon" type="TextureRect" parent="VBoxContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader"]
+[node name="DefenseIcon" type="TextureRect" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader"]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 texture = ExtResource("3_defence")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="DefenseLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader"]
+[node name="DefenseLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.29, 0.6, 0.886, 1)
 theme_override_font_sizes/font_size = 12
 text = "DEFENSE"
 
-[node name="DefenseValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader"]
+[node name="DefenseValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "0"
 
-[node name="DefenseBar" type="ProgressBar" parent="VBoxContainer/ContentMargin/ContentContainer/DefenseRow"]
+[node name="DefenseBar" type="ProgressBar" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DefenseRow"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 max_value = 100.0
 show_percentage = false
 
-[node name="MobilityRow" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="MobilityRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="MobilityHeader" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer/MobilityRow"]
+[node name="MobilityHeader" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/MobilityRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="MobilityIcon" type="TextureRect" parent="VBoxContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader"]
+[node name="MobilityIcon" type="TextureRect" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader"]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 texture = ExtResource("4_power")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="MobilityLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader"]
+[node name="MobilityLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.886, 0.6, 0.29, 1)
 theme_override_font_sizes/font_size = 12
 text = "MOBILITY"
 
-[node name="MobilityValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader"]
+[node name="MobilityValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "0"
 
-[node name="MobilityBar" type="ProgressBar" parent="VBoxContainer/ContentMargin/ContentContainer/MobilityRow"]
+[node name="MobilityBar" type="ProgressBar" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/MobilityRow"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 max_value = 100.0
 show_percentage = false
 
-[node name="PowerRow" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="PowerRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="PowerHeader" type="HBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer/PowerRow"]
+[node name="PowerHeader" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/PowerRow"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PowerIcon" type="TextureRect" parent="VBoxContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader"]
+[node name="PowerIcon" type="TextureRect" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader"]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 texture = ExtResource("4_power")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="PowerLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader"]
+[node name="PowerLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.886, 0.831, 0.29, 1)
 theme_override_font_sizes/font_size = 12
 text = "POWER"
 
-[node name="PowerValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader"]
+[node name="PowerValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 10
 text = "0"
 
-[node name="PowerBar" type="ProgressBar" parent="VBoxContainer/ContentMargin/ContentContainer/PowerRow"]
+[node name="PowerBar" type="ProgressBar" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/PowerRow"]
 custom_minimum_size = Vector2(0, 4)
 layout_mode = 2
 max_value = 100.0

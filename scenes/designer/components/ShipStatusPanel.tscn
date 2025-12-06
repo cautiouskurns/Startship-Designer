@@ -11,9 +11,9 @@ border_width_bottom = 1
 border_color = Color(0.290196, 0.886275, 0.886275, 1)
 
 [node name="ShipStatusPanel" type="Panel"]
-custom_minimum_size = Vector2(280, 260)
+custom_minimum_size = Vector2(280, 200)
 offset_right = 280.0
-offset_bottom = 260.0
+offset_bottom = 200.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_status")
 script = ExtResource("1")
 
@@ -53,6 +53,7 @@ layout_mode = 2
 theme_override_constants/separation = 3
 
 [node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/MarginContainer/Content/BridgeStatusRow"]
+visible = false
 layout_mode = 2
 
 [node name="BridgeIconLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/BridgeStatusRow/StatusLine"]
@@ -66,6 +67,7 @@ theme_override_font_sizes/font_size = 18
 text = " Bridge: Missing"
 
 [node name="BudgetStatusRow" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 3
 

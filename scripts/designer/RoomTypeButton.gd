@@ -255,6 +255,9 @@ func _ready():
 	# Update tooltip text based on room type
 	_update_tooltip_text()
 
+	# Check tech level availability
+	_update_tech_availability()
+
 ## Update the button's visual display
 func update_display():
 	if room_type == RoomData.RoomType.EMPTY:
@@ -331,6 +334,21 @@ func set_available(available: bool):
 	elif not is_selected:
 		modulate = Color(1, 1, 1)
 
+## Check tech level and grey out if not available
+func _update_tech_availability():
+	var room_tech_level = RoomData.get_tech_level(room_type)
+	var current_tech_level = GameState.current_tech_level
+
+	# If room requires higher tech level than unlocked, grey it out
+	if room_tech_level > current_tech_level:
+		disabled = true
+		modulate = Color(0.3, 0.3, 0.3, 0.6)  # More transparent for locked components
+	else:
+		# Component is available
+		disabled = false
+		if not is_selected:
+			modulate = Color(1, 1, 1)
+
 ## Handle button press
 func _on_pressed():
 	emit_signal("room_type_selected", room_type)
@@ -376,8 +394,17 @@ func _update_tooltip_text():
 		tooltip_name_label.text = full_label
 
 	# Set description (first part)
+	var description = ""
 	if parts.size() > 0:
-		tooltip_description_label.text = parts[0]
+		description = parts[0]
+
+	# Add tech level requirement if locked
+	var room_tech_level = RoomData.get_tech_level(room_type)
+	var current_tech_level = GameState.current_tech_level
+	if room_tech_level > current_tech_level:
+		description += "\n\n[LOCKED - Requires Tech Level %d]" % room_tech_level
+
+	tooltip_description_label.text = description
 
 	# Set stats - get from JSON data dynamically
 	var stats_text = _generate_stats_text()

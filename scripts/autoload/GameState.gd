@@ -12,6 +12,10 @@ var missions_unlocked: Array[bool] = [true, false, false]
 ## Currently selected mission (0 = Patrol, 1 = Convoy, 2 = Fleet)
 var current_mission: int = 0
 
+## Current tech level unlocked (1 = basic, 2 = intermediate, 3 = advanced)
+## Updated as missions are completed
+var current_tech_level: int = 1
+
 ## Hull types (Phase 10.1)
 enum HullType {
 	FRIGATE,
@@ -244,6 +248,24 @@ func get_mission_brief(index: int) -> String:
 		return MISSION_BRIEFS[index]
 	return ""
 
+## Get tech level for a mission index
+func get_mission_tech_level(index: int) -> int:
+	_load_data_from_json()  # Ensure data is loaded
+	if index >= 0 and index < missions_data.size():
+		return missions_data[index].get("tech_level", 1)
+	return 1  # Default to basic tech
+
+## Update current tech level based on selected mission
+func update_tech_level_for_mission(mission_index: int):
+	current_tech_level = get_mission_tech_level(mission_index)
+
+## Get full mission data dictionary by index
+func get_mission_data(index: int) -> Dictionary:
+	_load_data_from_json()  # Ensure data is loaded
+	if index >= 0 and index < missions_data.size():
+		return missions_data[index]
+	return {}  # Empty dictionary fallback
+
 ## Get enemy ID for a mission index (Phase 3)
 func get_mission_enemy_id(index: int) -> String:
 	_load_data_from_json()  # Ensure data is loaded
@@ -256,12 +278,14 @@ func reset_progression():
 	missions_unlocked = [true, false, false]
 	current_mission = 0
 	current_hull = HullType.CRUISER
+	current_tech_level = 1
 
 ## Reset entire game state (for new game)
 func reset_game():
 	missions_unlocked = [true, false, false]
 	current_mission = 0
 	current_hull = HullType.CRUISER
+	current_tech_level = 1
 	template_to_load = null
 	redesign_template = null
 	last_battle_result = null

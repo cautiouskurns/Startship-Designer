@@ -185,6 +185,10 @@ static func _load_data_from_json():
 			if room_def.has("stats"):
 				stats[room_type] = room_def["stats"]
 
+			# Load tech level
+			if room_def.has("tech_level"):
+				tech_levels[room_type] = room_def["tech_level"]
+
 	# Load synergy definitions
 	if data.has("synergies"):
 		var synergies_data = data["synergies"]
@@ -398,10 +402,40 @@ static var placement_columns = {
 ## Stores differentiated stats for each component type
 static var stats: Dictionary = {}
 
+## Tech levels for each room type (1 = basic, 2 = intermediate, 3 = advanced)
+## Controls when components become available to the player
+static var tech_levels: Dictionary = {}
+
 ## Get cost for a room type
 static func get_cost(room_type: RoomType) -> int:
 	_load_data_from_json()  # Ensure data is loaded
 	return costs.get(room_type, 0)
+
+## Get tech level for a room type (1 = basic, 2 = intermediate, 3 = advanced)
+static func get_tech_level(room_type: RoomType) -> int:
+	_load_data_from_json()  # Ensure data is loaded
+	return tech_levels.get(room_type, _get_default_tech_level(room_type))
+
+## Get default tech level for a room type (used if not in JSON)
+static func _get_default_tech_level(room_type: RoomType) -> int:
+	# Tech Level 1 (Basic) - Mission 1
+	if room_type in [RoomType.EMPTY, RoomType.BRIDGE, RoomType.WEAPON, RoomType.SHIELD,
+					 RoomType.ENGINE, RoomType.REACTOR, RoomType.ARMOR, RoomType.CONDUIT]:
+		return 1
+
+	# Tech Level 2 (Intermediate) - Mission 2
+	elif room_type in [RoomType.RELAY, RoomType.PHASER_ARRAY, RoomType.PULSE_LASER,
+					   RoomType.BEAM_LANCE, RoomType.POINT_DEFENSE, RoomType.STANDARD_SHIELD,
+					   RoomType.LIGHT_SHIELD, RoomType.HULL_PLATING, RoomType.LIGHT_ARMOR,
+					   RoomType.STANDARD_ENGINE, RoomType.THRUSTERS, RoomType.REACTION_CONTROL,
+					   RoomType.SENSOR_ARRAY, RoomType.DAMAGE_CONTROL, RoomType.CHAFF_LAUNCHER,
+					   RoomType.REINFORCED_HULL, RoomType.LIGHTWEIGHT_FRAME, RoomType.BULKHEAD,
+					   RoomType.AIRLOCK]:
+		return 2
+
+	# Tech Level 3 (Advanced) - Mission 3 and beyond
+	else:
+		return 3
 
 ## Get color for a room type
 static func get_color(room_type: RoomType) -> Color:

@@ -5,21 +5,24 @@
       "name": "PATROL DUTY",
       "brief": "Pirates raiding supply lines. Need fast interceptor.",
       "budget": 50,
-      "enemy_id": "scout"
+      "enemy_id": "scout",
+      "tech_level": 1
     },
     {
       "id": 1,
       "name": "CONVOY DEFENSE",
       "brief": "Enemy cruiser attacking convoy. Engage and destroy.",
       "budget": 25,
-      "enemy_id": "raider"
+      "enemy_id": "raider",
+      "tech_level": 2
     },
     {
       "id": 2,
       "name": "FLEET BATTLE",
       "brief": "Capital ship inbound. This is our final stand.",
       "budget": 30,
-      "enemy_id": "dreadnought"
+      "enemy_id": "dreadnought",
+      "tech_level": 3
     }
   ]
 }

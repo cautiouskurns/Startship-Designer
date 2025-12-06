@@ -107,13 +107,19 @@ func _on_mission2_hovered():
 func _on_mission3_hovered():
 	_show_brief(2)
 
-## Load mission and transition to hull selection (Phase 10.1)
+## Load mission and transition to ship designer (hull selection temporarily skipped)
 func _load_mission(mission_index: int):
 	# Set current mission in GameState
 	GameState.current_mission = mission_index
 
-	# Load Hull Selection scene (Phase 10.1 - choose hull before designing)
-	get_tree().change_scene_to_file("res://scenes/hull/HullSelect.tscn")
+	# Update tech level based on mission
+	GameState.update_tech_level_for_mission(mission_index)
+
+	# Set free design hull (no restrictions) - skipping hull selection for now
+	GameState.current_hull = GameState.HullType.FREE_DESIGN
+
+	# Load Ship Designer scene directly (skipping hull selection)
+	get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
 
 ## Back button pressed
 func _on_back_pressed():
