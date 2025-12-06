@@ -33,72 +33,82 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 8
 
-[node name="Content" type="VBoxContainer" parent="VBoxContainer/MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="TitleLabel" type="Label" parent="VBoxContainer/MarginContainer/Content"]
+[node name="TitleLabel" type="Label" parent="VBoxContainer/MarginContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
 theme_override_font_sizes/font_size = 18
 text = "📋 MISSION BRIEF"
 
-[node name="Separator1" type="Control" parent="VBoxContainer/MarginContainer/Content"]
-visible = false
-custom_minimum_size = Vector2(0, 10)
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
 
-[node name="MissionTitleLabel" type="Label" parent="VBoxContainer/MarginContainer/Content"]
+[node name="ContentMargin" type="MarginContainer" parent="VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Content" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="MissionTitleLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "MISSION 1"
 
-[node name="ObjectiveSection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+[node name="ObjectiveSection" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ObjectiveLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/ObjectiveSection"]
+[node name="ObjectiveLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/ObjectiveSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 text = "OBJECTIVE"
 
-[node name="ObjectiveValue" type="Label" parent="VBoxContainer/MarginContainer/Content/ObjectiveSection"]
+[node name="ObjectiveValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/ObjectiveSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "Eliminate enemy vessel"
 autowrap_mode = 3
 
-[node name="EnemySection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+[node name="EnemySection" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="EnemyLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/EnemySection"]
+[node name="EnemyLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/EnemySection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 text = "ENEMY"
 
-[node name="EnemyValue" type="Label" parent="VBoxContainer/MarginContainer/Content/EnemySection"]
+[node name="EnemyValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/EnemySection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.886, 0.290, 0.290, 1)
 theme_override_font_sizes/font_size = 14
 text = "Unknown enemy configuration"
 autowrap_mode = 3
 
-[node name="RecommendationSection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+[node name="RecommendationSection" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="RecommendationLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/RecommendationSection"]
+[node name="RecommendationLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/RecommendationSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 text = "RECOMMENDATION"
 
-[node name="RecommendationValue" type="Label" parent="VBoxContainer/MarginContainer/Content/RecommendationSection"]
+[node name="RecommendationValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/RecommendationSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
 theme_override_font_sizes/font_size = 14

@@ -1,0 +1,137 @@
+[gd_scene load_steps=3 format=3 uid="uid://campaign_deployment_panel"]
+
+[ext_resource type="Script" path="res://scripts/campaign/DeploymentPanel.gd" id="1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_deployment"]
+bg_color = Color(0.101961, 0.101961, 0.101961, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.290196, 0.886275, 0.886275, 1)
+
+[node name="DeploymentPanel" type="Panel"]
+custom_minimum_size = Vector2(500, 400)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -200.0
+offset_right = 250.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_deployment")
+script = ExtResource("1")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="Content" type="VBoxContainer" parent="VBoxContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="SectorNameLabel" type="Label" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 24
+text = "DEPLOY TO: SECTOR"
+horizontal_alignment = 1
+
+[node name="Separator1" type="HSeparator" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+
+[node name="EnemySection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="EnemyLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/EnemySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "ENEMY"
+
+[node name="EnemyNameLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/EnemySection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.886, 0.290, 0.290, 1)
+theme_override_font_sizes/font_size = 16
+text = "Unknown Enemy"
+
+[node name="ThreatSection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ThreatLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/ThreatSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "THREAT LEVEL"
+
+[node name="ThreatValueLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/ThreatSection"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "▰▰▰░ (3/4) - CRITICAL"
+
+[node name="StakesSection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="StakesLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/StakesSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "STAKES"
+
+[node name="StakesValue" type="RichTextLabel" parent="VBoxContainer/MarginContainer/Content/StakesSection"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+bbcode_enabled = true
+text = "WIN: Secure sector
+LOSE: Sector falls"
+fit_content = true
+
+[node name="BudgetSection" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="BudgetLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/BudgetSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "BUDGET"
+
+[node name="BudgetValue" type="Label" parent="VBoxContainer/MarginContainer/Content/BudgetSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.290196, 1)
+theme_override_font_sizes/font_size = 16
+text = "30 BP"
+
+[node name="ButtonContainer" type="HBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="CancelButton" type="Button" parent="VBoxContainer/MarginContainer/Content/ButtonContainer"]
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+text = "CANCEL"
+
+[node name="ConfirmButton" type="Button" parent="VBoxContainer/MarginContainer/Content/ButtonContainer"]
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+text = "CONFIRM"

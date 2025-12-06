@@ -961,6 +961,10 @@ func _on_room_type_selected(room_type: RoomData.RoomType):
 
 ## Deselect currently selected room (ESC key functionality)
 func _deselect_room():
+	# Clear any hover previews FIRST (before changing selected_room_type)
+	if hovered_tile:
+		_on_tile_unhovered(hovered_tile)
+
 	# Clear selection
 	selected_room_type = RoomData.RoomType.EMPTY
 
@@ -972,10 +976,6 @@ func _deselect_room():
 
 	# Clear specifications panel
 	specifications_panel.update_specifications(RoomData.RoomType.EMPTY)
-
-	# Clear any hover previews if hovering
-	if hovered_tile:
-		_on_tile_unhovered(hovered_tile)
 
 	print("Component selection cleared")
 

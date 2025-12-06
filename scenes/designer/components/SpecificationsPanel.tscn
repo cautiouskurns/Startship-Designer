@@ -45,76 +45,84 @@ visible = false
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
 
-[node name="ContentMargin" type="MarginContainer" parent="VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="ContentMargin" type="MarginContainer" parent="VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="ContentContainer" type="VBoxContainer" parent="VBoxContainer/ContentMargin"]
+[node name="ContentContainer" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="ComponentSection" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="ComponentSection" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="ComponentLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ComponentSection"]
+[node name="ComponentLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/ComponentSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 text = "COMPONENT"
 
-[node name="ComponentValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/ComponentSection"]
+[node name="ComponentValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/ComponentSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "Select a component"
 
-[node name="DimensionsSection" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="DimensionsSection" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="DimensionsLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/DimensionsSection"]
+[node name="DimensionsLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DimensionsSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 text = "DIMENSIONS"
 
-[node name="DimensionsValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/DimensionsSection"]
+[node name="DimensionsValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DimensionsSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "—"
 
-[node name="CostSection" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="CostSection" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="CostLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/CostSection"]
+[node name="CostLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/CostSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 text = "COST"
 
-[node name="CostValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/CostSection"]
+[node name="CostValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/CostSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14
 text = "—"
 
-[node name="DescriptionSection" type="VBoxContainer" parent="VBoxContainer/ContentMargin/ContentContainer"]
+[node name="DescriptionSection" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="DescriptionLabel" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/DescriptionSection"]
+[node name="DescriptionLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DescriptionSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
 theme_override_font_sizes/font_size = 12
 text = "DESCRIPTION"
 
-[node name="DescriptionValue" type="Label" parent="VBoxContainer/ContentMargin/ContentContainer/DescriptionSection"]
+[node name="DescriptionValue" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DescriptionSection"]
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 14

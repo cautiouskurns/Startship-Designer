@@ -33,99 +33,109 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 8
 
-[node name="Content" type="VBoxContainer" parent="VBoxContainer/MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="TitleLabel" type="Label" parent="VBoxContainer/MarginContainer/Content"]
+[node name="TitleLabel" type="Label" parent="VBoxContainer/MarginContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
 theme_override_font_sizes/font_size = 18
 text = "⚙ STATUS"
 
-[node name="Separator1" type="Control" parent="VBoxContainer/MarginContainer/Content"]
-visible = false
-custom_minimum_size = Vector2(0, 10)
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
 
-[node name="BridgeStatusRow" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+[node name="ContentMargin" type="MarginContainer" parent="VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Content" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="BridgeStatusRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/MarginContainer/Content/BridgeStatusRow"]
+[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/BridgeStatusRow"]
 visible = false
 layout_mode = 2
 
-[node name="BridgeIconLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/BridgeStatusRow/StatusLine"]
+[node name="BridgeIconLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/BridgeStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "✗"
 
-[node name="BridgeTextLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/BridgeStatusRow/StatusLine"]
+[node name="BridgeTextLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/BridgeStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = " Bridge: Missing"
 
-[node name="BudgetStatusRow" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+[node name="BudgetStatusRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/MarginContainer/Content/BudgetStatusRow"]
+[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/BudgetStatusRow"]
 layout_mode = 2
 
-[node name="BudgetIconLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/BudgetStatusRow/StatusLine"]
+[node name="BudgetIconLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/BudgetStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "✗"
 
-[node name="BudgetTextLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/BudgetStatusRow/StatusLine"]
+[node name="BudgetTextLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/BudgetStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = " Budget: Over Budget"
 
-[node name="BudgetDetailLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/BudgetStatusRow"]
+[node name="BudgetDetailLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/BudgetStatusRow"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 14
 text = "  0 / 30"
 
-[node name="PowerStatusRow" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+[node name="PowerStatusRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/MarginContainer/Content/PowerStatusRow"]
+[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/PowerStatusRow"]
 layout_mode = 2
 
-[node name="PowerIconLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/PowerStatusRow/StatusLine"]
+[node name="PowerIconLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/PowerStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "✓"
 
-[node name="PowerTextLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/PowerStatusRow/StatusLine"]
+[node name="PowerTextLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/PowerStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = " Power: All Rooms Powered"
 
-[node name="PowerDetailLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/PowerStatusRow"]
+[node name="PowerDetailLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/PowerStatusRow"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
 theme_override_font_sizes/font_size = 14
 text = "  All powered!"
 
-[node name="SynergyStatusRow" type="VBoxContainer" parent="VBoxContainer/MarginContainer/Content"]
+[node name="SynergyStatusRow" type="VBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content"]
 layout_mode = 2
 theme_override_constants/separation = 3
 
-[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/MarginContainer/Content/SynergyStatusRow"]
+[node name="StatusLine" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/SynergyStatusRow"]
 layout_mode = 2
 
-[node name="SynergyIconLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine"]
+[node name="SynergyIconLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/SynergyStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "⚡"
 
-[node name="SynergyTextLabel" type="Label" parent="VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine"]
+[node name="SynergyTextLabel" type="Label" parent="VBoxContainer/ScrollContainer/ContentMargin/Content/SynergyStatusRow/StatusLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = " Synergies: 0 active"

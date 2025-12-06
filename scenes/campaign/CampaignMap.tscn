@@ -1,0 +1,139 @@
+[gd_scene load_steps=4 format=3 uid="uid://campaign_map_scene"]
+
+[ext_resource type="Script" path="res://scripts/campaign/CampaignMap.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://campaign_sector_node" path="res://scenes/campaign/components/SectorNode.tscn" id="2_sector"]
+[ext_resource type="PackedScene" uid="uid://campaign_deployment_panel" path="res://scenes/campaign/components/DeploymentPanel.tscn" id="3_deployment"]
+
+[node name="CampaignMap" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0392157, 0.0392157, 0.101961, 1)
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 40.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 36
+text = "SECTOR 7 DEFENSE"
+horizontal_alignment = 1
+
+[node name="TurnCounter" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 100.0
+offset_bottom = 130.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "TURN 1/12"
+horizontal_alignment = 1
+
+[node name="SectorContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CommandSector" parent="SectorContainer" instance=ExtResource("2_sector")]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 890.0
+offset_top = 480.0
+offset_right = 1030.0
+offset_bottom = 600.0
+grow_horizontal = 1
+grow_vertical = 1
+sector_id = 0
+
+[node name="ShipyardSector" parent="SectorContainer" instance=ExtResource("2_sector")]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 600.0
+offset_top = 350.0
+offset_right = 740.0
+offset_bottom = 470.0
+sector_id = 1
+
+[node name="MedicalSector" parent="SectorContainer" instance=ExtResource("2_sector")]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 1180.0
+offset_top = 350.0
+offset_right = 1320.0
+offset_bottom = 470.0
+sector_id = 2
+
+[node name="ColonySector" parent="SectorContainer" instance=ExtResource("2_sector")]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 890.0
+offset_top = 660.0
+offset_right = 1030.0
+offset_bottom = 780.0
+sector_id = 3
+
+[node name="PowerSector" parent="SectorContainer" instance=ExtResource("2_sector")]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 460.0
+offset_top = 580.0
+offset_right = 600.0
+offset_bottom = 700.0
+sector_id = 4
+
+[node name="DefenseSector" parent="SectorContainer" instance=ExtResource("2_sector")]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 890.0
+offset_top = 200.0
+offset_right = 1030.0
+offset_bottom = 320.0
+sector_id = 5
+
+[node name="WeaponsSector" parent="SectorContainer" instance=ExtResource("2_sector")]
+layout_mode = 1
+anchors_preset = 0
+offset_left = 1320.0
+offset_top = 580.0
+offset_right = 1460.0
+offset_bottom = 700.0
+sector_id = 6
+
+[node name="ConnectionLines" type="Node2D" parent="."]
+
+[node name="DeploymentPanel" parent="." instance=ExtResource("3_deployment")]
+visible = false
+layout_mode = 1

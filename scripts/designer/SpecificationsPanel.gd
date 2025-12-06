@@ -4,10 +4,10 @@ class_name SpecificationsPanel
 ## Panel displaying specifications for selected component
 
 ## UI element references
-@onready var component_value: Label = $VBoxContainer/ContentMargin/ContentContainer/ComponentSection/ComponentValue
-@onready var dimensions_value: Label = $VBoxContainer/ContentMargin/ContentContainer/DimensionsSection/DimensionsValue
-@onready var cost_value: Label = $VBoxContainer/ContentMargin/ContentContainer/CostSection/CostValue
-@onready var description_value: Label = $VBoxContainer/ContentMargin/ContentContainer/DescriptionSection/DescriptionValue
+@onready var component_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/ComponentSection/ComponentValue
+@onready var dimensions_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DimensionsSection/DimensionsValue
+@onready var cost_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/CostSection/CostValue
+@onready var description_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DescriptionSection/DescriptionValue
 
 ## Component descriptions
 const DESCRIPTIONS = {

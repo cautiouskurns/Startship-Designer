@@ -5,10 +5,10 @@ class_name MissionRequirementsPanel
 ## Helps players design ships that match mission needs
 
 ## UI elements
-@onready var mission_title_label: Label = $VBoxContainer/MarginContainer/Content/MissionTitleLabel
-@onready var objective_label: Label = $VBoxContainer/MarginContainer/Content/ObjectiveSection/ObjectiveValue
-@onready var enemy_label: Label = $VBoxContainer/MarginContainer/Content/EnemySection/EnemyValue
-@onready var recommendation_label: Label = $VBoxContainer/MarginContainer/Content/RecommendationSection/RecommendationValue
+@onready var mission_title_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/MissionTitleLabel
+@onready var objective_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/ObjectiveSection/ObjectiveValue
+@onready var enemy_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/EnemySection/EnemyValue
+@onready var recommendation_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/RecommendationSection/RecommendationValue
 
 func _ready():
 	# Initialize with current mission data

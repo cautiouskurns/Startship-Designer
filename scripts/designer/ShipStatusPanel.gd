@@ -4,27 +4,27 @@ class_name ShipStatusPanel
 ## Panel displaying ship readiness status (Bridge, Budget, Power)
 
 ## Bridge status elements
-@onready var bridge_icon_label: Label = $VBoxContainer/MarginContainer/Content/BridgeStatusRow/StatusLine/BridgeIconLabel
-@onready var bridge_text_label: Label = $VBoxContainer/MarginContainer/Content/BridgeStatusRow/StatusLine/BridgeTextLabel
+@onready var bridge_icon_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/BridgeStatusRow/StatusLine/BridgeIconLabel
+@onready var bridge_text_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/BridgeStatusRow/StatusLine/BridgeTextLabel
 
 ## Budget status elements
-@onready var budget_icon_label: Label = $VBoxContainer/MarginContainer/Content/BudgetStatusRow/StatusLine/BudgetIconLabel
-@onready var budget_text_label: Label = $VBoxContainer/MarginContainer/Content/BudgetStatusRow/StatusLine/BudgetTextLabel
-@onready var budget_detail_label: Label = $VBoxContainer/MarginContainer/Content/BudgetStatusRow/BudgetDetailLabel
+@onready var budget_icon_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/BudgetStatusRow/StatusLine/BudgetIconLabel
+@onready var budget_text_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/BudgetStatusRow/StatusLine/BudgetTextLabel
+@onready var budget_detail_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/BudgetStatusRow/BudgetDetailLabel
 
 ## Power status elements
-@onready var power_icon_label: Label = $VBoxContainer/MarginContainer/Content/PowerStatusRow/StatusLine/PowerIconLabel
-@onready var power_text_label: Label = $VBoxContainer/MarginContainer/Content/PowerStatusRow/StatusLine/PowerTextLabel
-@onready var power_detail_label: Label = $VBoxContainer/MarginContainer/Content/PowerStatusRow/PowerDetailLabel
+@onready var power_icon_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/PowerStatusRow/StatusLine/PowerIconLabel
+@onready var power_text_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/PowerStatusRow/StatusLine/PowerTextLabel
+@onready var power_detail_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/PowerStatusRow/PowerDetailLabel
 
 ## Synergy status elements
-@onready var synergy_icon_label: Label = $VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine/SynergyIconLabel
-@onready var synergy_text_label: Label = $VBoxContainer/MarginContainer/Content/SynergyStatusRow/StatusLine/SynergyTextLabel
+@onready var synergy_icon_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/SynergyStatusRow/StatusLine/SynergyIconLabel
+@onready var synergy_text_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/SynergyStatusRow/StatusLine/SynergyTextLabel
 
 ## Hull bonus status elements (Phase 10.3)
 ## NOTE: If these don't exist in scene, add HullStatusRow by duplicating another status row in Godot editor
-@onready var hull_icon_label: Label = $VBoxContainer/MarginContainer/Content/HullStatusRow/StatusLine/HullIconLabel
-@onready var hull_text_label: Label = $VBoxContainer/MarginContainer/Content/HullStatusRow/StatusLine/HullTextLabel
+@onready var hull_icon_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/HullStatusRow/StatusLine/HullIconLabel
+@onready var hull_text_label: Label = $VBoxContainer/ScrollContainer/ContentMargin/Content/HullStatusRow/StatusLine/HullTextLabel
 
 ## Colors (from BalanceConstants)
 const COLOR_GREEN = BalanceConstants.COLOR_GREEN

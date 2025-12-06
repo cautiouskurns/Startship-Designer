@@ -4,16 +4,16 @@ class_name ShipStatsPanel
 ## Panel displaying ship statistics: Offense, Defense, Mobility, Power (Updated to match modern UI)
 
 ## Stat value labels (simplified - just values)
-@onready var offense_value: Label = $VBoxContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader/OffenseValue
-@onready var defense_value: Label = $VBoxContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader/DefenseValue
-@onready var mobility_value: Label = $VBoxContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader/MobilityValue
-@onready var power_value: Label = $VBoxContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader/PowerValue
+@onready var offense_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/OffenseRow/OffenseHeader/OffenseValue
+@onready var defense_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DefenseRow/DefenseHeader/DefenseValue
+@onready var mobility_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/MobilityRow/MobilityHeader/MobilityValue
+@onready var power_value: Label = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/PowerRow/PowerHeader/PowerValue
 
 ## Progress bars
-@onready var offense_bar: ProgressBar = $VBoxContainer/ContentMargin/ContentContainer/OffenseRow/OffenseBar
-@onready var defense_bar: ProgressBar = $VBoxContainer/ContentMargin/ContentContainer/DefenseRow/DefenseBar
-@onready var mobility_bar: ProgressBar = $VBoxContainer/ContentMargin/ContentContainer/MobilityRow/MobilityBar
-@onready var power_bar: ProgressBar = $VBoxContainer/ContentMargin/ContentContainer/PowerRow/PowerBar
+@onready var offense_bar: ProgressBar = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/OffenseRow/OffenseBar
+@onready var defense_bar: ProgressBar = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/DefenseRow/DefenseBar
+@onready var mobility_bar: ProgressBar = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/MobilityRow/MobilityBar
+@onready var power_bar: ProgressBar = $VBoxContainer/ScrollContainer/ContentMargin/ContentContainer/PowerRow/PowerBar
 
 ## Update all stats from ship data
 ## hull_data: dictionary with hull bonus info (optional)

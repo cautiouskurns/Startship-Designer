@@ -317,7 +317,17 @@ func set_count(count: int):
 ## Set selected visual state
 func set_selected(selected: bool):
 	is_selected = selected
-	if selected:
+
+	# Check tech level - if locked, don't allow selection visuals
+	var room_tech_level = RoomData.get_tech_level(room_type)
+	var current_tech_level = GameState.current_tech_level
+
+	if room_tech_level > current_tech_level:
+		# Tech-locked - keep locked appearance
+		disabled = true
+		modulate = Color(0.3, 0.3, 0.3, 0.6)
+		remove_theme_color_override("font_color")
+	elif selected:
 		# Cyan glow border
 		add_theme_color_override("font_color", Color(0.290, 0.886, 0.886))
 		modulate = Color(1.1, 1.1, 1.1)
@@ -328,11 +338,21 @@ func set_selected(selected: bool):
 
 ## Set availability (enabled/disabled)
 func set_available(available: bool):
-	disabled = not available
-	if not available:
-		modulate = Color(0.5, 0.5, 0.5)
-	elif not is_selected:
-		modulate = Color(1, 1, 1)
+	# Check tech level first - if locked by tech, stay locked regardless of other availability
+	var room_tech_level = RoomData.get_tech_level(room_type)
+	var current_tech_level = GameState.current_tech_level
+
+	if room_tech_level > current_tech_level:
+		# Locked by tech level - override availability
+		disabled = true
+		modulate = Color(0.3, 0.3, 0.3, 0.6)  # More transparent for tech-locked components
+	else:
+		# Not tech-locked, apply normal availability
+		disabled = not available
+		if not available:
+			modulate = Color(0.5, 0.5, 0.5)
+		elif not is_selected:
+			modulate = Color(1, 1, 1)
 
 ## Check tech level and grey out if not available
 func _update_tech_availability():
