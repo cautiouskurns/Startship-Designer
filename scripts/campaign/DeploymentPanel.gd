@@ -52,8 +52,8 @@ func show_deployment(sector_id: CampaignState.SectorID):
 	# Update stakes
 	stakes_label.text = _get_stakes_text(sector_def, sector_data)
 
-	# Update budget
-	var budget = GameState.get_mission_budget(GameState.current_mission)
+	# Update budget (get correct budget for this sector's enemy)
+	var budget = CampaignState.get_budget_for_sector(sector_id)
 	budget_label.text = "%d BP" % budget
 
 	# Show panel

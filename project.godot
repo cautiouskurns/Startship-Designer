@@ -18,6 +18,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameState="*res://scripts/autoload/GameState.gd"
+CampaignState="*res://scripts/autoload/CampaignState.gd"
 TemplateManager="*res://scripts/autoload/TemplateManager.gd"
 AudioManager="*res://scripts/autoload/AudioManager.gd"
 CrewBarkSystem="*res://scripts/autoloads/CrewBarkSystem.gd"

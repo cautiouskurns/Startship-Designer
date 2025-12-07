@@ -12,6 +12,7 @@
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="7_ship_stats"]
 [ext_resource type="PackedScene" uid="uid://h4cfuumnaovx" path="res://scenes/mission/EnemySetupPanel.tscn" id="9_enemy_setup"]
 [ext_resource type="Theme" path="res://assets/themes/blueprint_theme.tres" id="10_blueprint_theme"]
+[ext_resource type="PackedScene" uid="uid://tutorial_system_001" path="res://scenes/designer/components/TutorialSystem.tscn" id="10_tutorial_system"]
 [ext_resource type="Texture2D" uid="uid://det0ehgyqq2qp" path="res://assets/sprites/ui/save.png" id="11_icon_save"]
 [ext_resource type="Texture2D" uid="uid://3mhepptrw5ex" path="res://assets/sprites/ui/load.png" id="12_icon_load"]
 [ext_resource type="Texture2D" uid="uid://bln3on3wakkuc" path="res://assets/sprites/ui/view.png" id="13_icon_view"]
@@ -953,3 +954,5 @@ text = "LAUNCH"
 [node name="RightMargin" type="Control" parent="BottomMenuBar/MenuBarContainer"]
 custom_minimum_size = Vector2(16, 0)
 layout_mode = 2
+
+[node name="TutorialSystem" parent="." instance=ExtResource("10_tutorial_system")]

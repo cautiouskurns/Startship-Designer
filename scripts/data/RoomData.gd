@@ -420,11 +420,11 @@ static func get_tech_level(room_type: RoomType) -> int:
 static func _get_default_tech_level(room_type: RoomType) -> int:
 	# Tech Level 1 (Basic) - Mission 1
 	if room_type in [RoomType.EMPTY, RoomType.BRIDGE, RoomType.WEAPON, RoomType.SHIELD,
-					 RoomType.ENGINE, RoomType.REACTOR, RoomType.ARMOR, RoomType.CONDUIT]:
+					 RoomType.ENGINE, RoomType.REACTOR, RoomType.RELAY, RoomType.ARMOR, RoomType.CONDUIT]:
 		return 1
 
 	# Tech Level 2 (Intermediate) - Mission 2
-	elif room_type in [RoomType.RELAY, RoomType.PHASER_ARRAY, RoomType.PULSE_LASER,
+	elif room_type in [RoomType.PHASER_ARRAY, RoomType.PULSE_LASER,
 					   RoomType.BEAM_LANCE, RoomType.POINT_DEFENSE, RoomType.STANDARD_SHIELD,
 					   RoomType.LIGHT_SHIELD, RoomType.HULL_PLATING, RoomType.LIGHT_ARMOR,
 					   RoomType.STANDARD_ENGINE, RoomType.THRUSTERS, RoomType.REACTION_CONTROL,

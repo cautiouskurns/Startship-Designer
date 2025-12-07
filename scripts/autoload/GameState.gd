@@ -16,6 +16,9 @@ var current_mission: int = 0
 ## Updated as missions are completed
 var current_tech_level: int = 1
 
+## Tutorial completion flag (first-time player experience)
+var tutorial_completed: bool = false
+
 ## Hull types (Phase 10.1)
 enum HullType {
 	FRIGATE,
@@ -273,12 +276,22 @@ func get_mission_enemy_id(index: int) -> String:
 		return missions_data[index].get("enemy_id", "scout")
 	return "scout"  # Default fallback
 
+## Mark tutorial as completed
+func complete_tutorial():
+	tutorial_completed = true
+	print("Tutorial marked as completed")
+
+## Check if tutorial should show (first mission selected, any mission)
+func should_show_tutorial() -> bool:
+	return not tutorial_completed
+
 ## Reset progression (for testing)
 func reset_progression():
 	missions_unlocked = [true, false, false]
 	current_mission = 0
 	current_hull = HullType.CRUISER
 	current_tech_level = 1
+	tutorial_completed = false
 
 ## Reset entire game state (for new game)
 func reset_game():
@@ -286,6 +299,7 @@ func reset_game():
 	current_mission = 0
 	current_hull = HullType.CRUISER
 	current_tech_level = 1
+	tutorial_completed = false
 	template_to_load = null
 	redesign_template = null
 	last_battle_result = null

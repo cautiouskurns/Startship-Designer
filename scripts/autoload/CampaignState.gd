@@ -42,6 +42,7 @@ var max_turns: int = 12
 var campaign_active: bool = false
 var last_defended_sector: SectorID = SectorID.COMMAND
 var sectors: Dictionary = {}  # SectorID -> SectorData
+var current_tech_level: int = 1  # Tech level (1-3), unlocks components as campaign progresses
 
 ## Sector definitions (loaded from JSON)
 var sector_definitions: Dictionary = {}
@@ -53,6 +54,7 @@ func _ready():
 ## Initialize new campaign
 func _initialize_campaign():
 	current_turn = 1
+	current_tech_level = 1  # Start at tech level 1
 	campaign_active = true
 	sectors.clear()
 
@@ -60,7 +62,7 @@ func _initialize_campaign():
 	for sector_id in SectorID.values():
 		sectors[sector_id] = SectorData.new(sector_id)
 
-	print("Campaign initialized - Turn 1/12, all sectors secure")
+	print("Campaign initialized - Turn 1/12, Tech Level 1, all sectors secure")
 
 ## Load sector definitions from JSON
 func _load_sector_definitions():
@@ -92,10 +94,50 @@ func get_sector_definition(sector_id: SectorID) -> Dictionary:
 	var sector_key = SectorID.keys()[sector_id]
 	return sector_definitions.get(sector_key, {})
 
+## Get current tech level for unlocking components
+func get_tech_level() -> int:
+	return current_tech_level
+
+## Get budget for a specific sector based on its enemy
+func get_budget_for_sector(sector_id: SectorID) -> int:
+	var sector_def = get_sector_definition(sector_id)
+	var enemy_id = sector_def.get("enemy_id", "scout")
+
+	# Map enemy to mission index
+	var mission_index = 0
+	match enemy_id:
+		"scout":
+			mission_index = 0
+		"raider":
+			mission_index = 1
+		"dreadnought":
+			mission_index = 2
+		_:
+			mission_index = 0
+
+	# Get budget from GameState mission data
+	return GameState.get_mission_budget(mission_index)
+
 ## Advance turn after battle
 func advance_turn():
 	current_turn += 1
-	print("Turn advanced to %d/%d" % [current_turn, max_turns])
+
+	# Update tech level based on turn progression
+	# Turns 1-4: Tech Level 1 (basic)
+	# Turns 5-8: Tech Level 2 (intermediate)
+	# Turns 9-12: Tech Level 3 (advanced)
+	var old_tech = current_tech_level
+	if current_turn >= 9:
+		current_tech_level = 3
+	elif current_turn >= 5:
+		current_tech_level = 2
+	else:
+		current_tech_level = 1
+
+	if old_tech != current_tech_level:
+		print("Tech Level increased to %d!" % current_tech_level)
+
+	print("Turn advanced to %d/%d (Tech Level %d)" % [current_turn, max_turns, current_tech_level])
 
 	# Check for campaign end
 	if current_turn > max_turns:
@@ -199,12 +241,13 @@ func _calculate_victory_rank(saved_count: int) -> String:
 ## Reset campaign to initial state
 func reset_campaign():
 	_initialize_campaign()
-	print("Campaign reset to Turn 1/12")
+	print("Campaign reset to Turn 1/12, Tech Level 1")
 
 ## Save campaign state (for persistence between battles)
 func save_campaign_state() -> Dictionary:
 	var save_data = {
 		"current_turn": current_turn,
+		"current_tech_level": current_tech_level,
 		"campaign_active": campaign_active,
 		"last_defended_sector": last_defended_sector,
 		"sectors": {}
@@ -227,6 +270,7 @@ func load_campaign_state(save_data: Dictionary):
 		return
 
 	current_turn = save_data.get("current_turn", 1)
+	current_tech_level = save_data.get("current_tech_level", 1)
 	campaign_active = save_data.get("campaign_active", true)
 	last_defended_sector = save_data.get("last_defended_sector", SectorID.COMMAND)
 
@@ -240,4 +284,4 @@ func load_campaign_state(save_data: Dictionary):
 			sector.is_lost = sector_data.get("is_lost", false)
 			sector.bonus_active = sector_data.get("bonus_active", true)
 
-	print("Campaign state loaded - Turn %d/%d" % [current_turn, max_turns])
+	print("Campaign state loaded - Turn %d/%d, Tech Level %d" % [current_turn, max_turns, current_tech_level])

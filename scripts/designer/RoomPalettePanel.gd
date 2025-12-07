@@ -6,6 +6,12 @@ class_name RoomPalettePanel
 signal room_type_selected(room_type: RoomData.RoomType)
 signal rotation_requested  # Phase 7.3 - emitted when rotation button is pressed
 
+## Tutorial signals - emitted when category tabs are clicked
+signal power_tab_clicked
+signal weapons_tab_clicked
+signal defense_tab_clicked
+signal command_tab_clicked
+
 ## References to category tab buttons
 @onready var power_tab: Button = $VBoxContainer/TabsMargin/CategoryTabBar/PowerTab
 @onready var weapons_tab: Button = $VBoxContainer/TabsMargin/CategoryTabBar/WeaponsTab
@@ -105,6 +111,17 @@ func update_rotation_display(rotation: int):
 ## Handle category tab press (Feature 01: Seven-Category Structure)
 func _on_category_tab_pressed(category: ComponentCategory.Category):
 	filter_by_category(category)
+
+	# Emit tutorial signals for specific categories
+	match category:
+		ComponentCategory.Category.POWER_SYSTEMS:
+			power_tab_clicked.emit()
+		ComponentCategory.Category.WEAPONS:
+			weapons_tab_clicked.emit()
+		ComponentCategory.Category.DEFENSE:
+			defense_tab_clicked.emit()
+		ComponentCategory.Category.COMMAND_CONTROL:
+			command_tab_clicked.emit()
 
 ## Filter room type buttons by category (Feature 01: Seven-Category Structure)
 func filter_by_category(category: ComponentCategory.Category):

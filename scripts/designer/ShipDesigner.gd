@@ -73,6 +73,9 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 ## Enemy setup UI (moved from MissionSelect) - optional nodes
 @onready var enemy_setup_panel = get_node_or_null("EnemySetupPanel")
 
+## Tutorial system - optional node for first-time player guidance
+@onready var tutorial_system = get_node_or_null("TutorialSystem")
+
 ## Current template index for cycling
 var current_template_index: int = 0
 
@@ -205,6 +208,12 @@ func _ready():
 	room_palette.room_type_selected.connect(_on_room_type_selected)
 	room_palette.rotation_requested.connect(rotate_selected_room)  # Phase 7.3
 
+	# Connect room palette tutorial signals
+	room_palette.power_tab_clicked.connect(_on_power_tab_clicked)
+	room_palette.weapons_tab_clicked.connect(_on_weapons_tab_clicked)
+	room_palette.defense_tab_clicked.connect(_on_defense_tab_clicked)
+	room_palette.command_tab_clicked.connect(_on_command_tab_clicked)
+
 	# Connect template UI signals (Phase 10.8)
 	template_name_dialog.template_name_entered.connect(_on_template_name_entered)
 	template_list_panel.template_selected.connect(_on_template_selected)
@@ -249,12 +258,35 @@ func _ready():
 	# Initialize zoom label as invisible
 	zoom_level_label.modulate.a = 0.0
 
+	# Start tutorial if this is the first time entering designer (any mission)
+	if GameState.should_show_tutorial() and tutorial_system:
+		# Defer tutorial start until after scene fully loaded
+		call_deferred("_start_tutorial")
+
 ## Calculate current budget from all placed rooms (Phase 7.1 - count room instances, not tiles)
 func calculate_current_budget() -> int:
 	var total = 0
 	for room in placed_rooms:
 		total += RoomData.get_cost(room.room_type)
 	return total
+
+## Start tutorial system (called deferred from _ready)
+func _start_tutorial():
+	if tutorial_system:
+		print("Starting tutorial for first-time player")
+		tutorial_system.start_tutorial(self)
+		tutorial_system.tutorial_completed.connect(_on_tutorial_completed)
+		tutorial_system.tutorial_skipped.connect(_on_tutorial_skipped)
+
+## Handle tutorial completion
+func _on_tutorial_completed():
+	GameState.complete_tutorial()
+	print("Tutorial completed! Player ready to design.")
+
+## Handle tutorial skip
+func _on_tutorial_skipped():
+	GameState.complete_tutorial()
+	print("Tutorial skipped by player")
 
 ## Update the budget display labels
 func _update_budget_display():
@@ -880,6 +912,10 @@ func _on_tile_clicked(x: int, y: int):
 		room.relay_hovered.connect(_on_relay_hovered)
 		room.relay_unhovered.connect(_on_relay_unhovered)
 
+	# Notify tutorial system of room placement
+	if tutorial_system and tutorial_system.is_active:
+		_notify_tutorial_room_placed(selected_room_type)
+
 	# Update budget display and power states
 	_update_budget_display()
 	update_all_power_states()
@@ -958,6 +994,10 @@ func _on_room_type_selected(room_type: RoomData.RoomType):
 	update_palette_availability()
 	# Update specifications panel with selected room type
 	specifications_panel.update_specifications(room_type)
+
+	# Notify tutorial of reactor selection
+	if tutorial_system and tutorial_system.is_active and room_type == RoomData.RoomType.REACTOR:
+		tutorial_system.check_step_completion("reactor_selected")
 
 ## Deselect currently selected room (ESC key functionality)
 func _deselect_room():
@@ -1934,3 +1974,38 @@ func _on_hull_overlay_selected(index: int):
 		ship_grid.draw_hull_overlay(hull_shape)
 
 	print("Hull overlay changed to: ", HullData.get_label(hull_type))
+
+## Notify tutorial of room placement event
+func _notify_tutorial_room_placed(room_type: RoomData.RoomType):
+	var event = ""
+	match room_type:
+		RoomData.RoomType.REACTOR:
+			event = "reactor_placed"
+		RoomData.RoomType.BRIDGE:
+			event = "bridge_placed"
+		RoomData.RoomType.WEAPON:
+			event = "weapon_placed"
+		RoomData.RoomType.SHIELD:
+			event = "shield_placed"
+		_:
+			return  # Don't notify for other types
+
+	if not event.is_empty():
+		tutorial_system.check_step_completion(event)
+
+## Tutorial category tab click handlers
+func _on_power_tab_clicked():
+	if tutorial_system and tutorial_system.is_active:
+		tutorial_system.check_step_completion("power_tab_clicked")
+
+func _on_weapons_tab_clicked():
+	if tutorial_system and tutorial_system.is_active:
+		tutorial_system.check_step_completion("weapons_tab_clicked")
+
+func _on_defense_tab_clicked():
+	if tutorial_system and tutorial_system.is_active:
+		tutorial_system.check_step_completion("defense_tab_clicked")
+
+func _on_command_tab_clicked():
+	if tutorial_system and tutorial_system.is_active:
+		tutorial_system.check_step_completion("command_tab_clicked")

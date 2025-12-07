@@ -15,9 +15,9 @@ func _ready():
 	load_button.tooltip_text = "No save system implemented yet"
 
 func _on_new_game_pressed():
-	# Reset game state and go to mission select
+	# Reset game state and go to campaign map
 	GameState.reset_game()
-	get_tree().change_scene_to_file("res://scenes/mission/MissionSelect.tscn")
+	get_tree().change_scene_to_file("res://scenes/campaign/CampaignMap.tscn")
 
 func _on_load_pressed():
 	# TODO: Implement load game functionality

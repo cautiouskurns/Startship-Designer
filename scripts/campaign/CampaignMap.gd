@@ -22,6 +22,7 @@ var sector_nodes: Dictionary = {}
 
 ## Selected sector for deployment
 var selected_sector: CampaignState.SectorID = CampaignState.SectorID.COMMAND
+var selected_sector_node: SectorNode = null
 
 func _ready():
 	# Map sector nodes to their IDs
@@ -72,7 +73,15 @@ func _on_sector_clicked(sector_id: CampaignState.SectorID):
 	if sector_id == CampaignState.SectorID.COMMAND:
 		return
 
+	# Deselect previously selected sector
+	if selected_sector_node:
+		selected_sector_node.deselect()
+
+	# Select new sector
 	selected_sector = sector_id
+	selected_sector_node = sector_nodes.get(sector_id)
+	if selected_sector_node:
+		selected_sector_node.select()
 
 	# Show deployment panel
 	deployment_panel.show_deployment(sector_id)
@@ -80,6 +89,11 @@ func _on_sector_clicked(sector_id: CampaignState.SectorID):
 ## Handle deployment confirmed
 func _on_deployment_confirmed(sector_id: CampaignState.SectorID):
 	print("Deployment confirmed to sector: %s" % CampaignState.SectorID.keys()[sector_id])
+
+	# Deselect sector before launching
+	if selected_sector_node:
+		selected_sector_node.deselect()
+		selected_sector_node = null
 
 	# Store selected sector for battle result processing
 	CampaignState.last_defended_sector = sector_id
@@ -92,7 +106,11 @@ func _on_deployment_confirmed(sector_id: CampaignState.SectorID):
 	# Map sector to mission index for existing mission system
 	var mission_index = _get_mission_index_for_enemy(enemy_id)
 	GameState.current_mission = mission_index
-	GameState.update_tech_level_for_mission(mission_index)
+
+	# Campaign mode: Always use free design grid (30x30 square)
+	# Tech level based on campaign progression (starts at 1, increases over time)
+	GameState.current_hull = GameState.HullType.FREE_DESIGN  # 30x30 unrestricted square grid
+	GameState.current_tech_level = CampaignState.get_tech_level()  # Current campaign tech level
 
 	# Launch to ship designer
 	get_tree().change_scene_to_file("res://scenes/designer/ShipDesigner.tscn")
@@ -100,6 +118,11 @@ func _on_deployment_confirmed(sector_id: CampaignState.SectorID):
 ## Handle deployment cancelled
 func _on_deployment_cancelled():
 	print("Deployment cancelled")
+
+	# Deselect sector when cancelled
+	if selected_sector_node:
+		selected_sector_node.deselect()
+		selected_sector_node = null
 
 ## Map enemy ID to mission index (for existing mission system compatibility)
 func _get_mission_index_for_enemy(enemy_id: String) -> int:

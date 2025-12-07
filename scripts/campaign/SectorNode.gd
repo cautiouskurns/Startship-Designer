@@ -20,6 +20,7 @@ signal sector_clicked(sector_id: CampaignState.SectorID)
 var current_threat: int = 0
 var is_lost_state: bool = false
 var pulse_phase: float = 0.0
+var is_selected: bool = false
 
 func _ready():
 	pressed.connect(_on_pressed)
@@ -71,7 +72,7 @@ func _update_visual_state():
 		style.bg_color = Color(0.101, 0.101, 0.101, 0.3)
 		style.border_color = Color(0.424, 0.424, 0.424, 0.8)
 		modulate = Color(0.5, 0.5, 0.5, 0.6)
-		disabled = sector_id != CampaignState.SectorID.COMMAND  # Lost sectors clickable to recapture
+		disabled = false  # Lost sectors can be selected to recapture
 
 	elif current_threat >= 3:
 		# Critical: red, fast pulse
@@ -99,13 +100,25 @@ func _update_visual_state():
 		style.bg_color = Color(0.101, 0.101, 0.101, 0.4)
 		style.border_color = Color(0.290, 0.886, 0.290, 1.0)  # Green
 		modulate = Color(1, 1, 1)
-		disabled = true  # Secure sectors can't be selected
+		disabled = false  # Secure sectors can still be selected
 
-	# Apply border
-	style.border_width_left = 2
-	style.border_width_top = 2
-	style.border_width_right = 2
-	style.border_width_bottom = 2
+	# Command sector is always disabled (can't be defended)
+	if sector_id == CampaignState.SectorID.COMMAND:
+		disabled = true
+
+	# Override border color if selected (cyan pulse)
+	if is_selected:
+		style.border_color = Color(0.290, 0.886, 0.886, 1.0)  # Cyan
+		style.border_width_left = 4
+		style.border_width_top = 4
+		style.border_width_right = 4
+		style.border_width_bottom = 4
+	else:
+		# Apply normal border
+		style.border_width_left = 2
+		style.border_width_top = 2
+		style.border_width_right = 2
+		style.border_width_bottom = 2
 
 	panel.add_theme_stylebox_override("panel", style)
 
@@ -127,16 +140,17 @@ func _update_threat_bar_color():
 
 	threat_bar.add_theme_stylebox_override("fill", bar_style)
 
-## Handle pulse animation for threatened/critical sectors
+## Handle pulse animation for threatened/critical sectors and selected sectors
 func _on_pulse_timeout():
-	if current_threat < 2:
-		# No pulse for secure sectors
+	# Pulse for selected sectors OR threatened sectors
+	if not is_selected and current_threat < 2:
+		# No pulse for unselected, secure sectors
 		return
 
 	pulse_phase += 0.1
 
-	# Pulse speed depends on threat level
-	var pulse_speed = 1.0 if current_threat >= 3 else 0.5
+	# Pulse speed depends on state
+	var pulse_speed = 1.0 if (is_selected or current_threat >= 3) else 0.5
 	var pulse_amount = sin(pulse_phase * pulse_speed) * 0.15 + 1.0
 
 	# Apply pulse to modulate (brightness)
@@ -168,3 +182,13 @@ func _show_tooltip():
 func _hide_tooltip():
 	# TODO: Hide tooltip
 	pass
+
+## Select this sector (visual feedback for player choice)
+func select():
+	is_selected = true
+	_update_visual_state()
+
+## Deselect this sector (remove selection visual)
+func deselect():
+	is_selected = false
+	_update_visual_state()
