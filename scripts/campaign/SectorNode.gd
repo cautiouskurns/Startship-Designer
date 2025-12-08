@@ -18,6 +18,7 @@ signal sector_clicked(sector_id: CampaignState.SectorID)
 
 ## Visual state
 var current_threat: int = 0
+var previous_threat: int = 0
 var is_lost_state: bool = false
 var pulse_phase: float = 0.0
 var is_selected: bool = false
@@ -55,9 +56,16 @@ func update_display():
 	name_label.text = sector_def.get("name", "Unknown")
 
 	# Update threat level
+	previous_threat = current_threat
 	current_threat = sector_data.threat_level
-	threat_bar.value = current_threat
 	is_lost_state = sector_data.is_lost
+
+	# Animate threat change if it changed
+	if previous_threat != current_threat and previous_threat != 0:
+		animate_threat_change(previous_threat, current_threat)
+	else:
+		# No animation needed, just set the value
+		threat_bar.value = current_threat
 
 	# Update visual state based on threat
 	_update_visual_state()
@@ -192,3 +200,33 @@ func select():
 func deselect():
 	is_selected = false
 	_update_visual_state()
+
+## Animate threat level change with visual feedback
+func animate_threat_change(old_value: int, new_value: int):
+	# Determine if threat increased or decreased
+	var threat_increased = new_value > old_value
+
+	# Create tween for smooth threat bar animation
+	var tween = create_tween()
+	tween.set_parallel(true)  # Run animations in parallel
+
+	# Animate threat bar from old to new value
+	tween.tween_property(threat_bar, "value", new_value, 0.5).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+	# Flash the sector with appropriate color
+	var flash_color: Color
+	if threat_increased:
+		# Red flash for threat increase
+		flash_color = Color(1.5, 0.3, 0.3, 1.0)
+	else:
+		# Green flash for threat decrease
+		flash_color = Color(0.3, 1.5, 0.3, 1.0)
+
+	# Flash animation: modulate to flash color and back
+	tween.tween_property(self, "modulate", flash_color, 0.15)
+	tween.chain().tween_property(self, "modulate", Color(1, 1, 1, 1), 0.35)
+
+	# Scale pulse effect
+	var original_scale = scale
+	tween.tween_property(self, "scale", original_scale * 1.1, 0.15)
+	tween.chain().tween_property(self, "scale", original_scale, 0.35).set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)

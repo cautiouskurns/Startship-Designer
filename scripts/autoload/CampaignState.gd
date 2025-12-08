@@ -159,8 +159,11 @@ func process_threat_escalation(defended_sector: SectorID, victory: bool):
 		if sector_id == defended_sector:
 			# Player defended this sector
 			if victory:
-				# Victory: reduce threat by 2
-				_change_threat(sector, -2)
+				# Victory: reduce threat by 2 (or 3 if recapturing lost sector)
+				var threat_reduction = -3 if sector.is_lost else -2
+				var action = "RECAPTURED" if sector.is_lost else "DEFENDED"
+				print("Sector %s %s! Threat reduction: %d" % [SectorID.keys()[sector_id], action, threat_reduction])
+				_change_threat(sector, threat_reduction)
 			else:
 				# Defeat: increase threat by 1
 				_change_threat(sector, 1)

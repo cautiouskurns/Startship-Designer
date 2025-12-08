@@ -185,6 +185,16 @@ func start_combat(player_ship: ShipData, mission_index: int = 0):
 		player_data.max_hp += bonus_value
 		player_data.current_hp += bonus_value
 
+	# Feature 4: Apply sector bonuses to player HP
+	if CampaignState and CampaignState.campaign_active and SectorBonus:
+		var bonuses = SectorBonus.get_active_bonuses()
+		var hp_modifier = bonuses["hp_modifier"] * bonuses["all_stats_modifier"]
+		if hp_modifier != 1.0:
+			var hp_bonus = int(player_data.max_hp * (hp_modifier - 1.0))
+			player_data.max_hp += hp_bonus
+			player_data.current_hp += hp_bonus
+			print("Sector HP bonus applied: %+d HP (×%.2f modifier)" % [hp_bonus, hp_modifier])
+
 	# Load enemy based on mission (Phase 10.8 - check for template assignment first)
 	var enemy_template = TemplateManager.get_enemy_template(mission_index)
 	if enemy_template:
@@ -637,7 +647,18 @@ func _calculate_damage(attacker: ShipData) -> int:
 						synergy_damage += int(weapon_damage * BalanceConstants.FIRE_RATE_SYNERGY_BONUS)
 
 	print("DEBUG Combat: Total weapons found: ", weapons_found, ", base_damage: ", base_damage, ", synergy_damage: ", synergy_damage)
-	return base_damage + synergy_damage
+	var total_damage = base_damage + synergy_damage
+
+	# Feature 4: Apply sector bonuses to damage (only for player)
+	if attacker == player_data and CampaignState and CampaignState.campaign_active and SectorBonus:
+		var bonuses = SectorBonus.get_active_bonuses()
+		var damage_modifier = bonuses["damage_modifier"] * bonuses["all_stats_modifier"]
+		if damage_modifier != 1.0:
+			var original_damage = total_damage
+			total_damage = int(total_damage * damage_modifier)
+			print("Sector damage bonus applied: %d → %d (×%.2f modifier)" % [original_damage, total_damage, damage_modifier])
+
+	return total_damage
 
 ## Calculate shield absorption for defender (using individual shield stats)
 func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
@@ -671,6 +692,16 @@ func _calculate_shield_absorption(defender: ShipData, damage: int) -> int:
 							synergy_absorption += int(shield_absorption * BalanceConstants.SHIELD_CAPACITY_SYNERGY_BONUS)
 
 	var total_absorption = base_absorption + synergy_absorption
+
+	# Feature 4: Apply sector bonuses to shields (only for player)
+	if defender == player_data and CampaignState and CampaignState.campaign_active and SectorBonus:
+		var bonuses = SectorBonus.get_active_bonuses()
+		var shield_modifier = bonuses["shield_modifier"] * bonuses["all_stats_modifier"]
+		if shield_modifier != 1.0:
+			var original_absorption = total_absorption
+			total_absorption = int(total_absorption * shield_modifier)
+			print("Sector shield bonus applied: %d → %d (×%.2f modifier)" % [original_absorption, total_absorption, shield_modifier])
+
 	return min(damage, total_absorption)
 
 ## Fire weapons with visual effects (Phase 10.6 - lasers, torpedos, shield impacts)

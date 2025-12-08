@@ -66,6 +66,9 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 ## Zoom level label
 @onready var zoom_level_label: Label = $ZoomLevelLabel
 
+## Sector bonus panel (Feature 4 - displays active campaign bonuses)
+@onready var sector_bonus_panel = get_node_or_null("SectorBonusPanel")
+
 ## Template UI (Phase 10.8)
 @onready var template_name_dialog = $TemplateNameDialog
 @onready var template_list_panel = $TemplateListPanel
@@ -135,6 +138,13 @@ var hull_overlay_visible: bool = false
 func _ready():
 	# Load mission budget from GameState
 	max_budget = GameState.get_mission_budget(GameState.current_mission)
+
+	# Feature 4: Apply sector bonuses to budget (Shipyard sector)
+	if CampaignState and CampaignState.campaign_active:
+		var budget_modifier = SectorBonus.get_budget_modifier()
+		max_budget += budget_modifier
+		if budget_modifier != 0:
+			print("Sector bonus applied: Budget %+d → %d BP total" % [budget_modifier, max_budget])
 
 	# Initialize ship grid with hull-specific dimensions (Phase 10.4 - shaped hulls)
 	var hull_data = GameState.get_current_hull_data()
@@ -258,6 +268,9 @@ func _ready():
 	# Initialize zoom label as invisible
 	zoom_level_label.modulate.a = 0.0
 
+	# Feature 4: Update sector bonus display if campaign is active
+	_update_sector_bonus_display()
+
 	# Start tutorial if this is the first time entering designer (any mission)
 	if GameState.should_show_tutorial() and tutorial_system:
 		# Defer tutorial start until after scene fully loaded
@@ -350,6 +363,36 @@ func _update_ship_stats():
 
 	# Update panel
 	ship_stats_panel.update_stats(temp_ship, hull_data)
+
+## Update sector bonus display panel (Feature 4 - Sector Bonuses & Penalties)
+func _update_sector_bonus_display():
+	if not sector_bonus_panel:
+		return  # Panel not present in scene (optional node)
+
+	# Only show bonuses if campaign is active
+	if not CampaignState or not CampaignState.campaign_active:
+		sector_bonus_panel.visible = false
+		return
+
+	# Get active bonus descriptions
+	var bonus_descriptions = SectorBonus.get_active_bonus_descriptions()
+
+	# Hide panel if no bonuses active
+	if bonus_descriptions.is_empty():
+		sector_bonus_panel.visible = false
+		return
+
+	# Show panel and update text
+	sector_bonus_panel.visible = true
+
+	# Find the RichTextLabel child (assuming panel contains one)
+	var label = sector_bonus_panel.get_node_or_null("BonusLabel")
+	if label:
+		# Build bonus text
+		var bonus_text = "[b]SECTOR BONUSES[/b]\n"
+		for desc in bonus_descriptions:
+			bonus_text += desc + "\n"
+		label.text = bonus_text
 
 ## Update classification label with current hull type and grid size
 func _update_classification_label():

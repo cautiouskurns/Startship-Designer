@@ -6,6 +6,9 @@ extends Node
 ## Flag to track if data has been loaded from JSON
 static var _data_loaded: bool = false
 
+## Preferences file path (for persistent settings like tutorial completion)
+const PREFERENCES_FILE = "user://preferences.json"
+
 ## Mission unlock states
 var missions_unlocked: Array[bool] = [true, false, false]
 
@@ -219,6 +222,64 @@ static func _get_hull_type_from_name(name: String):
 			push_warning("Unknown hull type: %s" % name)
 			return null
 
+## Initialize GameState on startup
+func _ready():
+	# Load persistent preferences (tutorial completion, etc.)
+	_load_preferences()
+
+## Save preferences to disk (tutorial completion, etc.)
+func _save_preferences():
+	var data = {
+		"version": 1,
+		"tutorial_completed": tutorial_completed
+	}
+
+	# Convert to JSON
+	var json_string = JSON.stringify(data, "\t")
+
+	# Write to file
+	var file = FileAccess.open(PREFERENCES_FILE, FileAccess.WRITE)
+	if not file:
+		push_error("Failed to save preferences to: %s" % PREFERENCES_FILE)
+		return
+
+	file.store_string(json_string)
+	file.close()
+	print("Preferences saved (tutorial_completed = %s)" % tutorial_completed)
+
+## Load preferences from disk
+func _load_preferences():
+	# Check if file exists
+	if not FileAccess.file_exists(PREFERENCES_FILE):
+		# No preferences file yet, use defaults
+		print("No preferences file found, using defaults")
+		return
+
+	# Read file
+	var file = FileAccess.open(PREFERENCES_FILE, FileAccess.READ)
+	if not file:
+		push_error("Failed to load preferences from: %s" % PREFERENCES_FILE)
+		return
+
+	var json_string = file.get_as_text()
+	file.close()
+
+	# Parse JSON
+	var json = JSON.new()
+	var error = json.parse(json_string)
+	if error != OK:
+		push_error("Failed to parse preferences JSON: %s" % json.get_error_message())
+		return
+
+	var data = json.data
+	if typeof(data) != TYPE_DICTIONARY:
+		push_error("Preferences JSON root is not a dictionary")
+		return
+
+	# Load tutorial completion flag
+	tutorial_completed = data.get("tutorial_completed", false)
+	print("Preferences loaded (tutorial_completed = %s)" % tutorial_completed)
+
 ## Unlock a mission by index
 func unlock_mission(index: int):
 	if index >= 0 and index < missions_unlocked.size():
@@ -276,10 +337,11 @@ func get_mission_enemy_id(index: int) -> String:
 		return missions_data[index].get("enemy_id", "scout")
 	return "scout"  # Default fallback
 
-## Mark tutorial as completed
+## Mark tutorial as completed (and save to disk)
 func complete_tutorial():
 	tutorial_completed = true
-	print("Tutorial marked as completed")
+	_save_preferences()  # Persist to disk
+	print("Tutorial marked as completed and saved")
 
 ## Check if tutorial should show (first mission selected, any mission)
 func should_show_tutorial() -> bool:

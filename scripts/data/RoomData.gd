@@ -406,10 +406,17 @@ static var stats: Dictionary = {}
 ## Controls when components become available to the player
 static var tech_levels: Dictionary = {}
 
-## Get cost for a room type
+## Get cost for a room type (with campaign sector modifiers)
 static func get_cost(room_type: RoomType) -> int:
 	_load_data_from_json()  # Ensure data is loaded
-	return costs.get(room_type, 0)
+	var base_cost = costs.get(room_type, 0)
+
+	# Feature 4: Apply sector bonus cost modifiers
+	if CampaignState and CampaignState.campaign_active and SectorBonus:
+		var cost_modifier = SectorBonus.get_room_cost_modifier(room_type)
+		return max(1, base_cost + cost_modifier)  # Minimum cost is 1
+
+	return base_cost
 
 ## Get tech level for a room type (1 = basic, 2 = intermediate, 3 = advanced)
 static func get_tech_level(room_type: RoomType) -> int:

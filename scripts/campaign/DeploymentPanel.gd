@@ -99,7 +99,7 @@ func _get_threat_bar_text(threat: int) -> String:
 func _get_stakes_text(sector_def: Dictionary, sector_data: CampaignState.SectorData) -> String:
 	var stakes = ""
 
-	# Win condition
+	# Win condition (show correct threat reduction)
 	if sector_data.is_lost:
 		stakes += "[color=#4AE24A]WIN: Recapture sector (-3 threat)[/color]\n"
 	else:
