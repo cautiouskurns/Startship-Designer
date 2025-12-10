@@ -107,6 +107,15 @@ theme_override_font_sizes/font_size = 16
 text = "BRIDGE"
 vertical_alignment = 1
 
+[node name="ShapeGridContainer" type="MarginContainer" parent="HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
 [node name="SizeCostLabel" type="Label" parent="HBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)

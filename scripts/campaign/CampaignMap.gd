@@ -7,6 +7,8 @@ extends Control
 ## UI elements
 @onready var turn_counter: Label = $UI/TurnCounter
 @onready var deployment_panel: DeploymentPanel = $DeploymentPanel
+@onready var victory_screen: Control = $VictoryScreen  # Feature 6: Victory screen
+@onready var narrative_popup: Control = $NarrativePopup  # Feature 7: Narrative integration
 
 ## Sector nodes (assigned in scene)
 @onready var command_sector: SectorNode = $SectorContainer/CommandSector
@@ -23,6 +25,7 @@ var sector_nodes: Dictionary = {}
 ## Selected sector for deployment
 var selected_sector: CampaignState.SectorID = CampaignState.SectorID.COMMAND
 var selected_sector_node: SectorNode = null
+var showing_mission_brief: bool = false  # Feature 7: Track if showing mission brief
 
 func _ready():
 	# Map sector nodes to their IDs
@@ -43,11 +46,29 @@ func _ready():
 	deployment_panel.deployment_confirmed.connect(_on_deployment_confirmed)
 	deployment_panel.deployment_cancelled.connect(_on_deployment_cancelled)
 
+	# Feature 6: Connect campaign victory/defeat signals
+	CampaignState.campaign_victory.connect(_on_campaign_victory)
+	CampaignState.campaign_defeat.connect(_on_campaign_defeat)
+
+	# Feature 6: Connect victory screen signals
+	victory_screen.new_campaign_requested.connect(_on_new_campaign_requested)
+	victory_screen.main_menu_requested.connect(_on_main_menu_requested)
+
+	# Feature 7: Connect narrative manager signals
+	NarrativeManager.narrative_event_triggered.connect(_on_narrative_event_triggered)
+
+	# Feature 7: Connect narrative popup signals
+	if narrative_popup:
+		narrative_popup.continue_pressed.connect(_on_narrative_continue_pressed)
+
 	# Initialize or load campaign
 	_initialize_campaign()
 
 	# Update display
 	_update_all_displays()
+
+	# Feature 7: Check for narrative triggers after initialization
+	_check_narrative_triggers()
 
 ##Initialize new campaign
 func _initialize_campaign():
@@ -90,6 +111,26 @@ func _on_sector_clicked(sector_id: CampaignState.SectorID):
 func _on_deployment_confirmed(sector_id: CampaignState.SectorID):
 	print("Deployment confirmed to sector: %s" % CampaignState.SectorID.keys()[sector_id])
 
+	# Feature 7: Show mission brief before deployment
+	_show_mission_brief(sector_id)
+
+## Feature 7: Show mission brief and then proceed to deployment
+func _show_mission_brief(sector_id: CampaignState.SectorID):
+	# Generate dynamic mission brief
+	var brief = NarrativeManager.generate_mission_brief(sector_id)
+
+	# Show brief in narrative popup
+	if narrative_popup:
+		narrative_popup.show_custom(brief["title"], brief["text"], false, 3.0)
+		# Store sector for later (after brief is dismissed)
+		selected_sector = sector_id
+		showing_mission_brief = true
+	else:
+		# Fallback: proceed directly if popup missing
+		_proceed_to_deployment(sector_id)
+
+## Feature 7: Proceed to deployment after mission brief dismissed
+func _proceed_to_deployment(sector_id: CampaignState.SectorID):
 	# Deselect sector before launching
 	if selected_sector_node:
 		selected_sector_node.deselect()
@@ -156,40 +197,70 @@ func _process_battle_result():
 	# Clear battle result
 	GameState.last_battle_result = null
 
+	# Feature 7: Check for mid-campaign narrative triggers
+	_check_narrative_triggers()
+
 	# Check for campaign end
 	if CampaignState.current_turn > CampaignState.max_turns:
 		_show_victory_screen()
 	elif not CampaignState.campaign_active:
 		_show_game_over_screen()
 
-## Show victory screen (campaign complete)
+## Show victory screen (campaign complete) - deprecated, use signal handlers
 func _show_victory_screen():
-	var saved_count = 0
-	for sector_id in CampaignState.sectors.keys():
-		if sector_id != CampaignState.SectorID.COMMAND:
-			var sector = CampaignState.get_sector(sector_id)
-			if sector.threat_level <= 2:
-				saved_count += 1
+	# This function is kept for backward compatibility but is no longer used
+	# Victory is now handled via CampaignState.campaign_victory signal
+	pass
 
-	var rank = CampaignState._calculate_victory_rank(saved_count)
+## Show game over screen (campaign failed) - deprecated, use signal handlers
+func _show_game_over_screen():
+	# This function is kept for backward compatibility but is no longer used
+	# Defeat is now handled via CampaignState.campaign_defeat signal
+	pass
 
+## Feature 6: Handle campaign victory signal
+func _on_campaign_victory(rank: String, stats: Dictionary):
 	print("=== CAMPAIGN COMPLETE ===")
-	print("Sectors Saved: %d/6" % saved_count)
 	print("Victory Rank: %s" % rank)
+	print("Sectors Saved: %d/%d" % [stats["sectors_saved"], stats["total_sectors"]])
 	print("========================")
 
-	# TODO: Show proper victory screen
-	# For now, return to main menu
-	await get_tree().create_timer(3.0).timeout
-	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+	# Show victory screen with rank and stats
+	victory_screen.show_victory(rank, stats)
 
-## Show game over screen (campaign failed)
-func _show_game_over_screen():
+## Feature 6: Handle campaign defeat signal
+func _on_campaign_defeat(reason: String, stats: Dictionary):
 	print("=== CAMPAIGN FAILED ===")
-	print("Game Over")
-	print("=======================")
+	print("Defeat Reason: %s" % reason)
+	print("======================")
 
-	# TODO: Show proper game over screen
-	# For now, return to main menu
-	await get_tree().create_timer(3.0).timeout
+	# Show defeat screen with reason and stats
+	victory_screen.show_defeat(reason, stats)
+
+## Feature 6: Handle New Campaign button from victory screen
+func _on_new_campaign_requested():
+	# Reset campaign and reload this scene
+	CampaignState.reset_campaign()
+	NarrativeManager.reset()  # Feature 7: Reset narrative state
+	get_tree().reload_current_scene()
+
+## Feature 6: Handle Main Menu button from victory screen
+func _on_main_menu_requested():
+	# Return to main menu
 	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+
+## Feature 7: Check for narrative event triggers
+func _check_narrative_triggers():
+	NarrativeManager.check_triggers()
+
+## Feature 7: Handle narrative event triggered
+func _on_narrative_event_triggered(event: NarrativeEvent):
+	if narrative_popup:
+		narrative_popup.show_event(event)
+
+## Feature 7: Handle narrative popup continue pressed
+func _on_narrative_continue_pressed():
+	# Check if we were showing a mission brief (about to deploy)
+	if showing_mission_brief:
+		showing_mission_brief = false
+		_proceed_to_deployment(selected_sector)

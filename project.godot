@@ -21,8 +21,11 @@ GameState="*res://scripts/autoload/GameState.gd"
 CampaignState="*res://scripts/autoload/CampaignState.gd"
 SectorBonus="*res://scripts/autoload/SectorBonus.gd"
 TemplateManager="*res://scripts/autoload/TemplateManager.gd"
+SaveManager="*res://scripts/autoload/SaveManager.gd"
 AudioManager="*res://scripts/autoload/AudioManager.gd"
+SettingsManager="*res://scripts/autoload/SettingsManager.gd"
 CrewBarkSystem="*res://scripts/autoloads/CrewBarkSystem.gd"
+NarrativeManager="*res://scripts/autoload/NarrativeManager.gd"
 
 [display]
 

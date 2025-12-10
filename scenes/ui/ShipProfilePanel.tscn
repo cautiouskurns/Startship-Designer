@@ -1,0 +1,224 @@
+[gd_scene load_steps=4 format=3 uid="uid://cbm5xk8r3yn2w"]
+
+[ext_resource type="Script" path="res://scripts/ui/ShipProfilePanel.gd" id="1_profile_panel"]
+[ext_resource type="Script" path="res://scripts/ui/RadarChart.gd" id="2_radar_chart"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.059, 0.122, 0.157, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.290196, 0.886275, 0.886275, 1)
+
+[node name="ShipProfilePanel" type="Panel"]
+custom_minimum_size = Vector2(350, 0)
+offset_right = 350.0
+offset_bottom = 800.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("1_profile_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 20
+text = "SHIP PROFILE"
+horizontal_alignment = 1
+
+[node name="RadarChartContainer" type="Control" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+size_flags_horizontal = 4
+script = ExtResource("2_radar_chart")
+
+[node name="ArchetypeLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+theme_override_font_sizes/font_size = 18
+text = "Archetype: INCOMPLETE"
+horizontal_alignment = 1
+
+[node name="Separator1" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="StatsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="OffenseRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+
+[node name="OffenseLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/OffenseRow"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Offense:"
+
+[node name="OffenseBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/StatsContainer/OffenseRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="OffensePercent" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/OffenseRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "0%"
+horizontal_alignment = 2
+
+[node name="DefenseRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+
+[node name="DefenseLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/DefenseRow"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Defense:"
+
+[node name="DefenseBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/StatsContainer/DefenseRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="DefensePercent" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/DefenseRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "0%"
+horizontal_alignment = 2
+
+[node name="SpeedRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/SpeedRow"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Speed:"
+
+[node name="SpeedBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/StatsContainer/SpeedRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="SpeedPercent" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/SpeedRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "0%"
+horizontal_alignment = 2
+
+[node name="DurabilityRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+
+[node name="DurabilityLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/DurabilityRow"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Durability:"
+
+[node name="DurabilityBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/StatsContainer/DurabilityRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+show_percentage = false
+
+[node name="DurabilityPercent" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/DurabilityRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "0%"
+horizontal_alignment = 2
+
+[node name="EfficiencyRow" type="HBoxContainer" parent="MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+
+[node name="EfficiencyLabel" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/EfficiencyRow"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Efficiency:"
+
+[node name="EfficiencyBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/StatsContainer/EfficiencyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="EfficiencyPercent" type="Label" parent="MarginContainer/VBoxContainer/StatsContainer/EfficiencyRow"]
+custom_minimum_size = Vector2(50, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "100%"
+horizontal_alignment = 2
+
+[node name="Separator2" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="WarningsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="WarningsHeader" type="Label" parent="MarginContainer/VBoxContainer/WarningsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.886275, 0.627451, 0.290196, 1)
+theme_override_font_sizes/font_size = 14
+text = "CRITICAL WEAKNESSES:"
+
+[node name="WarningsList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/WarningsContainer"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Separator3" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="PerformanceContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="PerformanceHeader" type="Label" parent="MarginContainer/VBoxContainer/PerformanceContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 14
+text = "PREDICTED PERFORMANCE:"
+
+[node name="PerformanceList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/PerformanceContainer"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="Separator4" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="WinChancesContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="WinChancesHeader" type="Label" parent="MarginContainer/VBoxContainer/WinChancesContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 14
+text = "WIN PREDICTIONS:"
+
+[node name="WinChancesList" type="VBoxContainer" parent="MarginContainer/VBoxContainer/WinChancesContainer"]
+layout_mode = 2
+theme_override_constants/separation = 3

@@ -57,6 +57,9 @@ var secondary_grid: SecondaryGrid = null  # Electrical routing (stub for now)
 ## Ship stats panel (Phase 10.9)
 @onready var ship_stats_panel: ShipStatsPanel = $ShipStatsPanel
 
+## Ship profile panel (Live Design Feedback)
+@onready var ship_profile_panel = $ShipProfilePanel
+
 ## Synergy guide panel
 @onready var synergy_guide_panel: SynergyGuidePanel = $SynergyGuidePanel
 
@@ -240,6 +243,12 @@ func _ready():
 	# Initialize stats panel (Phase 10.9)
 	_update_ship_stats()
 
+	# Initialize ship profile panel with ship data reference
+	if ship_profile_panel:
+		var temp_ship = ShipData.from_designer_grid(main_grid.get_all_tiles(), placed_rooms, main_grid.grid_width, main_grid.grid_height, secondary_grid)
+		ship_profile_panel.set_ship_data(temp_ship)
+		ship_profile_panel.recalculate()
+
 	# Update classification label with current hull
 	_update_classification_label()
 
@@ -363,6 +372,11 @@ func _update_ship_stats():
 
 	# Update panel
 	ship_stats_panel.update_stats(temp_ship, hull_data)
+
+	# Update ship profile panel
+	if ship_profile_panel:
+		ship_profile_panel.set_ship_data(temp_ship)
+		ship_profile_panel.recalculate()
 
 ## Update sector bonus display panel (Feature 4 - Sector Bonuses & Penalties)
 func _update_sector_bonus_display():
@@ -1375,6 +1389,13 @@ func _on_launch_pressed():
 	# Save current design for redesign restoration after combat defeat
 	var current_template = ShipTemplate.from_ship_designer(self, "Redesign")
 	GameState.redesign_template = current_template
+
+	# Feature 6: Record ship deployment for campaign stats
+	if CampaignState and CampaignState.campaign_active:
+		CampaignState.record_ship_deployment()
+
+		# Auto-save campaign progress before combat (Save/Load System)
+		SaveManager.save_campaign_progress()
 
 	# Export player ship data
 	var player_ship = export_ship_data()

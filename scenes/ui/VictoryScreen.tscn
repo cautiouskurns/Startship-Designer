@@ -1,0 +1,181 @@
+[gd_scene load_steps=6 format=3 uid="uid://bv8kq4n2p3yac"]
+
+[ext_resource type="Script" path="res://scripts/ui/VictoryScreen.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://y1akstmn6odh" path="res://assets/sprites/ui/starfield.png" id="2_starfield"]
+[ext_resource type="Theme" path="res://assets/themes/blueprint_theme.tres" id="3_blueprint_theme"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.058824, 0.121569, 0.156863, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.290196, 0.886275, 0.886275, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.15, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.290196, 0.886275, 0.886275, 0.5)
+
+[node name="VictoryScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_blueprint_theme")
+script = ExtResource("1")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_starfield")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Dimmer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VictoryPanel" type="Panel" parent="CenterContainer"]
+custom_minimum_size = Vector2(700, 600)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/VictoryPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 40
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/VictoryPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 36
+text = "CAMPAIGN COMPLETE"
+horizontal_alignment = 1
+
+[node name="TurnLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 18
+text = "TURN 12/12"
+horizontal_alignment = 1
+
+[node name="HSeparator1" type="HSeparator" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="RankLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_font_sizes/font_size = 48
+text = "RANK: S"
+horizontal_alignment = 1
+
+[node name="RankTitleLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.843137, 0, 1)
+theme_override_font_sizes/font_size = 24
+text = "PERFECT VICTORY"
+horizontal_alignment = 1
+
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="StatsContainer" type="VBoxContainer" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SectorsSavedLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 22
+text = "SECTORS SAVED: 6/6"
+horizontal_alignment = 1
+
+[node name="FleetSizeLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 18
+text = "SHIPS DEPLOYED: 10"
+horizontal_alignment = 1
+
+[node name="BattlesWonLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer/StatsContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 18
+text = "BATTLES WON: 11/12"
+horizontal_alignment = 1
+
+[node name="HSeparator3" type="HSeparator" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="NarrativeLabel" type="Label" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 0.9)
+theme_override_font_sizes/font_size = 16
+text = "Enemy forces completely routed.
+All sectors secured, no losses sustained.
+Command commends your exceptional performance."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Spacer" type="Control" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="NewCampaignButton" type="Button" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.290196, 0.886275, 0.886275, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+text = "NEW CAMPAIGN"
+
+[node name="MainMenuButton" type="Button" parent="CenterContainer/VictoryPanel/MarginContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.666667, 0.666667, 0.666667, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+text = "MAIN MENU"

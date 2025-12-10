@@ -1,18 +1,19 @@
-[gd_scene load_steps=38 format=3 uid="uid://bh4cmg1gk2fmf"]
+[gd_scene load_steps=40 format=3 uid="uid://bh4cmg1gk2fmf"]
 
 [ext_resource type="Script" uid="uid://doyaokjn1138s" path="res://scripts/designer/ShipDesigner.gd" id="1"]
 [ext_resource type="Script" uid="uid://6tyxpgwy7jot" path="res://scripts/designer/ShipGrid.gd" id="1_grid"]
 [ext_resource type="PackedScene" uid="uid://gbexenfull3j" path="res://scenes/designer/components/RoomPalettePanel.tscn" id="2"]
 [ext_resource type="PackedScene" uid="uid://p7hx2grevdey" path="res://scenes/designer/components/SpecificationsPanel.tscn" id="2_specifications"]
 [ext_resource type="PackedScene" uid="uid://bh06bckasjnjq" path="res://scenes/designer/components/ShipStatusPanel.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://scenes/designer/components/MissionRequirementsPanel.tscn" id="3_mission"]
+[ext_resource type="PackedScene" uid="uid://c8yqm3v1lapxh" path="res://scenes/designer/components/MissionRequirementsPanel.tscn" id="3_mission"]
 [ext_resource type="PackedScene" uid="uid://walih11idf0w" path="res://scenes/designer/components/SynergyGuidePanel.tscn" id="4"]
 [ext_resource type="PackedScene" uid="uid://b3vn8y4qxc7h2" path="res://scenes/designer/components/TemplateNameDialog.tscn" id="5_template_name"]
 [ext_resource type="PackedScene" uid="uid://cc7qm3y5r8vph" path="res://scenes/designer/components/TemplateListPanel.tscn" id="6_template_list"]
 [ext_resource type="PackedScene" uid="uid://cq8m4x7savph" path="res://scenes/designer/components/ShipStatsPanel.tscn" id="7_ship_stats"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ShipProfilePanel.tscn" id="8_ship_profile"]
 [ext_resource type="PackedScene" uid="uid://h4cfuumnaovx" path="res://scenes/mission/EnemySetupPanel.tscn" id="9_enemy_setup"]
 [ext_resource type="Theme" path="res://assets/themes/blueprint_theme.tres" id="10_blueprint_theme"]
-[ext_resource type="PackedScene" uid="uid://tutorial_system_001" path="res://scenes/designer/components/TutorialSystem.tscn" id="10_tutorial_system"]
+[ext_resource type="PackedScene" path="res://scenes/designer/components/TutorialSystem.tscn" id="10_tutorial_system"]
 [ext_resource type="Texture2D" uid="uid://det0ehgyqq2qp" path="res://assets/sprites/ui/save.png" id="11_icon_save"]
 [ext_resource type="Texture2D" uid="uid://3mhepptrw5ex" path="res://assets/sprites/ui/load.png" id="12_icon_load"]
 [ext_resource type="Texture2D" uid="uid://bln3on3wakkuc" path="res://assets/sprites/ui/view.png" id="13_icon_view"]
@@ -365,6 +366,13 @@ offset_top = 147.0
 offset_right = 1898.0
 offset_bottom = 347.0
 
+[node name="ShipProfilePanel" parent="." instance=ExtResource("8_ship_profile")]
+layout_mode = 0
+offset_left = 1583.0
+offset_top = 161.0
+offset_right = 1933.0
+offset_bottom = 801.0
+
 [node name="RoomPalettePanel" parent="." instance=ExtResource("2")]
 layout_mode = 0
 offset_left = 33.0
@@ -567,6 +575,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="MissionRequirementsPanel" parent="." instance=ExtResource("3_mission")]
+visible = false
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -589,6 +598,7 @@ offset_bottom = -59.0
 grow_vertical = 0
 
 [node name="SynergyGuidePanel" parent="." instance=ExtResource("4")]
+visible = false
 custom_minimum_size = Vector2(280, 180)
 layout_mode = 1
 anchors_preset = 2

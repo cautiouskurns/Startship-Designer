@@ -3,6 +3,10 @@ extends Node
 ## Campaign State Singleton
 ## Manages campaign progression, sector states, and turn tracking
 
+## Signals (Feature 6: Victory Conditions)
+signal campaign_victory(rank: String, stats: Dictionary)
+signal campaign_defeat(reason: String, stats: Dictionary)
+
 ## Sector IDs (must match sectors.json)
 enum SectorID {
 	COMMAND,
@@ -44,6 +48,12 @@ var last_defended_sector: SectorID = SectorID.COMMAND
 var sectors: Dictionary = {}  # SectorID -> SectorData
 var current_tech_level: int = 1  # Tech level (1-3), unlocks components as campaign progresses
 
+## Campaign stats tracking (Feature 6: Victory Conditions)
+var battles_won: int = 0
+var battles_lost: int = 0
+var total_battles: int = 0
+var ships_deployed: int = 0  # Total number of ship designs created
+
 ## Sector definitions (loaded from JSON)
 var sector_definitions: Dictionary = {}
 
@@ -57,6 +67,12 @@ func _initialize_campaign():
 	current_tech_level = 1  # Start at tech level 1
 	campaign_active = true
 	sectors.clear()
+
+	# Reset campaign stats (Feature 6)
+	battles_won = 0
+	battles_lost = 0
+	total_battles = 0
+	ships_deployed = 0
 
 	# Initialize all 7 sectors
 	for sector_id in SectorID.values():
@@ -149,6 +165,9 @@ func advance_turn():
 func process_threat_escalation(defended_sector: SectorID, victory: bool):
 	print("Processing threat escalation - Defended: %s, Victory: %s" % [SectorID.keys()[defended_sector], victory])
 
+	# Record battle result (Feature 6)
+	record_battle_result(victory)
+
 	for sector_id in sectors.keys():
 		var sector = sectors[sector_id]
 
@@ -191,6 +210,33 @@ func _change_threat(sector: SectorData, delta: int):
 	if delta != 0:
 		print("Sector %s threat: %d -> %d" % [SectorID.keys()[sector.sector_id], old_threat, sector.threat_level])
 
+## Record battle result (Feature 6)
+func record_battle_result(victory: bool):
+	total_battles += 1
+	if victory:
+		battles_won += 1
+	else:
+		battles_lost += 1
+	print("Battle stats: %d won, %d lost, %d total" % [battles_won, battles_lost, total_battles])
+
+## Record ship deployment (Feature 6) - called when entering battle
+func record_ship_deployment():
+	ships_deployed += 1
+
+## Get campaign stats dictionary (Feature 6)
+func get_campaign_stats() -> Dictionary:
+	return {
+		"current_turn": current_turn,
+		"max_turns": max_turns,
+		"sectors_saved": _count_saved_sectors(),
+		"total_sectors": 6,
+		"battles_won": battles_won,
+		"battles_lost": battles_lost,
+		"total_battles": total_battles,
+		"ships_deployed": ships_deployed,
+		"tech_level": current_tech_level
+	}
+
 ## Check game over conditions
 func _check_game_over():
 	# Count lost sectors (excluding Command)
@@ -203,16 +249,18 @@ func _check_game_over():
 	if lost_count >= 6:
 		print("GAME OVER: All sectors lost")
 		campaign_active = false
-		# TODO: Trigger game over screen
+		_trigger_defeat("ALL_SECTORS_LOST")
+		return
 
 	# Game over if Command threatened critically
 	var command = sectors[SectorID.COMMAND]
 	if command.threat_level >= 3:
 		print("GAME OVER: Command under critical threat")
 		campaign_active = false
-		# TODO: Trigger game over screen
+		_trigger_defeat("COMMAND_THREATENED")
+		return
 
-## End campaign (victory at turn 12)
+## End campaign (victory at turn 12) - Feature 6
 func _end_campaign():
 	campaign_active = false
 	var saved_count = _count_saved_sectors()
@@ -222,7 +270,15 @@ func _end_campaign():
 	print("Sectors Saved: %d/6" % saved_count)
 	print("Victory Rank: %s" % rank)
 
-	# TODO: Show victory screen with rank
+	# Emit victory signal with rank and stats
+	var stats = get_campaign_stats()
+	campaign_victory.emit(rank, stats)
+
+## Trigger campaign defeat (Feature 6)
+func _trigger_defeat(reason: String):
+	print("Campaign defeated: %s" % reason)
+	var stats = get_campaign_stats()
+	campaign_defeat.emit(reason, stats)
 
 ## Count saved sectors (threat 0-2)
 func _count_saved_sectors() -> int:

@@ -14,6 +14,7 @@ signal rotation_requested(room_type: RoomData.RoomType)  # Phase 7.3
 @onready var size_cost_label: Label = $HBoxContainer/SizeCostLabel
 @onready var preview_panel: Panel = $HBoxContainer/PreviewMargin/PreviewContainer/PreviewPanel
 @onready var preview_icon: Label = $HBoxContainer/PreviewMargin/PreviewContainer/PreviewIcon
+@onready var shape_grid_container: Control = get_node_or_null("HBoxContainer/ShapeGridContainer")
 
 ## Tooltip elements
 @onready var tooltip_panel: Panel = $TooltipPanel
@@ -273,17 +274,69 @@ func update_display():
 	else:
 		name_label.text = full_label
 
-	# Get room size
-	var size = RoomData.get_shape_size(room_type)
-
 	# Get cost
 	var cost = RoomData.costs.get(room_type, 0)
 
-	# Format as "WxH • XBP"
-	size_cost_label.text = "%d×%d • %dBP" % [size.x, size.y, cost]
+	# Format as just cost (shape is shown visually)
+	size_cost_label.text = "%dBP" % cost
 
 	# Update preview panel and icon
 	_update_preview()
+
+	# Update shape grid visual representation
+	_update_shape_grid()
+
+## Update shape grid visual representation
+func _update_shape_grid():
+	if not shape_grid_container:
+		return  # Container not present in scene
+
+	if room_type == RoomData.RoomType.EMPTY:
+		return
+
+	# Clear existing children
+	for child in shape_grid_container.get_children():
+		child.queue_free()
+
+	# Get room shape and size
+	var shape = RoomData.get_shape(room_type)
+	var size = RoomData.get_shape_size(room_type)
+	var room_color = RoomData.get_color(room_type)
+
+	# Create a GridContainer to hold the tiles
+	var grid = GridContainer.new()
+	grid.columns = size.x
+	shape_grid_container.add_child(grid)
+
+	# Create a 2D array to mark which tiles are filled
+	var filled_tiles = {}
+	for offset in shape:
+		var key = Vector2i(offset[0], offset[1])
+		filled_tiles[key] = true
+
+	# Create small ColorRect nodes for each position in the bounding box
+	var tile_size = 8  # Small tiles for compact display
+	var gap = 1  # Gap between tiles
+
+	for y in range(size.y):
+		for x in range(size.x):
+			var tile = ColorRect.new()
+			tile.custom_minimum_size = Vector2(tile_size, tile_size)
+
+			# Check if this position is filled in the shape
+			var pos = Vector2i(x, y)
+			if filled_tiles.has(pos):
+				# Filled tile - use room color
+				tile.color = room_color
+			else:
+				# Empty tile - dark transparent
+				tile.color = Color(0.2, 0.2, 0.2, 0.3)
+
+			grid.add_child(tile)
+
+	# Add small gaps between tiles
+	grid.add_theme_constant_override("h_separation", gap)
+	grid.add_theme_constant_override("v_separation", gap)
 
 ## Update preview panel style and icon based on room type
 func _update_preview():

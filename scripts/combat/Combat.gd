@@ -55,6 +55,9 @@ signal battle_ended(victory: bool)
 @onready var victory_overlay: ColorRect = $VictoryOverlay
 @onready var victory_return_button: Button = $VictoryOverlay/ReturnButton
 
+## Post-Battle Analysis Panel (Feature: Post-Battle Analysis)
+var analysis_panel: Control = null
+
 ## Ship data
 var player_data: ShipData = null
 var enemy_data: ShipData = null
@@ -101,6 +104,9 @@ func _ready():
 	ff_button.pressed.connect(_on_ff_pressed)
 	zoom_in_button.pressed.connect(_zoom_in)
 	zoom_out_button.pressed.connect(_zoom_out)
+
+	# Load and setup Post-Battle Analysis Panel
+	_setup_analysis_panel()
 
 	# Set initial button text
 	pause_button.text = "PAUSE"
@@ -1199,6 +1205,18 @@ func _check_hp_thresholds(ship_name: String, ship_data: ShipData, old_hp: int):
 				hp_threshold_crossed.emit("player", threshold, new_hp)
 				print("[CrewBarkSystem] HP threshold crossed: player at %d%% (HP: %d)" % [threshold, new_hp])
 
+## Setup Post-Battle Analysis Panel (Feature: Post-Battle Analysis)
+func _setup_analysis_panel():
+	# Load analysis panel scene
+	var panel_scene = load("res://scenes/combat/PostBattleAnalysisPanel.tscn")
+	if panel_scene:
+		analysis_panel = panel_scene.instantiate()
+		add_child(analysis_panel)
+		analysis_panel.analysis_closed.connect(_on_analysis_closed)
+		print("DEBUG: Post-Battle Analysis Panel loaded and ready")
+	else:
+		print("ERROR: Could not load PostBattleAnalysisPanel scene")
+
 ## Show combat end screen
 func _show_combat_end(winner: String):
 	# Finalize battle result (Feature: State Capture & Replay)
@@ -1213,6 +1231,13 @@ func _show_combat_end(winner: String):
 	# Emit battle_ended signal for bark system (Crew Barks Phase 1.1)
 	var player_victory = (winner == "player")
 	battle_ended.emit(player_victory)
+
+	# Show Post-Battle Analysis Panel FIRST (Feature: Post-Battle Analysis)
+	if analysis_panel and battle_result:
+		print("DEBUG: Showing Post-Battle Analysis Panel")
+		analysis_panel.show_analysis(battle_result, player_data, enemy_data)
+		# Return here - actual result screens will be shown after analysis is closed
+		return
 
 	# Log victory/defeat
 	if combat_log:
@@ -1569,6 +1594,51 @@ func _capture_initial_snapshot():
 	battle_result.add_turn_snapshot(snapshot)
 
 	print("DEBUG: Captured initial state - ", snapshot.get_summary())
+
+## Handle analysis panel closed (Feature: Post-Battle Analysis)
+func _on_analysis_closed():
+	print("DEBUG: Analysis panel closed - showing result overlays")
+	# Now show the traditional result overlays
+	_show_result_overlays()
+
+## Show result overlays after analysis (Feature: Post-Battle Analysis)
+func _show_result_overlays():
+	var winner = "player" if battle_result.player_won else "enemy"
+
+	# Log victory/defeat
+	if combat_log:
+		combat_log.add_victory(winner)
+
+	# Flash winner green, loser red
+	if winner == "player":
+		# Play victory sound
+		AudioManager.play_victory()
+
+		_flash_ship(player_ship_display, Color(0.29, 0.89, 0.29))  # Green
+		_flash_ship(enemy_ship_display, Color(0.89, 0.29, 0.29))   # Red
+		result_label.text = "VICTORY"
+
+		# Unlock next mission if not final mission
+		if current_mission < 2:
+			GameState.unlock_mission(current_mission + 1)
+
+		# Show result overlay
+		result_overlay.visible = true
+
+		# Add "Continue" button for missions 1-2, or show victory overlay for mission 3
+		if current_mission >= 2:
+			# Mission 3 complete - show final victory screen (has its own return button)
+			victory_overlay.visible = true
+	else:
+		# Play death sound
+		AudioManager.play_death()
+
+		_flash_ship(player_ship_display, Color(0.89, 0.29, 0.29))  # Red
+		_flash_ship(enemy_ship_display, Color(0.29, 0.89, 0.29))   # Green
+		result_label.text = "DEFEAT"
+
+		# Show result overlay
+		result_overlay.visible = true
 
 ## Create enemy ship from template (Phase 10.8 - template system)
 func _create_enemy_from_template(template: ShipTemplate) -> ShipData:

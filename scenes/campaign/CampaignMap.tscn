@@ -1,9 +1,11 @@
-[gd_scene load_steps=5 format=3 uid="uid://bag6a3d5jamdr"]
+[gd_scene load_steps=6 format=3 uid="uid://bag6a3d5jamdr"]
 
 [ext_resource type="Script" uid="uid://dm12t73wcw3te" path="res://scripts/campaign/CampaignMap.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://y1akstmn6odh" path="res://assets/sprites/ui/starfield.png" id="2_8fucu"]
 [ext_resource type="PackedScene" path="res://scenes/campaign/components/SectorNode.tscn" id="2_sector"]
 [ext_resource type="PackedScene" path="res://scenes/campaign/components/DeploymentPanel.tscn" id="3_deployment"]
+[ext_resource type="PackedScene" uid="uid://bv8kq4n2p3yac" path="res://scenes/ui/VictoryScreen.tscn" id="4_victory"]
+[ext_resource type="PackedScene" uid="uid://cyjqb8vqk5n7k" path="res://scenes/ui/NarrativePopup.tscn" id="5_narrative"]
 
 [node name="CampaignMap" type="Control"]
 layout_mode = 3
@@ -134,5 +136,13 @@ sector_id = 6
 [node name="ConnectionLines" type="Node2D" parent="."]
 
 [node name="DeploymentPanel" parent="." instance=ExtResource("3_deployment")]
+visible = false
+layout_mode = 1
+
+[node name="VictoryScreen" parent="." instance=ExtResource("4_victory")]
+visible = false
+layout_mode = 1
+
+[node name="NarrativePopup" parent="." instance=ExtResource("5_narrative")]
 visible = false
 layout_mode = 1
